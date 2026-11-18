@@ -29,6 +29,8 @@ TEST(VulkanManaged, ManagedTailKeepsItsExclusiveOriginalCompletion) {
   ASSERT_TRUE(d::Access::program(program)->dispatches.back().region);
   auto first = program.create_invocation().value(), second = program.create_invocation().value();
   const auto &a = *d::Access::invocation(first)->run, &b = *d::Access::invocation(second)->run;
+  EXPECT_EQ(a.command_pool, VK_NULL_HANDLE); EXPECT_EQ(b.command_pool, VK_NULL_HANDLE);
+  EXPECT_EQ(a.command, VK_NULL_HANDLE); EXPECT_EQ(b.command, VK_NULL_HANDLE);
   ASSERT_EQ(a.fence, VK_NULL_HANDLE); ASSERT_EQ(b.fence, VK_NULL_HANDLE);
   ASSERT_NE(a.completion_fence, VK_NULL_HANDLE); ASSERT_NE(b.completion_fence, VK_NULL_HANDLE);
   EXPECT_NE(a.completion_fence, b.completion_fence);

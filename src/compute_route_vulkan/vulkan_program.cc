@@ -980,16 +980,17 @@ Program::create_invocation(mem::AllocatorRef allocator, InvocationAllocation all
     auto invocation = std::allocate_shared<detail::InvocationState>(mem::StdAllocator<detail::InvocationState>(allocator));
     invocation->program = state_;
     invocation->slot = std::move(*slot);
-    // The existing final managed Work already owns this invocation's exclusive
-    // completion. An IREE callback/cancellation chain still needs its original
-    // parent fence; native tails and standalone submissions do as well.
+    // Composed stages record their own commands. With a managed tail and no
+    // IREE callbacks, the final Work also owns the completion fence.
     const bool managed_completion = !state_->dispatches.empty() && state_->dispatches.back().region &&
         std::ranges::none_of(state_->dispatches, [](const auto &dispatch) { return dispatch.iree.has_value(); });
-    auto run = managed_completion ? detail::create_recording_run(state_->runtime, allocator)
-                                 : detail::create_run(state_->runtime, allocator);
-    if (!run)
-      return std::unexpected(std::move(run).error());
-    invocation->run = std::move(*run);
+    if (managed_completion) {
+      invocation->run = std::allocate_shared<detail::Run>(
+          mem::StdAllocator<detail::Run>(allocator), allocator);
+      invocation->run->runtime = state_->runtime;
+    } else {
+      HYLE_ASSIGN_OR_RETURN(invocation->run, detail::create_run(state_->runtime, allocator));
+    }
     invocation->run->allocation = allocation;
     invocation->run->private_storage = std::move(private_storage);
     invocation->run->recording_owner = state_;
