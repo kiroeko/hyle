@@ -1528,6 +1528,11 @@
             "root": "hyle",
             "path": "third_party/ggml_cpu_runtime/NOTICE.md",
             "sha256": "2288f426fbadfe431a050dcf50c020610d4524bce0925f231e85ad57b9d9089e"
+          },
+          {
+            "root": "hyle",
+            "path": "src/compute_ggml_runtime/LLAMAFILE_LICENSE.txt",
+            "sha256": "c5843750168debd92766cf0cf2f5040ce8a6eefe2ef7ebc652997b6897e1ba3b"
           }
         ]
       }

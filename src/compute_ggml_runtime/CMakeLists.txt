@@ -440,6 +440,12 @@ if(_cpu AND HYLE_TARGET_PROCESSOR STREQUAL "x86_64" AND
 endif()
 set(HYLE_GGML_SOURCE_DIR "${_patched_source}" PARENT_SCOPE)
 set(HYLE_GGML_VULKAN_SOURCE_DIR "${_patched_source}" PARENT_SCOPE)
+# Keep the original tinyBLAS copyright with every package that owns the CPU
+# integration lock, including non-AVX2 SDKs which carry that same dependency.
+if("ggml_cpu_runtime_patches" IN_LIST _locked)
+  list(APPEND _licenses
+    "${CMAKE_CURRENT_SOURCE_DIR}/LLAMAFILE_LICENSE.txt|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-cpu-llamafile-LICENSE")
+endif()
 hyle_register_package_dependency(
   NAME ggml_runtime OWNER compute_ggml_runtime
   STATIC_EXPORT_TARGETS ${_vendor_targets}
