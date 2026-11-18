@@ -572,7 +572,7 @@
           "after": "            src_clone[2], src_clone[3], src_clone[4], src_clone[5],\n            ggml_get_op_params_i32(tensor, 0));\n            // Retain explicit-scale presence and F32 bits in the CPU oracle clone.\n            tensor_clone->op_params[hyle::compute::ggml_runtime::kGdnOutputScaleSlot] =\n                tensor->op_params[hyle::compute::ggml_runtime::kGdnOutputScaleSlot];\n            tensor_clone->op_params[hyle::compute::ggml_runtime::kGdnOutputScalePresenceSlot] =\n                tensor->op_params[hyle::compute::ggml_runtime::kGdnOutputScalePresenceSlot];"
         }
       ],
-      "after_sha256": "dcaab6e022298178106d51e54a524499a447fe710759a4d243b27bcb4ef746f2"
+      "after_sha256": "3ab72d2af7f13aff8855f0f1857e5c061b663e9c4112e7d1de969c4045c17837"
     },
     {
       "path": "src/ggml.cpp",
