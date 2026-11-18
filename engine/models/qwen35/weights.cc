@@ -378,7 +378,8 @@ std::string_view score_policy(const ProjectionBinding &binding, PrecisionProfile
       if (precision.is_f16()) return "f16_inputs_f16_projection_f32_logits";
       if (description.data_type() == hyle::compute::DataType::kFloat16) return "f16_weight_f32_inputs_f32_output";
       if (description.data_type() == hyle::compute::DataType::kFloat32) return "f32_weight_f32_inputs_f32_output";
-      return "bf16_inputs_f32_output";
+      return precision.activation_type() == hyle::compute::DataType::kFloat32
+          ? "bf16_weight_f32_inputs_f32_output" : "bf16_inputs_f32_output";
     } else if constexpr (std::is_same_v<Entry, MlxAffineProjection>) {
       return "mlx_affine_f32_weight_dot_bf16_projection_f32_logits";
     } else if constexpr (std::is_same_v<Entry, Nf4Projection>) {

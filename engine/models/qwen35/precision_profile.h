@@ -50,6 +50,25 @@ public:
             roles.ct_mixed_policy.enabled() || roles.ct_asymmetric_policy.enabled || roles.mlx_policy.enabled() ||
             !roles.cache_calibration.empty())))
       throw std::runtime_error("incompatible source activation precision policies");
+    // UNADOPTED NUMERICAL EXPERIMENT: ordinary HF BF16 target only.
+    // Both loader/cache planning and Model construction already consume this
+    // cold function. Do not reinterpret stored weights or widen attention/KV.
+    // A selected NextN or encoded projection retains its original policy.
+    const bool experimental_bf16_target =
+        roles.representation == prepared::SourceRepresentation::kHfOriginal &&
+        roles.cache_policy == prepared::CachePolicy::kDefault && roles.cache_calibration.empty() &&
+        std::ranges::any_of(roles.selected, [](const auto &role) {
+          return role.name == "model.language_model.embed_tokens.weight" && role.dtype == "BF16";
+        }) &&
+        std::ranges::all_of(roles.selected, [](const auto &role) {
+          const bool dense_bf16 = role.dtype == "BF16" &&
+              (role.projection_codec == prepared::ProjectionCodec::kUnspecified ||
+               role.projection_codec == prepared::ProjectionCodec::kDense);
+          const bool original_f32_auxiliary = role.dtype == "F32" &&
+              role.projection_codec == prepared::ProjectionCodec::kUnspecified;
+          return !role.name.starts_with("mtp.") && (dense_bf16 || original_f32_auxiliary);
+        });
+    if (experimental_bf16_target) return float32_activations();
     PrecisionProfile result;
     result.f16_ = roles.nf4_policy.enabled;
     // Supported GGUF graphs keep target/NextN projections and residuals in
