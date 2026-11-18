@@ -20,6 +20,10 @@ public:
   HYLE_GGML_VULKAN_INTERNAL_API static Result<NativeGraph>
   allocate(NativeDevice, MetadataArena, ggml_cgraph *,
            std::shared_ptr<const void> imports = {}) noexcept;
+  HYLE_GGML_VULKAN_INTERNAL_API static Result<NativeGraph>
+  allocate_for_run(NativeDevice, MetadataArena, ggml_cgraph *,
+      std::shared_ptr<const void>, const std::shared_ptr<bridge::RunArena> &) noexcept;
+  HYLE_GGML_VULKAN_INTERNAL_API Status materialize_run_storage() noexcept;
   HYLE_GGML_VULKAN_INTERNAL_API ggml_cgraph *get() const noexcept;
   HYLE_GGML_VULKAN_INTERNAL_API std::size_t storage_bytes() const noexcept;
   std::shared_ptr<const void> lease() const noexcept { return state_; }

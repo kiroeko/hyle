@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <algorithm>
+#include <optional>
 
 #include "../compute_models/d5_qwen35_fixture.h"
 #include "../compute_models/batched_rope_fixture.h"
@@ -1082,6 +1083,77 @@ TEST(VulkanManaged, B2MatureCausalGqaRetainsReplayResults) {
       retained = result->get()->tensors()[0];
     else
       expect(context, retained, std::array{3.0, 3.0});
+  }
+}
+} // namespace
+
+namespace {
+TEST(VulkanManaged, RunArenaOwnsTwoNonzeroManagedRegionsAndKeepsSlotsIndependent) {
+  auto made = vulkan_test::context();
+  ASSERT_TRUE(made) << made.error().message();
+  auto &context = *made;
+  const auto description = dense(c::DataType::kFloat32, {2048});
+  const auto weight = make(context, description, std::vector<double>(2048, .5));
+  d::Plan plan;
+  plan.values.resize(7, {description, {}});
+  plan.values[1].constant = weight;
+  plan.inputs = {0};
+  plan.outputs = {3, 6};
+  auto shape = c::TensorShape::create(std::array<std::int64_t, 1>{2048});
+  ASSERT_TRUE(shape);
+  auto reshape = c::View::reshape(*shape);
+  ASSERT_TRUE(reshape);
+  plan.steps = {{c::Operation(c::Binary{c::BinaryKind::kAdd}), {0, 1}, {2}},
+                {c::Operation(c::Unary{c::UnaryKind::kNeg}), {2}, {3}},
+                {c::Operation(*reshape), {3}, {4}},
+                {c::Operation(c::Binary{c::BinaryKind::kAdd}), {4, 1}, {5}},
+                {c::Operation(c::Unary{c::UnaryKind::kNeg}), {5}, {6}}};
+  // Real cold control frontier leaves each Add->Neg fragment intact.
+  plan.steps[2].control_boundary = true;
+  auto prepared = d::prepare_plan(context, plan);
+  ASSERT_TRUE(prepared) << prepared.error().message();
+  auto first = prepared->create_invocation();
+  ASSERT_TRUE(first) << first.error().message();
+  const auto inspect = [&](const v::Invocation &call) {
+    const auto &run = *d::Access::invocation(call)->run;
+    std::size_t count = 0, total = 0, maximum = 0;
+    EXPECT_FALSE(run.async);
+    EXPECT_FALSE(run.transfer_submission);
+    for (const auto &stage : run.stages) {
+      EXPECT_FALSE(stage.iree);
+      if (!stage.managed)
+        continue;
+      ++count;
+      const auto bytes = stage.managed->storage_bytes();
+      EXPECT_GT(bytes, 0u);
+      total += bytes;
+      maximum = (std::max)(maximum, bytes);
+    }
+    EXPECT_EQ(count, 2u);
+    EXPECT_GT(total, maximum);
+  };
+  inspect(*first);
+  auto second = prepared->create_invocation();
+  ASSERT_TRUE(second) << second.error().message();
+  inspect(*second);
+  EXPECT_NE(d::Access::invocation(*first)->run, d::Access::invocation(*second)->run);
+  std::optional<v::Tensor> retained;
+  for (int pass = 0; pass < 3; ++pass) {
+    auto &call = pass == 0 ? *first : *second;
+    const double x = double(pass) + .25;
+    ASSERT_TRUE(call.bind(make(context, description, std::vector<double>(2048, x))).ok());
+    auto work = call.submit();
+    ASSERT_TRUE(work) << work.error().message();
+    auto result = work->wait();
+    ASSERT_TRUE(result) << result.error().message();
+    const auto tensors = result->get()->tensors();
+    ASSERT_EQ(tensors.size(), 2u);
+    EXPECT_EQ(values(context, tensors[0]), std::vector<double>(2048, -(x + .5)));
+    EXPECT_EQ(values(context, tensors[1]), std::vector<double>(2048, x));
+    if (retained)
+      EXPECT_EQ(values(context, *retained), std::vector<double>(2048, -.75));
+    if (pass == 0)
+      retained = tensors[0];
   }
 }
 } // namespace

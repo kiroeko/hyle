@@ -81,6 +81,12 @@ public:
   HYLE_GGML_VULKAN_INTERNAL_API Status
   with_transfer_queue(VkResult (*)(void *, VkQueue), void *) const noexcept;
 
+  // One cold controller for one original composed Run, not a global pool.
+  HYLE_GGML_VULKAN_INTERNAL_API Result<std::shared_ptr<bridge::RunArena>>
+  create_run_arena() const noexcept;
+  HYLE_GGML_VULKAN_INTERNAL_API Status
+  seal_run_arena(const std::shared_ptr<bridge::RunArena> &) const noexcept;
+
 private:
   friend class NativeGraph;
   HYLE_GGML_VULKAN_INTERNAL_API Status
@@ -88,6 +94,10 @@ private:
                  std::size_t *bytes) const noexcept;
   HYLE_GGML_VULKAN_INTERNAL_API void
   free_graph(bridge::Storage *) const noexcept;
+  HYLE_GGML_VULKAN_INTERNAL_API Status
+  allocate_graph_for_run(ggml_cgraph *, bool, const std::shared_ptr<bridge::RunArena> &,
+      bridge::Storage **, std::size_t *) const noexcept;
+  HYLE_GGML_VULKAN_INTERNAL_API Status materialize_graph(bridge::Storage *) const noexcept;
   struct State;
   std::shared_ptr<State> state_;
 };

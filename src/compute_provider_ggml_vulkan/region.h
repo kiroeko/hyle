@@ -77,6 +77,10 @@ public:
   Region &operator=(Region &&) noexcept = default;
   HYLE_GGML_VULKAN_INTERNAL_API static Result<Region>
   create(NativeDevice, const RegionRecipe &) noexcept;
+  HYLE_GGML_VULKAN_INTERNAL_API static Result<Region>
+  create_for_run(NativeDevice, const RegionRecipe &,
+      const std::shared_ptr<bridge::RunArena> &) noexcept;
+  HYLE_GGML_VULKAN_INTERNAL_API Status materialize_run_storage() noexcept;
   HYLE_GGML_VULKAN_INTERNAL_API
       Status validate(std::span<const RegionBinding>) const noexcept;
   HYLE_GGML_VULKAN_INTERNAL_API
