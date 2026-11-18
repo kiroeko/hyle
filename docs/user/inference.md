@@ -339,7 +339,7 @@ worker 和 `/v1/models` 的 `hyle.placement` 报告实际 `primary_backend` 与 
 
 WSL Vulkan 检查使用 Mesa Dozen 25.2.8 经 D3D12 在 RTX 4070 上执行，需配置对应 ICD 及其依赖；llvmpipe 不计为 GPU 路线。该驱动仍声明仅供测试，现有大位置 RoPE 精度检查尚未通过。这里的短请求结果不能推广为长上下文资格。
 
-公共引擎共用请求、会话、完整状态、RNG 和 MTP 起草／验证／修复合同。CUDA 支持普通和 MTP 接力，Metal 和 Vulkan 的 MTP 接力适用范围见上文。引擎向实际 CPU／CUDA／Metal／Vulkan 端点查询设备长度批资格。原编码草稿行复制资格只对 CUDA 声明。Metal／Vulkan 的变长 packed convolution 和 GDN 前缀状态实现见[计算合同](compute.md)。Windows 和 Mac 的 Vulkan／CPU＋Vulkan 已通过普通随机、K1、K3 三方案共存、兼容 K1 双请求合批、续轮、独立 RNG、取消后复用和两种方案装载顺序检查，覆盖容量 128、三个驻留会话和两个活跃序列。WSL Mesa Dozen 上，`--draft-count 2 --overlap on` 已验证贪心和随机双轮执行实际 K2 验证，并在原时限内自然退出。
+公共引擎共用请求、会话、完整状态、RNG 和 MTP 起草／验证／修复合同。CUDA 支持普通和 MTP 接力，Metal 和 Vulkan 的 MTP 接力适用范围见上文。引擎向实际 CPU／CUDA／Metal／Vulkan 端点查询设备长度批资格。原编码草稿行复制资格只对 CUDA 声明。Metal／Vulkan 的变长 packed convolution 和 GDN 前缀状态实现见[计算合同](compute.md)。Windows 和 Mac 的 Vulkan／CPU＋Vulkan 已通过普通随机、K1、K3 三方案共存、兼容 K1 双请求合批、续轮、独立 RNG、取消后复用和两种方案装载顺序检查，覆盖容量 128、三个驻留会话和两个活跃序列。WSL Mesa Dozen 上，`--draft-count 2 --overlap on` 在冷期选择串行 K2。贪心和随机双轮均完成验证，并在原时限内自然退出。
 
 模型、格式、后端与原始检查统一查[模型与算子覆盖](../implementation/model-operators.md)。
 加载器不会预先展开整库，但实际计划可能分解计算并使用workspace；4bit文件大小不是运行内存上限。
