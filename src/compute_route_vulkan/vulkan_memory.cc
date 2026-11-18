@@ -534,6 +534,7 @@ Status MemoryAccess::copy_constants(const std::shared_ptr<Runtime> &runtime,
     std::vector<PreparedCopy, mem::StdAllocator<PreparedCopy>> prepared{
         mem::StdAllocator<PreparedCopy>(allocator)};
     prepared.reserve(copies.size());
+    bool transfer_access = false;
     // Retain every actual source/destination backing before any accepted work.
     for (const auto &copy : copies) {
       auto &entry = prepared.emplace_back();
@@ -542,6 +543,8 @@ Status MemoryAccess::copy_constants(const std::shared_ptr<Runtime> &runtime,
       if (!bytes) continue;
       if (entry.direction != ConstantDirection::kDownload) {
         HYLE_ASSIGN_OR_RETURN(entry.destination, tensor_view(runtime, copy.destination.as_const(), allocator));
+        if (entry.direction == ConstantDirection::kUpload)
+          transfer_access |= Access::buffer(entry.destination)->transfer_eligible;
       }
       if (entry.direction != ConstantDirection::kUpload) {
         HYLE_ASSIGN_OR_RETURN(entry.source, tensor_view(runtime, copy.source, allocator));
@@ -552,7 +555,7 @@ Status MemoryAccess::copy_constants(const std::shared_ptr<Runtime> &runtime,
       HYLE_ASSIGN_OR_RETURN(auto description, TensorDesc::dense(DataType::kUInt8,
           std::array<std::int64_t, 1>{static_cast<std::int64_t>(host_maximum)}));
       HYLE_ASSIGN_OR_RETURN(auto buffer, allocate_buffer(runtime->device, host_maximum, true, false,
-          {.allocator = allocator, .transfer_access = true}));
+          {.allocator = allocator, .transfer_access = transfer_access}));
       HYLE_ASSIGN_OR_RETURN(slot, TransferAccess::create(runtime,
           Access::tensor(description, std::move(buffer)), host_maximum, allocator));
     }

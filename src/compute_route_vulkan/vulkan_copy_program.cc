@@ -270,7 +270,9 @@ Result<CopyBatchInvocation> CopyBatchInvocation::create(const CopyBatchProgram &
     if (!memory) return std::unexpected(Status::ResourceExhausted("Vulkan copy phase metadata"));
     auto *phase = std::construct_at(static_cast<detail::CopyNativePhase *>(memory));
     phase->owner = state; phase->index = id; state->phases.push_back(phase);
-    HYLE_ASSIGN_OR_RETURN(phase->recording, detail::prepare_copy_recording_runtime(program->runtime, r, allocator, program->options.max_bytes));
+    HYLE_ASSIGN_OR_RETURN(phase->recording, detail::prepare_copy_recording_runtime(
+        program->runtime, r, allocator, program->options.max_bytes, detail::CopyRecordingMode::kOnce,
+        detail::CopyGranularity::kWord, detail::CopyQueueUse::kHostUpload));
   }
   HYLE_ASSIGN_OR_RETURN(state->uses, LeaseUsePool::create({.max_batches = g,
       .max_resources_per_batch = static_cast<std::uint32_t>((std::max)(n, std::size_t{1})), .allocator = allocator}));

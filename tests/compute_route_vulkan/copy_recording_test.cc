@@ -19,6 +19,32 @@ struct DrainGuard final {
   ~DrainGuard() { context.close().IgnoreError(); }
 };
 
+VKAPI_ATTR VkResult VKAPI_CALL reject_transfer_semaphore(
+    VkDevice, const VkSemaphoreCreateInfo *, const VkAllocationCallbacks *, VkSemaphore *) {
+  return VK_ERROR_OUT_OF_DEVICE_MEMORY;
+}
+
+TEST(VulkanCopyRecording, ComputeQueuePreparationNeedsNoTransferSemaphore) {
+  auto context = vulkan_test::context().value();
+  const auto &runtime = d::Access::runtime(context);
+  if (!context.environment().distinct_transfer_queue)
+    GTEST_SKIP() << "This device uses one queue";
+  auto &create_semaphore = runtime->device->fn.CreateSemaphore;
+  struct RestoreSemaphore final {
+    PFN_vkCreateSemaphore &function;
+    PFN_vkCreateSemaphore original;
+    ~RestoreSemaphore() { function = original; }
+  } restore{create_semaphore, create_semaphore};
+  create_semaphore = &reject_transfer_semaphore;
+
+  auto resident = d::prepare_copy_recording_runtime(runtime, 1, mem::system_allocator(),
+      32, d::CopyRecordingMode::kReplayable);
+  ASSERT_TRUE(resident.has_value()) << resident.error().message();
+  auto upload = d::prepare_copy_recording(context, 1);
+  ASSERT_FALSE(upload.has_value());
+  EXPECT_TRUE(upload.error().IsResourceExhausted());
+}
+
 TEST(VulkanCopyRecording, ThreeNativeBytePhasesAndPairRegionsReuseColdMetadata) {
   auto context = vulkan_test::context().value();
   ASSERT_FALSE(context.environment().software_device);
