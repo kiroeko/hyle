@@ -30,6 +30,34 @@ std::uint32_t gdn_snapshot_count(Operation operation) noexcept {
   return 1;
 }
 
+// Exact widening is private per-execution scratch, never a second weight bank.
+// The native mixed BF16-W/F32-A GEMM narrows A; bounded F32-W tiles instead
+// retain the DenseLinearF32 operand and accumulation contract.
+std::int64_t dense_weight_tile_rows(const RegionRecipe &recipe,
+                                    const RegionNode &node,
+                                    std::uint64_t alignment) noexcept {
+  if (!node.operation.custom_as<model_ops::DenseLinearF32>())
+    return 0;
+  const auto &activation = recipe.values[node.inputs[0]];
+  const auto &weight = recipe.values[node.inputs[1]];
+  if (activation.rank() != 2 || weight.rank() != 2 ||
+      activation.data_type() != DataType::kFloat32 ||
+      weight.data_type() != DataType::kBFloat16 ||
+      activation.dimensions()[0] <= 8)
+    return 0;
+  constexpr std::uint64_t budget = 1ULL << 20;
+  const auto inner = std::uint64_t(weight.dimensions()[1]);
+  const auto count = std::uint64_t(weight.dimensions()[0]);
+  if (inner == 0 || alignment == 0 || inner > budget / sizeof(float))
+    return 0; // Keep the original exact matvec when one row exceeds the budget.
+  const auto limit = (std::min)({count, std::uint64_t{256},
+                                budget / sizeof(float) / inner});
+  // Each later original-BF16 view starts at a legal descriptor origin. The
+  // final short tile need not have an aligned extent; it never enlarges scope.
+  const auto quantum = alignment / std::gcd(alignment, inner * sizeof(std::uint16_t));
+  return std::int64_t(count <= limit ? count : limit / quantum * quantum);
+}
+
 std::int64_t attention_query_block(const RegionRecipe &recipe,
                                    const RegionNode &node,
                                    std::uint64_t alignment) noexcept {
@@ -1052,6 +1080,11 @@ Result<Region> Region::create(NativeDevice device,
     // GatedDeltaNet: fused native result, two views and two owning ports.
     // Other operations need at most three (Rsqrt: Fill, Sqrt, Div).
     // Each published alias may need its own owning export tensor.
+    constexpr auto maximum = std::size_t{INT32_MAX} / 4;
+    if (recipe.outputs.size() > maximum - 16 ||
+        recipe.inputs.size() > maximum - 16 - recipe.outputs.size())
+      return std::unexpected(
+          Status::ResourceExhausted("ggml Vulkan region port capacity"));
     auto capacity = recipe.inputs.size() + recipe.outputs.size() + 16;
     for (const auto &node : recipe.nodes) {
       capacity += node.operation.custom_as<model_ops::RecurrentGatedDeltaNet>() ? 9
@@ -1074,6 +1107,17 @@ Result<Region> Region::create(NativeDevice device,
       if (node.operation.get_if<RoPE>() &&
           recipe.values[node.inputs[0]].rank() == 3)
         capacity += 2; // Implicit head and public-rank metadata restores.
+      if (const auto rows = dense_weight_tile_rows(
+              recipe, node, device.native().storage_buffer_alignment)) {
+        const auto count = std::uint64_t(recipe.values[node.inputs[1]].dimensions()[0]);
+        const auto tiles = std::size_t((count - 1) / std::uint64_t(rows) + 1);
+        // Original weight view, private F32 cast, full-F32 Mul and balanced
+        // join per tile. A frontiers borrow existing tensors, not new nodes.
+        if (capacity > maximum || tiles > (maximum - capacity) / 4)
+          return std::unexpected(
+              Status::ResourceExhausted("ggml Vulkan dense tile node capacity"));
+        capacity += 4 * tiles;
+      }
       if (node.operation.get_if<MatMul>()) {
         const auto &left = recipe.values[node.inputs[0]];
         const auto &right = recipe.values[node.inputs[1]];
@@ -1133,6 +1177,17 @@ Result<Region> Region::create(NativeDevice device,
     auto active = state.device.activate();
     auto *context = arena.get();
     std::vector<ggml_tensor *> tensors(recipe.values.size());
+    // A frontier is needed only for a tiled node reachable from an original
+    // public output. Do not turn unused recipe branches into executable work.
+    auto needed = published;
+    for (auto i = recipe.nodes.size(); i-- != 0;) {
+      const auto &node = recipe.nodes[i];
+      if (std::ranges::any_of(node.outputs,
+              [&](auto output) { return needed[output]; }))
+        for (auto input : node.inputs)
+          needed[input] = true;
+    }
+    std::vector<ggml_tensor *> dense_activation_frontiers;
     for (const auto input : recipe.inputs) {
       const auto &description = recipe.values[input];
       tensors[input] = native_tensor(context, description);
@@ -1264,7 +1319,10 @@ Result<Region> Region::create(NativeDevice device,
                                         arguments[2], arguments[3]);
       } else if (node.operation.get_if<MatMul>() ||
                  node.operation.custom_as<model_ops::DenseLinearF32>()) {
+        const auto tile_rows = dense_weight_tile_rows(
+            recipe, node, state.device.native().storage_buffer_alignment);
         const bool dense_matvec=node.operation.custom_as<model_ops::DenseLinearF32>() &&
+            !tile_rows &&
             !(recipe.values[node.inputs[0]].rank()==2 &&
               recipe.values[node.inputs[0]].data_type()==DataType::kBFloat16 &&
               recipe.values[node.inputs[1]].data_type()==DataType::kBFloat16);
@@ -1326,7 +1384,33 @@ Result<Region> Region::create(NativeDevice device,
         // actual batch strides, so the common M1 shared-A path stays intact.
         // Other two-way broadcasts become cold native MatMul runs, reading
         // the original storage and joining only their result tensors.
-        if (right->ne[3] != batch3 ||
+        if (tile_rows) {
+          if (needed[node.outputs[0]])
+            dense_activation_frontiers.push_back(left);
+          std::vector<ggml_tensor *> parts;
+          parts.reserve(std::size_t((right->ne[1] - 1) / tile_rows + 1));
+          for (std::int64_t row = 0; row < right->ne[1]; row += tile_rows) {
+            const auto rows = (std::min)(tile_rows, right->ne[1] - row);
+            if (std::uint64_t(row) > SIZE_MAX / right->nb[1])
+              return std::unexpected(
+                  Status::ResourceExhausted("ggml Vulkan dense tile origin"));
+            auto *view = ggml_view_2d(context, right, right->ne[0], rows,
+                                      right->nb[1], std::size_t(row) * right->nb[1]);
+            // New tensor flags remain private (no PARAM/INPUT/OUTPUT). The
+            // sole Mul reader lets gallocr retire this exact widening tile.
+            auto *wide = ggml_cast(context, view, GGML_TYPE_F32);
+            HYLE_ASSIGN_OR_RETURN(auto part, multiply(left, wide));
+            parts.push_back(part);
+          }
+          while (parts.size() > 1) {
+            std::size_t next = 0;
+            for (std::size_t i = 0; i < parts.size(); i += 2)
+              parts[next++] = i + 1 < parts.size()
+                  ? ggml_concat(context, parts[i], parts[i + 1], 0) : parts[i];
+            parts.resize(next);
+          }
+          product = parts.front();
+        } else if (right->ne[3] != batch3 ||
             (left->ne[1] != 1 &&
              (left->ne[2] != batch2 || left->ne[3] != batch3))) {
           if (left->type == GGML_TYPE_BF16 && left->ne[1] <= 8)
@@ -1897,6 +1981,12 @@ Result<Region> Region::create(NativeDevice device,
           restore_shape(context, output, recipe.values[node.outputs[0]]);
     }
     auto *graph = ggml_new_graph_custom(context, capacity, false);
+    // Native DFS visits W before A. Prepare only live A producers in recipe
+    // topological order so an outer W tile cannot remain live while a nested
+    // tiled A producer executes. This borrows the original graph/allocator;
+    // these tensors are not extra outputs or persistent weight assets.
+    for (auto *activation : dense_activation_frontiers)
+      ggml_build_forward_expand(graph, activation);
     for (const auto output : recipe.outputs) {
       auto *value = tensors[output];
       auto *root = value;

@@ -10,6 +10,8 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
+#include <iostream>
 #include <memory>
 #include <type_traits>
 #include <vector>
@@ -389,6 +391,179 @@ TEST(GgmlVulkanRegion, DenseLinearRetainsOriginalHalfBfloatAndFloatSources) {
   dense_original_sources<BF16,BF16>(*device);dense_original_sources<BF16,float>(*device);
   dense_original_sources<float,F16>(*device);dense_original_sources<float,BF16>(*device);
   dense_original_sources<float,float>(*device);
+}
+
+void dense_tiled_bfloat_sources(const NativeDevice &device, std::int64_t m,
+                                std::int64_t k, std::int64_t n,
+                                bool computed_activation) {
+  namespace d = c::ggml_vulkan::detail;
+  using BF16 = hyle::simd::bfloat16_t;
+  const auto dense = [](c::DataType type, std::int64_t rows, std::int64_t cols) {
+    return c::TensorDesc::dense(type, std::array{rows, cols}).value();
+  };
+  const auto ad = dense(c::DataType::kFloat32, m, k);
+  const auto wd = dense(c::DataType::kBFloat16, n, k);
+  const auto yd = dense(c::DataType::kFloat32, m, n);
+  d::RegionRecipe recipe;
+  if (computed_activation) {
+    // A real earlier tiled projection produces [M,K] A. The outer W must not
+    // be allocated before this producer's private widening has retired.
+    recipe.values = {dense(c::DataType::kFloat32, m, 66),
+                     dense(c::DataType::kBFloat16, k, 66), ad, wd, yd};
+    recipe.inputs = {0, 1, 3};
+    recipe.outputs = {4};
+    recipe.nodes = {{c::model_ops::dense_linear_f32(), {0, 1}, {2}},
+                    {c::model_ops::dense_linear_f32(), {2, 3}, {4}}};
+  } else {
+    recipe.values = {ad, wd, yd};
+    recipe.inputs = {0, 1};
+    recipe.outputs = {2};
+    recipe.nodes = {{c::model_ops::dense_linear_f32(), {0, 1}, {2}}};
+  }
+  auto region = d::Region::create(device, recipe);
+  ASSERT_TRUE(region) << region.error().message();
+  // The original all-matvec recipe has no private owning intermediates. This
+  // lower bound rejects silently testing that old path instead of the tiles.
+  const auto first_rows = (std::min)({std::int64_t{256}, n,
+                                    std::int64_t{(1 << 20) / sizeof(float)} / k});
+  ASSERT_GE(region->storage_bytes(), std::size_t(first_rows * k) * sizeof(float));
+  // This is an actual TOTAL native arena bound, separate from the <=1MiB
+  // live converted-weight payload. Outputs, joins and fragmentation count.
+  ASSERT_LT(region->storage_bytes(), 4u << 20);
+  if (k == 4096)
+    ASSERT_LT(region->storage_bytes(), std::size_t(k * n) * sizeof(float));
+  std::cout << "dense_tile_arena M=" << m << " K=" << k << " N=" << n
+            << " computed_A=" << computed_activation << " total_bytes="
+            << region->storage_bytes() << " converted_tile_cap=1048576\n";
+  std::vector<std::uint32_t> ports = recipe.inputs;
+  ports.insert(ports.end(), recipe.outputs.begin(), recipe.outputs.end());
+  std::vector<VkBuffer> previous;
+  for (const int replay : {1, 2}) {
+    SCOPED_TRACE(testing::Message() << "M=" << m << " K=" << k << " N=" << n
+                                  << " computed_A=" << computed_activation
+                                  << " replay=" << replay);
+    auto arena = MetadataArena::create(ports.size() * ggml_tensor_overhead(),
+                                       hyle::mem::system_allocator()).value();
+    std::vector<std::shared_ptr<ggml_backend_buffer>> owners;
+    std::vector<ggml_tensor *> tensors;
+    std::vector<d::RegionBinding> bindings;
+    std::vector<VkBuffer> handles;
+    for (const auto value : ports) {
+      const auto &desc = recipe.values[value];
+      const auto bytes = desc.required_bytes().value();
+      auto buffer = device.allocate_buffer(bytes);
+      ASSERT_TRUE(buffer) << buffer.error().message();
+      owners.emplace_back(*buffer, [device](auto *p) {
+        auto scope = device.activate();
+        ggml_backend_buffer_free(p);
+      });
+      const auto handle = device.buffer_handle(*buffer);
+      handles.push_back(handle);
+      const auto type = desc.data_type() == c::DataType::kBFloat16
+                            ? GGML_TYPE_BF16 : GGML_TYPE_F32;
+      auto *tensor = ggml_new_tensor_1d(
+          arena.get(), type, std::int64_t(desc.element_count().value()));
+      ASSERT_EQ(ggml_backend_tensor_alloc(*buffer, tensor,
+                    ggml_backend_buffer_get_base(*buffer)), GGML_STATUS_SUCCESS);
+      tensors.push_back(tensor);
+      bindings.push_back({handle, 0, bytes, owners.back()});
+    }
+    if (!previous.empty())
+      for (std::size_t i = 0; i < handles.size(); ++i)
+        ASSERT_NE(handles[i], previous[i]); // Old region bindings still pin old owners.
+    ASSERT_TRUE(region->bind(bindings).ok());
+    const auto input_k = computed_activation ? 66 : k;
+    std::vector<float> a(std::size_t(m * input_k), 0.F);
+    for (std::int64_t row = 0; row < m; ++row) {
+      a[std::size_t(row * input_k)] = 1.F + float(replay + row % 3) / 262144.F;
+      a[std::size_t(row * input_k + 1)] = -1.F;
+      a[std::size_t(row * input_k + 65)] = .25F;
+    }
+    ggml_backend_tensor_set(tensors[0], a.data(), 0, a.size() * sizeof(float));
+    if (computed_activation) {
+      std::vector<BF16> inner(std::size_t(k * 66), half_test::encode<BF16>(0));
+      for (const auto index : {0, 1, 65})
+        inner[std::size_t(index * 66 + index)] = half_test::encode<BF16>(1);
+      ggml_backend_tensor_set(tensors[1], inner.data(), 0, inner.size() * sizeof(BF16));
+    }
+    std::vector<BF16> weight(std::size_t(n * k), half_test::encode<BF16>(0));
+    for (std::int64_t col = 0; col < n; ++col) {
+      const auto scale = double(1 + col % 4);
+      weight[std::size_t(col * k)] = half_test::encode<BF16>(scale);
+      weight[std::size_t(col * k + 1)] = half_test::encode<BF16>(scale);
+      weight[std::size_t(col * k + 65)] =
+          half_test::encode<BF16>(.5 + double(col % 129) / 256.);
+    }
+    const auto weight_port = computed_activation ? 2 : 1;
+    ggml_backend_tensor_set(tensors[weight_port], weight.data(), 0,
+                             weight.size() * sizeof(BF16));
+    ASSERT_TRUE(region->submit().status.ok());
+    const auto done = region->wait();
+    ASSERT_TRUE(done.status.ok()) << done.status.message();
+    ASSERT_FALSE(done.pending);
+    ASSERT_TRUE(region->can_detach_bindings().ok());
+    std::vector<float> actual(std::size_t(m * n));
+    ggml_backend_tensor_get(tensors.back(), actual.data(), 0,
+                             actual.size() * sizeof(float));
+    for (std::int64_t row = 0; row < m; ++row)
+      for (std::int64_t col = 0; col < n; ++col) {
+        // Only three original sparse terms are nonzero. Tiny F32 A deltas
+        // must survive; output-column markers exercise exact 256+1 tile tails.
+        const double expected = double(a[std::size_t(row * input_k)]) *
+                                    half_test::decode(weight[std::size_t(col * k)]) +
+                                double(a[std::size_t(row * input_k + 1)]) *
+                                    half_test::decode(weight[std::size_t(col * k + 1)]) +
+                                .25 * half_test::decode(weight[std::size_t(col * k + 65)]);
+        ASSERT_NEAR(actual[std::size_t(row * n + col)], float(expected), 2.e-8F)
+            << "row=" << row << " col=" << col;
+      }
+    std::vector<BF16> unchanged(weight.size());
+    ggml_backend_tensor_get(tensors[weight_port], unchanged.data(), 0,
+                             unchanged.size() * sizeof(BF16));
+    EXPECT_EQ(std::memcmp(unchanged.data(), weight.data(), weight.size() * sizeof(BF16)), 0);
+    previous = std::move(handles);
+  }
+}
+
+TEST(GgmlVulkanRegion, DenseLinearF32BfloatTilesRetainPrecisionTailAndFreshBindings) {
+  auto device = NativeDevice::create();
+  ASSERT_TRUE(device) << device.error().message();
+  auto scope = device->activate();
+  for (const auto rows : {17, 105})
+    dense_tiled_bfloat_sources(*device, rows, 66, 257, false);
+}
+
+TEST(GgmlVulkanRegion, DenseLinearF32BfloatTilesBoundComputedActivationArena) {
+  auto device = NativeDevice::create();
+  ASSERT_TRUE(device) << device.error().message();
+  auto scope = device->activate();
+  dense_tiled_bfloat_sources(*device, 17, 4096, 1025, true);
+}
+
+TEST(GgmlVulkanRegion, DenseLinearF32BfloatTilesIgnoreUnreachableActivationFrontiers) {
+  namespace d = c::ggml_vulkan::detail;
+  auto device = NativeDevice::create();
+  ASSERT_TRUE(device) << device.error().message();
+  const auto ad = c::TensorDesc::dense(
+      c::DataType::kFloat32, std::array<std::int64_t, 2>{17, 66}).value();
+  const auto wd = c::TensorDesc::dense(
+      c::DataType::kBFloat16, std::array<std::int64_t, 2>{257, 66}).value();
+  const auto yd = c::TensorDesc::dense(
+      c::DataType::kFloat32, std::array<std::int64_t, 2>{17, 257}).value();
+  d::RegionRecipe recipe;
+  recipe.values = {ad, wd, yd};
+  recipe.inputs = {0, 1};
+  recipe.outputs = {2};
+  recipe.nodes = {{c::model_ops::dense_linear_f32(), {0, 1}, {2}}};
+  auto live = d::Region::create(*device, recipe);
+  ASSERT_TRUE(live) << live.error().message();
+  recipe.values.insert(recipe.values.end(), {ad, yd});
+  recipe.nodes.insert(recipe.nodes.begin(),
+      {{c::Operation(c::Unary{c::UnaryKind::kNeg}), {0}, {3}},
+       {c::model_ops::dense_linear_f32(), {3, 1}, {4}}});
+  auto with_dead = d::Region::create(*device, recipe);
+  ASSERT_TRUE(with_dead) << with_dead.error().message();
+  EXPECT_EQ(live->storage_bytes(), with_dead->storage_bytes());
 }
 
 TEST(GgmlVulkanRegion, ModelWidthNormGateResidualWithChangingInputs) {
