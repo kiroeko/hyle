@@ -267,6 +267,39 @@ TEST(VulkanDeviceLengths, OriginalContextQuerySharesNativeShapeAndDeviceLimitQua
   ASSERT_FALSE(malformed); EXPECT_TRUE(malformed.error().IsInvalidArgument());
   EXPECT_EQ(d::Access::runtime(cell.context)->pending, nullptr);
 }
+
+TEST(VulkanDeviceLengths, FixedQueryWidthPreservesTheFullCacheCapacity) {
+  auto context = take(vulkan_test::context());
+  const auto storage = take(c::CacheStorage::plain(c::DataType::kBFloat16));
+  const c::BatchCapacity capacity{.query_type = c::DataType::kBFloat16,
+      .output_type = c::DataType::kBFloat16, .key_storage = storage, .value_storage = storage,
+      .max_requests = 1, .max_query_rows = 512, .max_kv_rows = 32768,
+      .max_pages = 2048, .max_page_refs = 2048, .query_heads = 8, .kv_heads = 2,
+      .qk_head_dim = 256, .value_head_dim = 256, .page_size = 16};
+  constexpr std::uint32_t rows = 4;
+  const auto &runtime = d::Access::runtime(context);
+  EXPECT_TRUE(take(v::supports_device_lengths_paged(context, capacity, rows, {})));
+  const auto full = take(v::supports_device_lengths_paged(context, capacity));
+  EXPECT_EQ(full, take(v::supports_device_lengths_paged(context, capacity, capacity.max_query_rows, {})));
+  if (runtime->device->properties.limits.maxComputeWorkGroupCount[0] < capacity.max_query_rows * 8u * 32u)
+    EXPECT_FALSE(full);
+  for (auto invalid : {0u, capacity.max_query_rows + 1u}) {
+    const auto result = v::supports_device_lengths_paged(context, capacity, invalid, {});
+    ASSERT_FALSE(result);
+    EXPECT_TRUE(result.error().IsInvalidArgument());
+  }
+  auto oversized = capacity;
+  oversized.max_pages = INT32_MAX;
+  EXPECT_FALSE(take(v::supports_device_lengths_paged(context, oversized, rows, {})));
+  EXPECT_EQ(runtime->pending, nullptr);
+
+  const auto schema = take(c::BatchSchema::create(capacity));
+  auto program = take(d::prepare_device_lengths_paged_graph(runtime, schema, rows, 1.F / 16.F, true, -1, {}, true));
+  EXPECT_EQ(program.input_descriptions()[1], take(c::batch_cache_description(schema, c::BatchCacheRole::kKey)));
+  EXPECT_EQ(program.input_descriptions()[2], take(c::batch_cache_description(schema, c::BatchCacheRole::kValue)));
+  EXPECT_EQ(program.output_descriptions()[0], take(c::batch_output_description(capacity, rows)));
+}
+
 TEST(VulkanDeviceLengths, ColdQueryPreservesUnknownBudgetAndClosedContextContracts) {
   Cell<BF16> cell(64,64,39);
   const std::array limits{c::ResourceBudgetLimit{hyle::mem::system_resource(), 1u << 20}};

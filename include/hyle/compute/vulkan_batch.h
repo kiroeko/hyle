@@ -14,6 +14,11 @@ namespace hyle::compute::vulkan {
 HYLE_COMPUTE_ROUTE_VULKAN_API Result<bool> supports_device_lengths_paged(
     const Context &, BatchCapacity, const ResourceBudget & = {}) noexcept;
 
+// Qualify a fixed query width within the original, full cache capacity.
+// The query width must be positive and at most capacity.max_query_rows.
+HYLE_COMPUTE_ROUTE_VULKAN_API Result<bool> supports_device_lengths_paged(
+    const Context &, BatchCapacity, std::uint32_t query_rows, const ResourceBudget &) noexcept;
+
 // Cold immutable host-known ragged layout. Three packed-capacity Q/K/V ports;
 // output contains this layout's active packed Q rows. Reuse the original
 // Program/Invocation and owners; another Q topology needs explicit preparation.

@@ -183,6 +183,11 @@ Status lower_device_lengths_paged(ProgramState &program, const PlanStep &step) n
 namespace hyle::compute::vulkan {
 Result<bool> supports_device_lengths_paged(const Context &context, BatchCapacity capacity,
     const ResourceBudget &budget) noexcept {
+  return supports_device_lengths_paged(context, capacity, capacity.max_query_rows, budget);
+}
+
+Result<bool> supports_device_lengths_paged(const Context &context, BatchCapacity capacity,
+    std::uint32_t query_rows, const ResourceBudget &budget) noexcept {
   if (!context.valid())
     return std::unexpected(Status::FailedPrecondition("Vulkan device lengths query requires its original Context"));
   const auto &runtime = detail::Access::runtime(context);
@@ -193,14 +198,15 @@ Result<bool> supports_device_lengths_paged(const Context &context, BatchCapacity
     HYLE_RETURN_IF_ERROR(runtime->failure);
   }
   HYLE_RETURN_IF_ERROR(validate_batch_capacity(capacity));
+  if (!query_rows || query_rows > capacity.max_query_rows)
+    return std::unexpected(Status::InvalidArgument("Vulkan device lengths require query rows within the capacity"));
   HYLE_ASSIGN_OR_RETURN(auto schema, BatchSchema::create(capacity, {.resource_budget = budget}));
   const auto domain = detail::qualify_device_lengths_paged_schema(schema, 1.F, true, -1);
   if (domain.IsUnimplemented()) return false;
   HYLE_RETURN_IF_ERROR(domain);
-  const detail::DeviceLengthsPagedRead description{std::move(schema), capacity.max_query_rows,
-      1.F, true, -1, true};
+  const detail::DeviceLengthsPagedRead description{std::move(schema), query_rows, 1.F, true, -1, true};
   HYLE_ASSIGN_OR_RETURN(auto inputs, detail::descriptions(description));
-  HYLE_ASSIGN_OR_RETURN(auto output, batch_output_description(capacity, capacity.max_query_rows));
+  HYLE_ASSIGN_OR_RETURN(auto output, batch_output_description(capacity, query_rows));
   auto launch = detail::qualify_launch(runtime->device->properties.limits, description, inputs, output);
   if (!launch && launch.error().IsUnimplemented()) return false;
   if (!launch) return std::unexpected(launch.error());
