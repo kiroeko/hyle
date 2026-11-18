@@ -1,5 +1,6 @@
 // Cold source policy and digest; no device, model payload or network needed.
 #include "../../engine/models/qwen35/precision_profile.h"
+#include "../../engine/models/qwen35/execution_precision.h"
 #include "../../engine/models/qwen35/mtp_capabilities.h"
 #include "../../engine/models/qwen35/cache_plan.h"
 #include "../../engine/inference/artifact_digest.h"
@@ -21,10 +22,96 @@ template<class F> void rejects(F action) {
   try { action(); } catch (const std::runtime_error &) { ++checks; return; }
   throw std::runtime_error("invalid source precision was accepted");
 }
+template<class F> void rejects_execution(F action) {
+  try { action(); } catch (const std::invalid_argument &) { ++checks; return; }
+  throw std::runtime_error("invalid execution precision choice was accepted");
+}
+void execution_precision_contract() {
+  using namespace qwen35;
+  using hyle::compute::DataType;
+  const auto begin = checks;
+  const auto f32 = PrecisionProfile::float32_activations();
+  const auto dense_source = [](const char *dtype) {
+    prepared::Roles roles;
+    roles.identity = "host-reader-identity";
+    prepared::Role role;
+    role.name = "model.language_model.embed_tokens.weight";
+    role.dtype = dtype; role.shape = {2, 4};
+    role.projection_codec = prepared::ProjectionCodec::kDense;
+    roles.selected.push_back(std::move(role));
+    return roles;
+  };
+  for (const auto *dtype : {"F16", "BF16", "F32"}) {
+    const auto roles = dense_source(dtype), before = roles;
+    const auto source = PrecisionProfile::from_roles(roles);
+    require(execution_precision(roles) == source);
+    require(execution_precision(roles, source) == source);
+    const auto chosen = execution_precision(roles, f32);
+    require(chosen.activation_type() == DataType::kFloat32 && chosen.activation_bytes() == 4);
+    require(chosen.cache_type() == source.cache_type());
+    require(PrecisionProfile::from_roles(roles) == source && roles.selected == before.selected && roles.identity == before.identity);
+  }
+  for (const auto policy : {prepared::CachePolicy::kFloat8OriginalCalibration, prepared::CachePolicy::kBFloat16OmitCalibration}) {
+    auto roles = dense_source("BF16");
+    roles.cache_policy = policy;
+    prepared::Role scale;
+    scale.name = "original_kv_scale"; scale.dtype = "F32"; scale.shape = {1};
+    roles.cache_calibration.push_back(scale);
+    const auto before = roles;
+    const auto source = PrecisionProfile::from_roles(roles);
+    require(execution_precision(roles, f32).activation_type() == DataType::kFloat32);
+    require(execution_precision(roles, f32).cache_type() == source.cache_type());
+    require(roles.cache_policy == before.cache_policy && roles.cache_calibration == before.cache_calibration &&
+        roles.selected == before.selected && PrecisionProfile::from_roles(roles) == source);
+  }
+  for (unsigned reader = 0; reader != 6; ++reader) {
+    auto roles = dense_source("BF16");
+    auto &role = roles.selected.front();
+    switch (reader) {
+      case 0: role.dtype = "F16"; role.projection_codec = prepared::ProjectionCodec::kNf4DoubleQuant; roles.nf4_policy.enabled = true; break;
+      case 1: role.dtype = "E4M3FN"; role.projection_codec = prepared::ProjectionCodec::kModelOptStaticFp8; roles.static_fp8_policy.enabled = true; break;
+      case 2: role.dtype = "E4M3FN"; role.projection_codec = prepared::ProjectionCodec::kFloat8Block128; roles.float8_policy.enabled = true; break;
+      case 3: role.dtype = "E4M3FN"; role.projection_codec = prepared::ProjectionCodec::kCtFloat8ChannelToken; roles.ct_mixed_policy.kind = prepared::CtMixedPolicy::Kind::kChannelToken; break;
+      case 4: role.dtype = "U32"; role.projection_codec = prepared::ProjectionCodec::kCtAsymmetric4; roles.ct_asymmetric_policy.enabled = true; break;
+      case 5: role.dtype = "U32"; role.projection_codec = prepared::ProjectionCodec::kMlxAffine; roles.mlx_policy.bits = 4; break;
+    }
+    const auto before = roles;
+    const auto source = PrecisionProfile::from_roles(roles);
+    require(execution_precision(roles) == source);
+    require(execution_precision(roles, source) == source);
+    rejects_execution([&] { (void)execution_precision(roles, f32); });
+    require(roles.selected == before.selected && roles.identity == before.identity && PrecisionProfile::from_roles(roles) == source);
+  }
+  for (const auto codec : {prepared::ProjectionCodec::kGptqV1Int4, static_cast<prepared::ProjectionCodec>(999)}) {
+    auto roles = dense_source("BF16"); roles.selected.front().projection_codec = codec;
+    rejects_execution([&] { (void)execution_precision(roles, f32); });
+  }
+  auto integer = dense_source("I32");
+  rejects_execution([&] { (void)execution_precision(integer, f32); });
+  prepared::Roles empty;
+  require(execution_precision(empty) == PrecisionProfile::from_roles(empty));
+  rejects_execution([&] { (void)execution_precision(empty, f32); });
+  auto encoded = dense_source("Q8_0");
+  encoded.representation = prepared::SourceRepresentation::kGgufConverted;
+  encoded.selected.front().meaning = prepared::ParameterMeaning::kEmbeddingRows;
+  encoded.selected.front().projection_codec = prepared::ProjectionCodec::kUnspecified;
+  encoded.cache_policy = prepared::CachePolicy::kFloat8OriginalCalibration;
+  encoded.cache_calibration.push_back({});
+  require(PrecisionProfile::from_roles(encoded) == f32);
+  require(execution_precision(encoded) == f32 && execution_precision(encoded, f32) == f32);
+  rejects_execution([&] { (void)execution_precision(encoded, PrecisionProfile{}); });
+  auto invalid_source = dense_source("F16");
+  invalid_source.selected.front().projection_codec = prepared::ProjectionCodec::kNf4DoubleQuant;
+  // Preserve the ORIGINAL runtime_error contract. New invalid_argument is
+  // caught only by rejects_execution above, never this existing helper.
+  rejects([&] { (void)execution_precision(invalid_source, f32); });
+  std::printf("execution precision cold selection: %zu checks passed\n", checks - begin);
+}
 }
 int main(int argc, char **argv) {
   using namespace qwen35;
   using hyle::compute::DataType;
+  execution_precision_contract();
   // Test model-owned cold chain capability without including the engine driver.
   constexpr DraftChainCapabilities k3{3, true, 1, 2, 3, true, true};
   static_assert(k3.packet_available() && k3.available());

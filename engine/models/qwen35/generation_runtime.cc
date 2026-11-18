@@ -3,6 +3,7 @@
 #include "generation_diagnostics.h"
 #include <atomic>
 #include "model_core.h"
+#include "execution_precision.h"
 #include "prepared_executor.h"
 #include "device_mtp_planning.h"
 #include "schedule.h"
@@ -3765,6 +3766,7 @@ bool matches_prepared_model(const std::filesystem::path &source) {
 struct ExecutionProfilePreparation final {
   PreparedWeightSource source;
   Backend endpoint;
+  PrecisionProfile precision;
   cache::Plan cache;
   Model::Sampling sampling;
   std::vector<SamplingConfiguration> additional_sampling;
@@ -3775,7 +3777,8 @@ struct ExecutionProfilePreparation final {
 };
 
 ExecutionProfilePreparation prepare_execution_profile(const inference::ModelLoadConfig &config,
-    std::size_t index, const Backend *shared_endpoint = nullptr) {
+    std::size_t index, const Backend *shared_endpoint = nullptr,
+    std::optional<PrecisionProfile> selected_precision = {}) {
   const auto &profile = config.execution_profiles[index];
   const auto source_assets = inference::execution_profile_assets(config, index);
   inference::validate_model_assets(source_assets);
@@ -3844,7 +3847,10 @@ ExecutionProfilePreparation prepare_execution_profile(const inference::ModelLoad
     additional_sampling.push_back({policy.random, {policy.temperature, policy.top_k, policy.top_p}, {}});
     retains_random_frontier = retains_random_frontier || policy.random;
   }
-  const auto precision = PrecisionProfile::from_roles(source.roles);
+  // The single cold choice precedes schema/cache/native-route planning.
+  // Default remains the source reader; a future qualified preference may
+  // supply one value here without changing physical weights or hot code.
+  const auto precision = execution_precision(source.roles, selected_precision);
   const auto query_rows = (std::max)(prefill, mtp ? cache::add(depth, 1) : std::size_t{1});
   const auto recurrent = recurrent_bytes(state_schema_for(geometry, config.execution.context, precision), geometry);
   const qwen35::DecodeRouteFacts facts{.workload = workload, .overlap_requested = true,
@@ -3897,7 +3903,7 @@ ExecutionProfilePreparation prepare_execution_profile(const inference::ModelLoad
       .policy = {config.sampling.temperature, config.sampling.top_k, config.sampling.top_p}, .seed = 0};
   auto backend = continuous.endpoint ? std::move(*continuous.endpoint) : query_endpoint ? std::move(*query_endpoint) :
       shared_endpoint ? take(shared_endpoint->share_endpoint()) : create_execution(geometry, plan, cpu_layers, execution);
-  return {std::move(source), std::move(backend), plan, sampling, std::move(additional_sampling), depth, overlap,
+  return {std::move(source), std::move(backend), precision, plan, sampling, std::move(additional_sampling), depth, overlap,
       vision_asset?vision_asset->path:std::filesystem::path{}, cpu_layers};
 }
 
@@ -3908,7 +3914,7 @@ std::unique_ptr<Model> instantiate_execution_profile(ExecutionProfilePreparation
   const auto vision_target=vision_path.empty()?prepared::Roles{}:preparation.source.roles;
   auto model = std::make_unique<Model>(std::move(preparation.endpoint), hyle::compute::ResourceBudget{}, std::move(preparation.source),
       geometry, capacity, preparation.cache, std::filesystem::path{}, false, ReplayPolicy::kAuto, SIZE_MAX,
-      preparation.sampling, preparation.cpu_ffn_layers, preparation.additional_sampling, std::move(weights));
+      preparation.sampling, preparation.cpu_ffn_layers, preparation.additional_sampling, std::move(weights), preparation.precision);
   if (preparation.cache.draft_cache) model->configure_draft_policy({preparation.draft_depth});
   if(!vision_path.empty())model->vision=shared_vision?std::move(shared_vision):
       std::make_shared<VisionEncoder>(model->execution,vision_target,vision_path,model->allocation_budget);

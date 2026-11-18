@@ -92,6 +92,7 @@
 #include "hyle/compute/detail/device_lengths_paged_append_backend.h"
 #include "hyle/core/assert.h"
 #include "precision_profile.h"
+#include "execution_precision.h"
 #include "cache_precision.h"
 #include "hyle/container/small_vector.h"
 
@@ -1105,9 +1106,10 @@ public:
       cache::Plan selected_cache, std::filesystem::path probe, bool progress, ReplayPolicy replay,
       std::size_t max_cache_bytes, Sampling sampling_configuration, std::size_t cpu_ffn_layer_count,
       std::span<const SamplingConfiguration> additional_sampling = {},
-      std::shared_ptr<WeightStorage> shared_weights = {})
+      std::shared_ptr<WeightStorage> shared_weights = {},
+      std::optional<PrecisionProfile> selected_precision = {})
        : sampling_seed(sampling_configuration.seed), ffn_placement(source.roles, cpu_ffn_layer_count),
-         precision(PrecisionProfile::from_roles(source.roles)),
+         precision(execution_precision(source.roles, selected_precision)),
          geometry(model_geometry), hidden(geometry.hidden), intermediate(geometry.intermediate), vocabulary(geometry.vocabulary),
          target_kv_layers(geometry.attention_layers()), draft_bank(target_kv_layers * 2),
          attention_layer_ids([&] {
