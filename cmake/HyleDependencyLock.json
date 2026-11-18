@@ -1533,6 +1533,34 @@
       }
     },
     {
+      "name": "ggml_cpu_llamafile",
+      "class": "integrated_source",
+      "repository": "https://github.com/ggml-org/ggml.git",
+      "version": "ggml-llamafile-cpu-integration-ffa4e8b8",
+      "revision": "ffa4e8b80930029a35991f94e7c8a93cd67730ab",
+      "git_tree": "e8e4626f9017d3b2e486a74bfbdb9bd258e7236d",
+      "archive": {
+        "url": "https://codeload.github.com/ggml-org/ggml/tar.gz/ffa4e8b80930029a35991f94e7c8a93cd67730ab",
+        "sha256": "2adae8335f09b75d05158ee32104f0b562929b8470e6d5858ecb513d325636f4"
+      },
+      "integrated": {
+        "paths": [
+          "src/compute_ggml_runtime/prepare_cpu_bf16_gemm.py"
+        ],
+        "content_sha256": "367d04f4b64b0b68a1aa43edc2fdf5e3c913a7a0879b0825a5deda7bc3bc815b"
+      },
+      "license": {
+        "expression": "MIT",
+        "files": [
+          {
+            "root": "hyle",
+            "path": "third_party/ported/LICENSE-LLAMAFILE",
+            "sha256": "c5843750168debd92766cf0cf2f5040ce8a6eefe2ef7ebc652997b6897e1ba3b"
+          }
+        ]
+      }
+    },
+    {
       "name": "bitsandbytes_cpu",
       "repository": "https://github.com/bitsandbytes-foundation/bitsandbytes.git",
       "revision": "833649043474794b8fe7a4136e0c40faf077b2e0",

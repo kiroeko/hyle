@@ -433,6 +433,10 @@ if(APPLE AND _cpu)
 endif()
 if(_cpu AND HYLE_TARGET_PROCESSOR STREQUAL "x86_64" AND
    CMAKE_SYSTEM_NAME MATCHES "^(Windows|Linux)$")
+  hyle_audit_integrated_source_dependencies(ggml_cpu_llamafile)
+  list(APPEND _locked ggml_cpu_llamafile)
+  list(APPEND _licenses
+    "${HYLE_SOURCE_DIR}/third_party/ported/LICENSE-LLAMAFILE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-cpu-llamafile-LICENSE")
   string(SUBSTRING "${_selected_commit}" 0 8 _cpu_commit_short)
   set(_cpu_program_basename "hyle_ggml_cpu_avx2_${_cpu_commit_short}_${_source_id}")
   include("${CMAKE_CURRENT_SOURCE_DIR}/cpu_program.cmake")
