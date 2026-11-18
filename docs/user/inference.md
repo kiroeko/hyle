@@ -155,7 +155,7 @@ CUDA greedy单会话K1—K3已接入自然接力。固定K2／K3把起草、验�
 中间token和下一轮接受位置留在设备。冷期只按配置容量和已到达首轮准备，后续长度与配额不参与规划。
 CUDA 单活动请求的随机 K1／K2／K3 也可使用设备接力：显式设置 `--draft-count 1`、`2` 或 `3`，配合 `--sampling random` 和已准备的采样参数。起草和验证共享每个提案的实际概率与接受位；K 个提案固定保留 `2K+1` 个请求 RNG 地址，拒绝和配额截断也不另取游标。Windows／WSL 已检查完整状态、逻辑 RNG、停止、取消及失败后的复用。相同采样方案与物理程序内可复现；不同草稿 GEMM 形状可能改变提案和随机轨迹，不保证逐 token 相同。
 Metal 上已验证 Qwen3.5-2B BF16 的 GPU-only 单驻留、单活动请求。指定草稿深度 K1、K2 或 K3 并传 `--overlap on`，可请求原生 MTP 接力。是否提交后继还取决于实际原生前驱和输出额度。默认采用串行执行。在 M4 的同程序 K2 单轮对照中，接力的 decode 耗时处于 A/A 波动范围内，完整耗时增加 12.2%，主要差在首轮准备。
-Vulkan 的 BF16 GPU-only 单驻留、单活动请求可用 `--draft-count` 和 `--overlap on` 请求原生接力。已在 Windows RTX 4070 和 macOS M4 的 MoltenVK 路线上验证 K1、K2、K3，在 WSL Mesa Dozen 上验证 K1，均覆盖容量 128 下的贪心与随机双轮生成。Vulkan 的 MTP 默认串行。Mesa Dozen 上的原生深链曾超过 30 秒关闭时限，K2／K3 使用串行路径。
+Vulkan 的 BF16 GPU-only 单驻留、单活动请求可用 `--draft-count` 和 `--overlap on` 请求原生接力。已在 Windows RTX 4070 和 macOS M4 的 MoltenVK 路线上验证 K1、K2、K3，在 WSL Mesa Dozen 上验证 K1、K2，均覆盖容量 128 下的贪心与随机双轮生成。Vulkan 的 MTP 默认串行。Mesa Dozen 的原生 K3 曾超过 30 秒关闭时限，目前选择串行 K3。
 符合条件的 MTP 根据来源绑定的草稿制品读取推荐草稿数；没有推荐时默认为 K1。K3 的收益与资源边界见性能表。
 单会话有界生成按配置容量准备接力；其它有限日程在有多于一个输出额度且执行能力允许时准备两层候选。
 需要强制只使用不依赖未来请求形状的路径时，可设置 `--require-bounded-generation on`；不符合该条件的配置会报错。
@@ -339,7 +339,7 @@ worker 和 `/v1/models` 的 `hyle.placement` 报告实际 `primary_backend` 与 
 
 WSL Vulkan 检查使用 Mesa Dozen 25.2.8 经 D3D12 在 RTX 4070 上执行，需配置对应 ICD 及其依赖；llvmpipe 不计为 GPU 路线。该驱动仍声明仅供测试，现有大位置 RoPE 精度检查尚未通过。这里的短请求结果不能推广为长上下文资格。
 
-公共引擎共用请求、会话、完整状态、RNG 和 MTP 起草／验证／修复合同。CUDA 支持普通和 MTP 接力，Metal 和 Vulkan 的 MTP 接力适用范围见上文。引擎向实际 CPU／CUDA／Metal／Vulkan 端点查询设备长度批资格。原编码草稿行复制资格只对 CUDA 声明。Metal／Vulkan 的变长 packed convolution 和 GDN 前缀状态实现见[计算合同](compute.md)。Windows 和 Mac 的 Vulkan／CPU＋Vulkan 已通过普通随机、K1、K3 三方案共存、兼容 K1 双请求合批、续轮、独立 RNG、取消后复用和两种方案装载顺序检查，覆盖容量 128、三个驻留会话和两个活跃序列。WSL Mesa Dozen 上，`--draft-count 2 --overlap on` 在冷期选择串行 K2。贪心和随机双轮均完成验证，并在原时限内自然退出。
+公共引擎共用请求、会话、完整状态、RNG 和 MTP 起草／验证／修复合同。CUDA 支持普通和 MTP 接力，Metal 和 Vulkan 的 MTP 接力适用范围见上文。引擎向实际 CPU／CUDA／Metal／Vulkan 端点查询设备长度批资格。原编码草稿行复制资格只对 CUDA 声明。Metal／Vulkan 的变长 packed convolution 和 GDN 前缀状态实现见[计算合同](compute.md)。Windows 和 Mac 的 Vulkan／CPU＋Vulkan 已通过普通随机、K1、K3 三方案共存、兼容 K1 双请求合批、续轮、独立 RNG、取消后复用和两种方案装载顺序检查，覆盖容量 128、三个驻留会话和两个活跃序列。
 
 模型、格式、后端与原始检查统一查[模型与算子覆盖](../implementation/model-operators.md)。
 加载器不会预先展开整库，但实际计划可能分解计算并使用workspace；4bit文件大小不是运行内存上限。

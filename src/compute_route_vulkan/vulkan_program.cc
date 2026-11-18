@@ -601,6 +601,23 @@ Result<Program> prepare_plan(const std::shared_ptr<Runtime> &runtime,
       if(step.operation.custom_as<model_ops::CacheEncode>()){
         HYLE_RETURN_IF_ERROR(lower_cache_encoder(*program,step,last_uses));++index;continue;
       }
+      const auto *binary = step.operation.get_if<Binary>();
+      if (runtime->device->environment.driver_id == VK_DRIVER_ID_MESA_DOZEN &&
+          binary && (binary->kind == BinaryKind::kAdd || binary->kind == BinaryKind::kSubtract ||
+                     binary->kind == BinaryKind::kMultiply) && step.inputs.size() == 2 &&
+          step.outputs.size() == 1) {
+        const auto &output = program->values[step.outputs[0]].description;
+        if (output.data_type() == DataType::kBFloat16 && output.is_dense() && output.is_plain() &&
+            program->values[step.inputs[0]].description == output &&
+            program->values[step.inputs[1]].description == output) {
+          const auto wide = TensorDesc::dense(DataType::kFloat32, output.dimensions());
+          if (wide && tensor_bfloat_rounding_supported(*runtime->device, *wide)) {
+            HYLE_RETURN_IF_ERROR(lower_tensor(*program, step));
+            ++index;
+            continue;
+          }
+        }
+      }
       const bool representation_cast = step.operation.get_if<Cast>() &&
           step.inputs.size() == 1 && step.outputs.size() == 1 &&
           tensor_representation_cast_supported(*runtime->device,
@@ -653,6 +670,42 @@ Result<Program> prepare_plan(const std::shared_ptr<Runtime> &runtime,
                  managed_operation(*program, lowered.steps[end])) ||
                 internal_reshape(lowered.steps[end])))
           ++end;
+        const auto *norm = step.operation.get_if<RmsNorm>();
+        if (norm && runtime->device->environment.driver_id == VK_DRIVER_ID_MESA_DOZEN) {
+          const auto &input = program->values[step.inputs.front()].description;
+          const auto &output = program->values[step.outputs.front()].description;
+          const bool preceding_native = !program->dispatches.empty() &&
+              program->dispatches.back().pipeline && !program->dispatches.back().values.empty() &&
+              program->dispatches.back().values.back() == step.inputs.front();
+          const bool lone = end == index + 1;
+          bool bracketed = false;
+          if (lone && index != 0 && end < lowered.steps.size() && preceding_native &&
+              (prepared_casts.empty() || (!prepared_casts[index - 1] && !prepared_casts[end]))) {
+            const auto &widen = lowered.steps[index - 1], &narrow = lowered.steps[end];
+            bracketed = widen.operation.get_if<Cast>() && narrow.operation.get_if<Cast>() &&
+                widen.inputs.size() == 1 && widen.outputs.size() == 1 && narrow.inputs.size() == 1 &&
+                narrow.outputs.size() == 1 && widen.outputs.front() == step.inputs.front() &&
+                narrow.inputs.front() == step.outputs.front() &&
+                last_uses[step.outputs.front()] == end && !step.preserve_outputs &&
+                std::ranges::find(lowered.outputs, step.outputs.front()) == lowered.outputs.end() &&
+                tensor_representation_cast_supported(*runtime->device,
+                    program->values[widen.inputs.front()].description, input) &&
+                tensor_representation_cast_supported(*runtime->device, output,
+                    program->values[narrow.outputs.front()].description);
+          }
+          // Both reductions have one squared input per live lane at width
+          // 128. The wider managed group contributes zeros in its extra lanes.
+          const bool qualified = bracketed && input == output &&
+              input.data_type() == DataType::kFloat32 &&
+              norm->accumulation_type == DataType::kFloat32 && input.rank() > 0 &&
+              input.dimensions().back() == 128 && step.inputs.size() == 1 &&
+              runtime->device->properties.limits.maxComputeSharedMemorySize >= 128 * 2 * sizeof(float);
+          if (qualified) {
+            HYLE_RETURN_IF_ERROR(lower_tensor(*program, step));
+            ++index;
+            continue;
+          }
+        }
         HYLE_RETURN_IF_ERROR(
             lower_region(*program, lowered, index, end, last_uses));
         index = end;

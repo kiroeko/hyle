@@ -489,7 +489,8 @@ Status record(const std::shared_ptr<Run> &run,
         }
       }
     }
-    return encode_commands(*run, dispatches);
+    return run->command == VK_NULL_HANDLE ? Status::Ok()
+                                          : encode_commands(*run, dispatches);
   } catch (const std::bad_alloc &) {
     return Status::ResourceExhausted("Vulkan command recording metadata");
   }
@@ -541,7 +542,8 @@ Status rebind_descriptors(Run &run, std::span<const PlanValue> values,
       device.fn.UpdateDescriptorSets(device.native.device, 1, &write, 0, nullptr);
     }
   }
-  if (!device.environment.storage_update_after_bind || origins_changed(run, dispatches))
+  if (run.command != VK_NULL_HANDLE &&
+      (!device.environment.storage_update_after_bind || origins_changed(run, dispatches)))
     return encode_commands(run, dispatches);
   return Status::Ok();
 }

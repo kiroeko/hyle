@@ -15,6 +15,38 @@
 
 namespace hyle::compute::vulkan::detail {
 
+static Status allocate_recording_storage(Run &run) noexcept {
+  HYLE_FATAL_ASSERT(run.command_pool == VK_NULL_HANDLE && run.command == VK_NULL_HANDLE);
+  VkCommandPool pool_handle = VK_NULL_HANDLE;
+  VkCommandBuffer command_handle = VK_NULL_HANDLE;
+  const auto &device = *run.runtime->device;
+  VkCommandPoolCreateInfo pool{};
+  pool.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+  pool.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+  pool.queueFamilyIndex = device.native.queue_family;
+  auto status =
+      native_status(device.fn.CreateCommandPool(device.native.device, &pool,
+                                                nullptr, &pool_handle),
+                    "vkCreateCommandPool");
+  if (!status.ok())
+    return status;
+  VkCommandBufferAllocateInfo commands{};
+  commands.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+  commands.commandPool = pool_handle;
+  commands.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+  commands.commandBufferCount = 1;
+  status = native_status(device.fn.AllocateCommandBuffers(
+                             device.native.device, &commands, &command_handle),
+                         "vkAllocateCommandBuffers");
+  if (!status.ok()) {
+    device.fn.DestroyCommandPool(device.native.device, pool_handle, nullptr);
+    return status;
+  }
+  run.command_pool = pool_handle;
+  run.command = command_handle;
+  return Status::Ok();
+}
+
 Run::~Run() {
   HYLE_FATAL_ASSERT(!pending && !retiring && observers == 0);
   const auto &device = *runtime->device;
@@ -42,27 +74,7 @@ create_recording_run(const std::shared_ptr<Runtime> &runtime, mem::AllocatorRef 
     if (!allocator.valid()) return std::unexpected(Status::InvalidArgument("invalid Vulkan run metadata allocator"));
     auto run = std::allocate_shared<Run>(mem::StdAllocator<Run>(allocator), allocator);
     run->runtime = runtime;
-    const auto &device = *runtime->device;
-    VkCommandPoolCreateInfo pool{};
-    pool.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    pool.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    pool.queueFamilyIndex = device.native.queue_family;
-    auto status =
-        native_status(device.fn.CreateCommandPool(device.native.device, &pool,
-                                                  nullptr, &run->command_pool),
-                      "vkCreateCommandPool");
-    if (!status.ok())
-      return std::unexpected(status);
-    VkCommandBufferAllocateInfo commands{};
-    commands.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    commands.commandPool = run->command_pool;
-    commands.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    commands.commandBufferCount = 1;
-    status = native_status(device.fn.AllocateCommandBuffers(
-                               device.native.device, &commands, &run->command),
-                           "vkAllocateCommandBuffers");
-    if (!status.ok())
-      return std::unexpected(status);
+    HYLE_RETURN_IF_ERROR(allocate_recording_storage(*run));
     return run;
   } catch (const std::bad_alloc &) {
     return std::unexpected(
@@ -612,6 +624,24 @@ Result<Completion> submit_locked(const std::shared_ptr<Run> &run,
     return std::unexpected(
         Status::FailedPrecondition("Vulkan slot is still retained"));
   Status status;
+  if (!run->stages.empty() && !run->encoding_valid) {
+    for (auto &stage : run->stages) {
+      if (!stage.native || stage.native->encoding_valid)
+        continue;
+      if (stage.native->command == VK_NULL_HANDLE)
+        status = allocate_recording_storage(*stage.native);
+      if (status.ok())
+        status = encode_commands(*stage.native, stage.encoding->dispatches);
+      if (!status.ok()) {
+        if (device_lost(status)) {
+          runtime.failure = status;
+          device.provider.note_device_lost();
+        }
+        return std::unexpected(status);
+      }
+    }
+    run->encoding_valid = true;
+  }
   status = checked_status(*run, true);
   if (!status.ok()) {
     if (device_lost(status)) {

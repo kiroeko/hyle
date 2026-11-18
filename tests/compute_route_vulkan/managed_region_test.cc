@@ -59,13 +59,18 @@ TEST(VulkanManaged, NativeTailKeepsItsExclusiveOriginalCompletion) {
   auto program = d::prepare_plan(context, plan).value();
   auto first = program.create_invocation().value(), second = program.create_invocation().value();
   const auto &a = *d::Access::invocation(first)->run, &b = *d::Access::invocation(second)->run;
+  const bool defer_children = a.runtime->device->environment.driver_id == VK_DRIVER_ID_MESA_DOZEN;
   for (const auto *run : {&a, &b}) {
     ASSERT_GE(run->stages.size(), 2u);
+    EXPECT_TRUE(std::ranges::none_of(run->stages, [](const auto &stage) { return stage.iree != nullptr; }));
     ASSERT_TRUE(std::ranges::any_of(run->stages, [](const auto &stage) { return stage.managed != nullptr; }));
     ASSERT_TRUE(run->stages.back().native);
     EXPECT_EQ(run->command_pool, VK_NULL_HANDLE);
     EXPECT_EQ(run->command, VK_NULL_HANDLE);
-    EXPECT_NE(run->stages.back().native->command, VK_NULL_HANDLE);
+    if (defer_children)
+      EXPECT_EQ(run->stages.back().native->command, VK_NULL_HANDLE);
+    else
+      EXPECT_NE(run->stages.back().native->command, VK_NULL_HANDLE);
     ASSERT_NE(run->fence, VK_NULL_HANDLE);
     EXPECT_EQ(run->completion_fence, run->fence);
   }
@@ -73,6 +78,9 @@ TEST(VulkanManaged, NativeTailKeepsItsExclusiveOriginalCompletion) {
   ASSERT_TRUE(first.bind(make(context, input, std::vector<double>(64, 1.25))).ok());
   ASSERT_TRUE(second.bind(make(context, input, std::vector<double>(64, -2.5))).ok());
   auto left = first.submit().value(), right = second.submit().value();
+  EXPECT_NE(a.stages.back().native->command, VK_NULL_HANDLE);
+  EXPECT_NE(b.stages.back().native->command, VK_NULL_HANDLE);
+  EXPECT_NE(a.stages.back().native->command, b.stages.back().native->command);
   auto left_ready = left.wait().value(), right_ready = right.wait().value();
   EXPECT_EQ(values(context, left_ready.get()->tensors()[0]), std::vector<double>(64, 10));
   EXPECT_EQ(values(context, right_ready.get()->tensors()[0]), std::vector<double>(64, -20));

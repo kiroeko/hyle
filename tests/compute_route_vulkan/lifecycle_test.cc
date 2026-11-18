@@ -2,7 +2,9 @@
 #include "hyle/compute/vulkan_memory.h"
 #include "hyle/mem/stats.h"
 
+#include <algorithm>
 #include <array>
+#include <cmath>
 #include <atomic>
 #include <barrier>
 #include <chrono>
@@ -24,6 +26,7 @@
 #include "hyle/mem/buffer.h"
 #include "scan_test_support.h"
 #include "vulkan_internal.h"
+#include "vulkan_program_internal.h"
 
 namespace {
 namespace c = hyle::compute;
@@ -72,6 +75,10 @@ struct NativeBoundary final {
   std::atomic<bool> hold_wait{false}, waiting{false}, release_wait{false},
       wait_timed_out{false};
   int submissions = 0, fail_submit_on = 0;
+  unsigned command_allocations = 0;
+  VkResult command_allocation_failure = VK_SUCCESS;
+  VkCommandPool rejected_pool = VK_NULL_HANDLE;
+  bool destroyed_rejected_pool = false;
   int flushes = 0, invalidations = 0;
   bool fail_submit = false, fail_poll = false, fail_wait = false,
        fail_idle = false;
@@ -117,6 +124,27 @@ struct NativeBoundary final {
     device.fn = original;
     device.memory_properties = original_memory;
     active = nullptr;
+  }
+  void reject_second_command_allocation(VkResult error) noexcept {
+    command_allocation_failure = error;
+    device.fn.AllocateCommandBuffers = allocate_commands;
+    device.fn.DestroyCommandPool = destroy_command_pool;
+  }
+  static VKAPI_ATTR VkResult VKAPI_CALL allocate_commands(
+      VkDevice device, const VkCommandBufferAllocateInfo *info, VkCommandBuffer *commands) {
+    auto &self = *active;
+    if (++self.command_allocations == 2) {
+      self.rejected_pool = info->commandPool;
+      return self.command_allocation_failure;
+    }
+    return self.original.AllocateCommandBuffers(device, info, commands);
+  }
+  static VKAPI_ATTR void VKAPI_CALL destroy_command_pool(
+      VkDevice device, VkCommandPool pool, const VkAllocationCallbacks *allocator) {
+    auto &self = *active;
+    if (pool == self.rejected_pool)
+      self.destroyed_rejected_pool = true;
+    self.original.DestroyCommandPool(device, pool, allocator);
   }
   bool await_completed_wait() {
     std::unique_lock lock(wait_mutex);
@@ -716,6 +744,79 @@ TEST(VulkanLifetime, IndependentThreadsReplayWhileContextCollects) {
   EXPECT_EQ(failures.load(), 0);
   EXPECT_TRUE(context->close().ok());
   EXPECT_EQ(d::Access::runtime(*context)->pending, nullptr);
+}
+
+TEST(VulkanLifetime, DeferredNativeChildAllocationFailureLeavesSlotUnsubmitted) {
+  const auto description = t::dense({17, 2048});
+  const c::RmsNorm norm{};
+  const c::Operation relu(c::Unary{c::UnaryKind::kRelu});
+  for (const auto fault : {VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_DEVICE_LOST}) {
+    SCOPED_TRACE(fault);
+    auto context = t::context().value();
+    const auto &runtime = d::Access::runtime(context);
+    if (runtime->device->environment.driver_id != VK_DRIVER_ID_MESA_DOZEN)
+      GTEST_SKIP() << "Requires Mesa Dozen native child recordings";
+    const auto count = *description.element_count();
+    auto original = t::upload(context, description, t::data(count, 1)).value();
+    auto replacement = t::upload(context, description, std::vector<float>(count, 2.0f)).value();
+    d::Plan plan;
+    plan.values.assign(4, {description, {}});
+    plan.inputs = {0};
+    plan.outputs = {3};
+    plan.steps = {{relu, {0}, {1}}, {c::Operation(norm), {1}, {2}}, {relu, {2}, {3}}};
+    auto program = d::prepare_plan(context, plan).value();
+    auto slot = program.create_invocation().value();
+    const auto &run = *d::Access::invocation(slot)->run;
+    ASSERT_EQ(run.stages.size(), 3u);
+    ASSERT_TRUE(run.stages[0].native && run.stages[1].managed && run.stages[2].native);
+    const auto &first = *run.stages[0].native;
+    const auto &last = *run.stages[2].native;
+    ASSERT_EQ(first.command, VK_NULL_HANDLE);
+    ASSERT_EQ(last.command, VK_NULL_HANDLE);
+    ASSERT_TRUE(slot.bind(original).ok());
+
+    NativeBoundary boundary(context);
+    boundary.reject_second_command_allocation(fault);
+    auto rejected = slot.submit();
+    ASSERT_FALSE(rejected);
+    EXPECT_EQ(boundary.command_allocations, 2u);
+    EXPECT_EQ(boundary.submissions, 0);
+    EXPECT_EQ(runtime->pending, nullptr);
+    EXPECT_FALSE(run.encoding_valid);
+    EXPECT_TRUE(first.encoding_valid);
+    EXPECT_FALSE(last.encoding_valid);
+    EXPECT_EQ(last.command_pool, VK_NULL_HANDLE);
+    EXPECT_EQ(last.command, VK_NULL_HANDLE);
+    EXPECT_TRUE(boundary.destroyed_rejected_pool);
+    if (fault == VK_ERROR_DEVICE_LOST) {
+      EXPECT_FALSE(runtime->failure.ok());
+      EXPECT_FALSE(slot.bind(replacement).ok());
+      EXPECT_FALSE(slot.submit());
+      EXPECT_EQ(boundary.command_allocations, 2u);
+      EXPECT_EQ(boundary.submissions, 0);
+      continue;
+    }
+
+    EXPECT_TRUE(rejected.error().IsResourceExhausted());
+    EXPECT_TRUE(runtime->failure.ok());
+    const auto first_command = first.command;
+    ASSERT_TRUE(slot.bind(replacement).ok());
+    const auto expected = 2.0f / std::sqrt(4.0f + norm.epsilon);
+    for (const auto new_recordings : {1u, 0u}) {
+      const auto attempts = boundary.command_allocations;
+      auto submitted = slot.submit().value();
+      EXPECT_EQ(boundary.command_allocations - attempts, new_recordings);
+      auto result = submitted.wait().value();
+      const auto output = t::read(context, result.get()->tensors()[0]).value();
+      EXPECT_TRUE(std::ranges::all_of(output, [&](float value) {
+        return std::abs(value - expected) < 2.0e-5f;
+      }));
+      EXPECT_EQ(first.command, first_command);
+      EXPECT_NE(last.command, VK_NULL_HANDLE);
+      EXPECT_EQ(runtime->pending, nullptr);
+    }
+    EXPECT_TRUE(context.close().ok());
+  }
 }
 
 TEST(VulkanLifetime, ManagedPrefixSurvivesRejectedNativeSuffixUntilDrain) {

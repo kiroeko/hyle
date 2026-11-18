@@ -1618,7 +1618,8 @@ Status bind_regions(Run &run, const ProgramState *rebound_storage) noexcept {
       if (rebound_storage)
         HYLE_RETURN_IF_ERROR(rebind_descriptors(*stage.native, rebound_storage->values,
             stage.encoding->dispatches, stage.values));
-      else if (origins_changed(*stage.native, stage.encoding->dispatches))
+      else if (stage.native->command != VK_NULL_HANDLE &&
+               origins_changed(*stage.native, stage.encoding->dispatches))
         HYLE_RETURN_IF_ERROR(
             encode_commands(*stage.native, stage.encoding->dispatches));
     }
@@ -1639,6 +1640,8 @@ Status record_regions(const std::shared_ptr<Run> &run,
             [](const auto &dispatch) { return dispatch.iree.has_value(); })) {
       HYLE_ASSIGN_OR_RETURN(scratch, run->runtime->device->provider.create_run_arena());
     }
+    const bool defer_native = scratch && run->runtime->device->environment.driver_id == VK_DRIVER_ID_MESA_DOZEN;
+    std::size_t deferred = 0;
     for (std::size_t first = 0; first < dispatches.size();) {
       RunStage stage;
       if (dispatches[first].iree) {
@@ -1674,7 +1677,14 @@ Status record_regions(const std::shared_ptr<Run> &run,
             value = static_cast<std::uint32_t>(
                 std::ranges::lower_bound(stage.values, value) -
                 stage.values.begin());
-        HYLE_ASSIGN_OR_RETURN(stage.native, create_recording_run(run->runtime));
+        if (defer_native) {
+          const auto allocator = mem::system_allocator();
+          stage.native = std::allocate_shared<Run>(mem::StdAllocator<Run>(allocator), allocator);
+          stage.native->runtime = run->runtime;
+          ++deferred;
+        } else {
+          HYLE_ASSIGN_OR_RETURN(stage.native, create_recording_run(run->runtime));
+        }
         std::vector<PlanValue> compact;
         for (const auto value : stage.values) {
           compact.push_back(values[value]);
@@ -1703,7 +1713,7 @@ Status record_regions(const std::shared_ptr<Run> &run,
     HYLE_RETURN_IF_ERROR(bind_regions(*run));
     const auto &last = run->stages.back();
     run->completion_fence = last.managed ? last.managed->fence() : run->fence;
-    run->encoding_valid = true;
+    run->encoding_valid = deferred == 0;
     return Status::Ok();
   } catch (const std::bad_alloc &) {
     return Status::ResourceExhausted("Vulkan composed native regions");
