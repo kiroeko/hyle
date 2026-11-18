@@ -413,10 +413,19 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
           ? dense(Type::kUInt32, {static_cast<std::int64_t>(requests), 4})
           : dense(Type::kUInt32, {static_cast<std::int64_t>(requests),
               static_cast<std::int64_t>(chain_steps ? 2 * chain_steps + 1 : 3), 4}));
+    const auto sampling_draws = chain_steps ? 2 * chain_steps + 1 : std::size_t{3};
+    std::vector<V> sampling_identities;
+    if (definition.sampling_identity_port) sampling_identities.resize(cache::multiply(requests, sampling_draws));
     const auto sampling_identity = [&](std::size_t request, std::size_t draw) {
-      return r.copy(r.reshape(r.slice(r.slice(definition.sampling_identity_port, 0,
+      if (request >= requests || draw >= sampling_draws || sampling_identities.empty())
+        throw std::logic_error("sampling identity is outside its prepared request/draw inventory");
+      // Proposal and verification share this original logical draw. Reusing
+      // its value avoids a second, unused Copy for proposal-only coordinates.
+      auto &identity = sampling_identities[request * sampling_draws + draw];
+      if (!identity) identity = r.copy(r.reshape(r.slice(r.slice(definition.sampling_identity_port, 0,
           f(static_cast<std::int64_t>(request)), f(1)), 1,
           f(static_cast<std::int64_t>(draw)), f(1)), {f(1), f(4)}));
+      return identity;
     };
     const auto sampling_row = [&](V values, std::size_t row) {
       return r.copy(r.slice(values, 0, f(static_cast<std::int64_t>(row)), f(1)));
@@ -756,8 +765,8 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
     const OrdinaryIoCapabilities ordinary_io{
         .backend = execution.kind(), .role = role, .completion = completion,
         .packing = packing, .cpu_assist = execution.has_cpu_assist(), .diagnostic = diagnostic};
-    const auto native_results = prepared.emit_successor
-        ? native_ordinary_io_domains(execution, ordinary_io) : std::nullopt;
+    const auto native_results = prepared.emit_successor && (role == GraphRole::kText || successor_eligible)
+        ? native_generated_io_domains(execution, ordinary_io) : std::nullopt;
     const auto control_storage = generation_control_storage(execution, ordinary_io);
     const bool caller_small_results = ordinary_io.caller_small_results() || native_results.has_value();
     const auto publish_valid = [&] {
@@ -971,6 +980,16 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
         external_contracts.push_back({definition.id_port, native_results->device});
         external_contracts.push_back({definition.delivery_id_port, native_results->staging});
         if (definition.sampling_valid_port) external_contracts.push_back({definition.sampling_valid_port, native_results->staging});
+        // The existing three scalar writers carry the selected MTP prefix.
+        // Keep their original Source on device; staging is only host delivery.
+        if (emit_device_decision) {
+          for (const auto output : {definition.successor_pending_port, definition.successor_prefix_index_port,
+              definition.successor_selected_catchup_port})
+            if (output) external_contracts.push_back({output, native_results->device});
+        } else if (successor_eligible) {
+          for (const auto output : {definition.successor_token_port, definition.successor_catchup_port})
+            if (output) external_contracts.push_back({output, native_results->device});
+        }
       }
       if (control_storage) {
         // Metadata and scalar delivery use host staging. The original token

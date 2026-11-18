@@ -275,8 +275,19 @@ int main() {
       const auto disabled = plan_prepared_decode_routes(choices, false);
       if (disabled.overlap || !disabled.verification)
         throw std::runtime_error("explicit overlap disable changed independent verification capacity");
+      const auto serial_default = plan_prepared_decode_routes(choices, {}, false);
+      if (serial_default.overlap || !serial_default.verification)
+        throw std::runtime_error("serial default changed independent verification capacity");
+      for (std::size_t index = 0; index < choices.size(); ++index) {
+        const auto expected = choices[index].relay_eligible ? RouteReason::kBackendPolicy : RouteReason::kSampling;
+        if (serial_default.by_sampling[index].overlap.reason != expected)
+          throw std::runtime_error("serial default lost the original refusal reason");
+      }
+      const auto explicit_overlap = plan_prepared_decode_routes(choices, true, false);
+      if (!explicit_overlap.overlap || !explicit_overlap.verification)
+        throw std::runtime_error("explicit overlap request did not override the serial default");
     }
-    const auto sampled_only = plan_prepared_decode_routes(std::array{random}, true);
+    const auto sampled_only = plan_prepared_decode_routes(std::array{random}, true, false);
     if (sampled_only.overlap || sampled_only.verification)
       throw std::runtime_error("explicit overlap enable waived actual route eligibility");
   }

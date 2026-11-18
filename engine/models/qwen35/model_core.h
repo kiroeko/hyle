@@ -807,13 +807,15 @@ private:
   std::vector<RelayPlan> relay_by_sampling_;
   void prepare_sampling_relay_routes() {
     relay_by_sampling_.clear();
+    const bool native_relay = execution.native_generated_storage() &&
+        (!cache_plan.draft_cache || (cache_plan.in_flight_batches >= 2 && device_mtp_attention_available()));
     relay_by_sampling_.reserve(resources_->sampling_configurations.size());
     for (const auto &prepared : resources_->sampling_configurations) {
       const auto &sampling = prepared->configuration;
       relay_by_sampling_.push_back({
           DeviceRelayCapabilities{execution.kind(), execution.has_cpu_assist(), bool(scheduler),
               sampling.enabled && cache_plan.draft_cache, !sampling.modifiers.empty(),
-              execution.native_generated_storage() && !cache_plan.draft_cache,
+              native_relay,
               device_mtp_sampling_supported(sampling.enabled, max_drafts())}.eligible(),
           PrefillRelayFacts{execution.kind(), execution.has_cpu_assist(), bool(scheduler),
               cache_plan.draft_cache, cache_plan.in_flight_batches,
@@ -867,7 +869,9 @@ public:
       }
     }
     const DraftChainCapabilities chain{policy.max_drafts,
-        DeviceRelayCapabilities{execution.kind(), execution.has_cpu_assist(), bool(scheduler), false, false}.eligible(),
+        DeviceRelayCapabilities{execution.kind(), execution.has_cpu_assist(), bool(scheduler), false, false,
+            cache_plan.auxiliary_hidden_rows >= 2 && execution.native_generated_storage() &&
+                device_mtp_attention_available()}.eligible(),
         cache_plan.active_sequences, cache_plan.auxiliary_hidden_rows, cache_plan.private_draft_stages,
         replay_policy != ReplayPolicy::kCommands, supported_projection};
     draft_packet_available_ = chain.packet_available();
@@ -893,6 +897,9 @@ public:
     if (!device_mtp_model_contract()) return false;
     if (max_drafts() > 1 && std::ranges::none_of(resources_->sampling_configurations,
         [&](const auto &prepared) { return compound_mtp_round_enabled(prepared->configuration); })) return false;
+    return device_mtp_attention_available();
+  }
+  bool device_mtp_attention_available() {
     if (!backend_device_mtp_support_) {
       backend_device_mtp_support_ = supports_mtp_attention(execution, attention_capacity(),
           resources_->attention_storage, allocation_budget);
@@ -904,11 +911,12 @@ public:
       throw std::runtime_error("configure device MTP continuation before model preparation");
     if (enabled && !supports_device_mtp())
       throw std::runtime_error("device MTP continuation requires its bounded native R1 N1 recipe");
+    check(execution.configure_device_continuation(enabled));
     device_mtp_successor_ = enabled;
   }
 
   void prepare_default_device_mtp_successor(bool requested) {
-    if (requested && !preparation_started_ && supports_device_mtp()) device_mtp_successor_ = true;
+    if (requested && !preparation_started_ && supports_device_mtp()) configure_device_mtp_successor(true);
   }
 
   bool prepare_draft_projection(const SamplingConfiguration &sampling) {
@@ -2949,6 +2957,7 @@ public:
           (failure.retirement_observed() && (!failure.retirement().retired || !failure.retirement().status.ok()))) throw;
       // An optional native shape was declined before request admission. The
       // real private recording episode has retired; preserve the old route.
+      check(execution.configure_device_continuation(false));
       device_mtp_successor_ = false;
       return prepare_decode_recordings(sampling_index, true, prepared_session, stage, 0, initial_sampling);
     }
@@ -4392,7 +4401,7 @@ public:
     auto &carrier = phase->slots[slot].carrier;
     if (!carrier.initialized() || carrier.closing() || !carrier.retired()) return false;
     if (carrier.queues().empty())
-      return !device_mtp && carrier.native_source_dependencies();
+      return carrier.native_source_dependencies();
     auto *run = take(carrier.borrow());
     return take(g::detail::ReplayAccess::has_capture_candidate(*run,
         source.primary_output.reader_binding(phase->token_port)));

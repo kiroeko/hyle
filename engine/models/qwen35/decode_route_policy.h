@@ -153,7 +153,7 @@ struct PreparedDecodeRoutes final {
 };
 
 inline PreparedDecodeRoutes plan_prepared_decode_routes(std::span<const DecodeRouteFacts> choices,
-    std::optional<bool> requested_overlap = {}) {
+    std::optional<bool> requested_overlap = {}, bool prefer_overlap = true) {
   PreparedDecodeRoutes result;
   result.by_sampling.reserve(choices.size());
   for (const auto &facts : choices) {
@@ -161,6 +161,8 @@ inline PreparedDecodeRoutes plan_prepared_decode_routes(std::span<const DecodeRo
     routes.overlap = select_resident_decode_overlap(facts);
     if (requested_overlap && !*requested_overlap)
       routes.overlap = {false, RouteReason::kUserDisabled};
+    else if (!requested_overlap && !prefer_overlap && routes.overlap.enabled)
+      routes.overlap = {false, RouteReason::kBackendPolicy};
     // Explicit enablement requests the route; it does not waive eligibility.
     result.overlap = result.overlap || routes.overlap.enabled;
     result.verification = result.verification || routes.verification.enabled;

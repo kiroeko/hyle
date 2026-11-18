@@ -3845,17 +3845,33 @@ ExecutionProfilePreparation prepare_execution_profile(const inference::ModelLoad
     retains_random_frontier = retains_random_frontier || policy.random;
   }
   const auto precision = PrecisionProfile::from_roles(source.roles);
+  const auto query_rows = (std::max)(prefill, mtp ? cache::add(depth, 1) : std::size_t{1});
+  const auto recurrent = recurrent_bytes(state_schema_for(geometry, config.execution.context, precision), geometry);
   const qwen35::DecodeRouteFacts facts{.workload = workload, .overlap_requested = true,
       .mtp_enabled = mtp, .max_drafts = depth, .max_device_drafts = kMaximumDeviceMtpDrafts,
       .stored_draft_head = supports_stored_draft_projection(source.roles),
       .has_decode = config.execution.context > 1, .resolved_active_sequences = config.execution.active_sequences};
+  // Qualify the native Metal recipe for a single resident request. Use the
+  // serial default because this device's matched K2 window shows extra
+  // preparation time without a measurable decode gain.
+  const bool qualify_native_mtp = mtp && !cpu_layers && execution.primary == BackendKind::kApple &&
+      workload.max_sessions == 1 && workload.active_sequences == 1;
+  std::optional<Backend> query_endpoint;
+  bool native_candidate = !mtp &&
+      (execution.primary == BackendKind::kApple || execution.primary == BackendKind::kVulkan);
+  if (qualify_native_mtp) {
+    query_endpoint.emplace(shared_endpoint ? take(shared_endpoint->share_endpoint()) : take(Backend::create(execution)));
+    const auto provisional = cache::plan(geometry, source.cache_row_bytes, config.execution.context,
+        config.execution.resident_sessions, query_rows, recurrent, config.execution.active_sequences,
+        cache::add(depth, 1), true, retains_random_frontier, 3, 0, precision);
+    native_candidate = query_endpoint->native_generated_storage() && supports_mtp_attention(*query_endpoint,
+        attention_capacity(geometry, precision, provisional), source.cache_storage);
+  }
   std::vector<qwen35::DecodeRouteFacts> sampling_routes;
   sampling_routes.reserve(config.additional_sampling.size() + 1);
   const auto append_sampling_route = [&](const inference::PreparedSamplingPolicy &policy) {
     auto selected = facts;
     selected.workload.greedy = !policy.random;
-    const bool native_candidate = !mtp &&
-        (execution.primary == BackendKind::kApple || execution.primary == BackendKind::kVulkan);
     const DeviceRelayCapabilities relay{execution.primary, cpu_layers != 0, false, policy.random && mtp, false,
         native_candidate, device_mtp_sampling_supported(policy.random, depth)};
     selected.relay_eligible = relay.eligible(); selected.relay_refusal = relay.refusal_reason();
@@ -3863,13 +3879,11 @@ ExecutionProfilePreparation prepare_execution_profile(const inference::ModelLoad
   };
   append_sampling_route(config.sampling);
   for (const auto &policy : config.additional_sampling) append_sampling_route(policy);
-  const auto routes = qwen35::plan_prepared_decode_routes(sampling_routes, profile.overlap);
+  const auto routes = qwen35::plan_prepared_decode_routes(sampling_routes, profile.overlap, !qualify_native_mtp);
   const bool overlap = !vision_asset && routes.overlap;
   // The verifier can consume a standalone draft chain; it does not require
   // an overlapping successor. Keep its independently selected capacity.
   const bool verification = routes.verification;
-  const auto query_rows = (std::max)(prefill, mtp ? cache::add(depth, 1) : std::size_t{1});
-  const auto recurrent = recurrent_bytes(state_schema_for(geometry, config.execution.context, precision), geometry);
   auto continuation_facts = sampling_routes.front();
   for (std::size_t i = 0; i < routes.by_sampling.size(); ++i)
     if (routes.by_sampling[i].overlap.enabled) { continuation_facts = sampling_routes[i]; break; }
@@ -3877,14 +3891,15 @@ ExecutionProfilePreparation prepare_execution_profile(const inference::ModelLoad
       .precision = precision, .backend = execution, .context = config.execution.context, .residents = config.execution.resident_sessions,
       .active_sequences = config.execution.active_sequences, .query_rows = query_rows, .recurrent_bytes = recurrent,
       .draft_depth = depth, .overlap = overlap, .verification = verification, .random = retains_random_frontier,
-      .shared_endpoint = shared_endpoint});
+      .shared_endpoint = query_endpoint ? &*query_endpoint : shared_endpoint});
   const auto plan = cache::plan(geometry, source.cache_row_bytes, config.execution.context, config.execution.resident_sessions,
       query_rows, recurrent, config.execution.active_sequences, mtp ? cache::add(depth, 1) : 1, mtp, retains_random_frontier,
       overlap ? (continuous.enabled ? 3 : 2) : 1, verification ? 2 : 0, precision, verification ? depth : 0);
   const Model::Sampling sampling{.enabled = config.sampling.random,
       .policy = {config.sampling.temperature, config.sampling.top_k, config.sampling.top_p}, .seed = 0};
   auto backend = shared_endpoint ? take(shared_endpoint->share_endpoint()) :
-      continuous.endpoint ? std::move(*continuous.endpoint) : create_execution(geometry, plan, cpu_layers, execution);
+      continuous.endpoint ? std::move(*continuous.endpoint) :
+      query_endpoint ? std::move(*query_endpoint) : create_execution(geometry, plan, cpu_layers, execution);
   return {std::move(source), std::move(backend), plan, sampling, std::move(additional_sampling), depth, overlap,
       vision_asset?vision_asset->path:std::filesystem::path{}, cpu_layers};
 }
