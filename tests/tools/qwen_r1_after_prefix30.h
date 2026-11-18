@@ -210,8 +210,8 @@ inline OriginalTensorView original_tensor_view(qwen35::Tensor &tensor) {
   else owned={tensor.buffer.view(),0,"original_owned_buffer",false};
   owned.view=take(owned.view.subview(0,take(tensor.description.required_bytes())));return owned;
 }
-template<class T> inline void read_fixed(const char *label,Sample &s,qwen35::Tensor &tensor,
-    const hyle::inference::ProgramCarrier<qwen35::ColdResources> &carrier,std::span<T> result,hyle::inference::Backend &backend) {
+template<class T,std::size_t Extent> inline void read_fixed(const char *label,Sample &s,qwen35::Tensor &tensor,
+    const hyle::inference::ProgramCarrier<qwen35::ColdResources> &carrier,std::span<T,Extent> result,hyle::inference::Backend &backend) {
   if(!carrier.retired())throw std::runtime_error("post fixed original carrier not retired");
   const auto owned=original_tensor_view(tensor);if(owned.view.size()!=result.size_bytes())throw std::runtime_error("post fixed exact span differs");
   identity(label,s,0,owned.view,tensor.description,owned.generation,owned.source,owned.generation_valid,backend);
