@@ -2267,6 +2267,35 @@ inference::RequestWaveResult advance_generation_wave(Model &model, inference::Re
   return inference::advance_request_wave(wave, remaining_reserved, stage);
 }
 
+void reclaim_inactive_vulkan_sampling_slots(Model &model, std::size_t sampling_index) {
+  if (model.execution.kind() != BackendKind::kVulkan || !model.device_mtp_successor_enabled() ||
+      model.max_drafts() != kMaximumDeviceMtpDrafts || model.cache_plan.resident_sessions != 1 ||
+      model.sampling_configuration_count() < 2 || model.execution_workspace.valid() ||
+      model.active_step || model.successor_step || model.carrier_borrowed || model.snapshot_versions.live ||
+      !model.private_publications_retired()) return;
+
+  // This single-resident route admits one sampler at a time. Keep the cold
+  // programs and release private Invocation storage after the last reader.
+  // The original admission path restores the selected sampler's carriers.
+  for (const auto &[shape, phase] : model.phases) {
+    if (shape.sampling_index == sampling_index) continue;
+    for (const auto &slot : phase->slots.slots())
+      if (!slot.carrier.retired() || slot.transactions.bound() || slot.data.small_results.in_flight()) return;
+  }
+  std::size_t released = 0;
+  for (auto &[shape, phase] : model.phases) {
+    if (shape.sampling_index == sampling_index) continue;
+    for (auto &slot : phase->slots.slots()) {
+      if (!slot.carrier.initialized()) continue;
+      check(slot.carrier.reset_retired());
+      ++released;
+    }
+  }
+  if (released)
+    std::cerr << "execution_sampling_storage_reclaimed invocations=" << released
+              << " next_sampler=" << sampling_index << '\n';
+}
+
 // Model-specific state and execution only. RequestLoop owns FIFO, idle
 // selection and turn/key transitions; no native work is owned by this adapter.
 template<class ExecuteWave>
@@ -2297,7 +2326,10 @@ struct GenerationRequestAdapter final {
     preflight_generation_sampling(model, request);
     if (!request.progress.input_open() || request.admission_start == Clock::time_point{})
       request.admission_start = Clock::now();
-    if (!request.session) model.restore_mtp_decode_recordings(request.sampling_index);
+    if (!request.session) {
+      reclaim_inactive_vulkan_sampling_slots(model, request.sampling_index);
+      model.restore_mtp_decode_recordings(request.sampling_index);
+    }
   }
   void admit(inference::RequestKey key, std::span<const inference::RequestKey>) const {
     auto &request = requests[key.slot];
@@ -3851,11 +3883,10 @@ ExecutionProfilePreparation prepare_execution_profile(const inference::ModelLoad
       .mtp_enabled = mtp, .max_drafts = depth, .max_device_drafts = kMaximumDeviceMtpDrafts,
       .stored_draft_head = supports_stored_draft_projection(source.roles),
       .has_decode = config.execution.context > 1, .resolved_active_sequences = config.execution.active_sequences};
-  // Keep the serial default for native MTP. Vulkan's explicit K1 route uses
-  // the original native Source; deeper Vulkan chains still use serial
-  // execution while their complete lifetime is being qualified.
-  const bool native_mtp_backend = execution.primary == BackendKind::kApple ||
-      (execution.primary == BackendKind::kVulkan && depth == 1 && profile.overlap.value_or(false));
+  // Keep the serial default for native MTP; Vulkan qualifies it on request.
+  const bool vulkan_mtp_requested = execution.primary == BackendKind::kVulkan &&
+      profile.overlap.value_or(false) && depth <= kMaximumDeviceMtpDrafts;
+  const bool native_mtp_backend = execution.primary == BackendKind::kApple || vulkan_mtp_requested;
   const bool qualify_native_mtp = mtp && !cpu_layers && native_mtp_backend &&
       workload.max_sessions == 1 && workload.active_sequences == 1;
   std::optional<Backend> query_endpoint;
@@ -3863,11 +3894,21 @@ ExecutionProfilePreparation prepare_execution_profile(const inference::ModelLoad
       (execution.primary == BackendKind::kApple || execution.primary == BackendKind::kVulkan);
   if (qualify_native_mtp) {
     query_endpoint.emplace(shared_endpoint ? take(shared_endpoint->share_endpoint()) : take(Backend::create(execution)));
-    const auto provisional = cache::plan(geometry, source.cache_row_bytes, config.execution.context,
-        config.execution.resident_sessions, query_rows, recurrent, config.execution.active_sequences,
-        cache::add(depth, 1), true, retains_random_frontier, 3, 0, precision);
-    native_candidate = query_endpoint->native_generated_storage() && supports_mtp_attention(*query_endpoint,
-        attention_capacity(geometry, precision, provisional), source.cache_storage);
+    bool native_mtp_available = query_endpoint->native_generated_storage();
+#if defined(HYLE_COMPUTE_VULKAN)
+    if (vulkan_mtp_requested && depth > 1) {
+      // Longer Dozen chains have exceeded the worker's graceful-close window.
+      const auto *context = take(query_endpoint->vulkan_context());
+      native_mtp_available = native_mtp_available && context->environment().driver_id != VK_DRIVER_ID_MESA_DOZEN;
+    }
+#endif
+    if (native_mtp_available) {
+      const auto provisional = cache::plan(geometry, source.cache_row_bytes, config.execution.context,
+          config.execution.resident_sessions, query_rows, recurrent, config.execution.active_sequences,
+          cache::add(depth, 1), true, retains_random_frontier, 3, 0, precision);
+      native_candidate = supports_mtp_attention(*query_endpoint,
+          attention_capacity(geometry, precision, provisional), source.cache_storage);
+    }
   }
   std::vector<qwen35::DecodeRouteFacts> sampling_routes;
   sampling_routes.reserve(config.additional_sampling.size() + 1);
