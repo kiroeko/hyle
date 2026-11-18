@@ -48,7 +48,7 @@ std::unique_ptr<Phase> prepare_phase(const PhaseSelection &selection,
       .diagnostic = diagnostic, .imported_sources = imported_sources};
   const auto control_storage = generation_control_storage(execution, ordinary_io);
   const auto control_resource = control_storage ? take(execution.resource_for(*control_storage)) : execution.device();
-  auto native_results = native_ordinary_io_domains(execution, ordinary_io);
+  auto native_results = native_generated_io_domains(execution, ordinary_io);
   if (native_results) {
     const auto &output = selection.child.output(definition.id_port);
     if (!output.caller_owned() || output.storage != native_results->device || !definition.delivery_id_port ||

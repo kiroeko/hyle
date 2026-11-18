@@ -3,6 +3,7 @@
 #include "qwen_host_image_case.h"
 #include "qwen_mtp_batch_state_case.h"
 #include "qwen_packed_prefill_case.h"
+#include "qwen_legacy_ledger_case.h"
 #include "../../engine/models/qwen35/request_installation.h"
 
 // Native Model-only correctness consumer. Uses existing local GA/MTP weights,
@@ -17,13 +18,137 @@ namespace p = qwen_packed_prefill_case;
 using h::require;
 constexpr std::size_t episodes = 6;
 
+// Fixed host-only observations for the finite boundary consumer. No entry
+// owns a Step, Source, lease, Invocation, or payload. Sixty-four callbacks
+// exceed two submissions per credited output in the current <=12-output
+// cases. Overflow is reported as missing evidence, never a passing oracle.
+struct BoundaryCarrierFacts final {
+  bool present = false;
+  std::size_t count = 0;
+  unsigned initialized = 0, closing = 0, retired = 0, native = 0;
+  std::array<std::size_t, q::execution_slot_count> queues{};
+};
+using BoundaryCarrierSet = std::array<BoundaryCarrierFacts, 3>;
+inline constexpr std::array boundary_roles{q::GraphRole::kMtpRound,
+    q::GraphRole::kMtpCatchupRound, q::GraphRole::kMtpContinuation};
+
+inline BoundaryCarrierSet boundary_carriers(const q::Model &model, std::size_t sampling_index) {
+  static_assert(q::execution_slot_count < 32);
+  BoundaryCarrierSet result{};
+  for (std::size_t group = 0; group < boundary_roles.size(); ++group) {
+    const auto role = boundary_roles[group];
+    const auto found = model.phases.find({1, model.max_drafts() + 1, role, q::TextCompletion::kEmitNext,
+        sampling_index, role == q::GraphRole::kMtpContinuation, q::RowPacking::kRectangular});
+    if (found == model.phases.end()) continue;
+    auto &facts = result[group]; const auto &slots = found->second->slots;
+    facts.present = true; facts.count = slots.size();
+    for (std::size_t slot = 0; slot < slots.size() && slot < facts.queues.size(); ++slot) {
+      const auto &carrier = slots[slot].carrier; const auto bit = 1u << slot;
+      if (carrier.initialized()) facts.initialized |= bit;
+      if (carrier.closing()) facts.closing |= bit;
+      // retired() reads Graph's cached in-flight/retention facts, not a fence.
+      if (carrier.retired()) facts.retired |= bit;
+      if (carrier.native_source_dependencies()) facts.native |= bit;
+      facts.queues[slot] = carrier.queues().size();
+    }
+  }
+  return result;
+}
+
+struct BoundaryStepFacts final {
+  bool present = false, submitted = false, cancelled = false, device_input_choice = false;
+  bool sources = false, source_submission = false, incoming = false, draft_rows_deferred = false;
+  unsigned physical_role = 0;
+  std::size_t slot = SIZE_MAX, query_rows = 0, prefix_rows = 0, input_rows = 0, draft_rows = 0;
+};
+inline BoundaryStepFacts boundary_step(const q::StepState *step) noexcept {
+  BoundaryStepFacts result;
+  if (!step) return result;
+  result.present = true; result.submitted = step->submitted; result.cancelled = step->cancelled;
+  result.device_input_choice = step->device_input_choice; result.slot = step->state_slot;
+  result.sources = bool(step->execution.sources);
+  result.source_submission = result.sources && step->execution.sources->submission.valid();
+  result.incoming = bool(step->execution.incoming); result.draft_rows_deferred = step->draft_rows_deferred;
+  result.input_rows = step->input_tokens; result.draft_rows = step->active_draft_rows;
+  if (step->phase && step->phase->family) {
+    result.physical_role = static_cast<unsigned>(step->phase->family->role);
+    result.query_rows = step->phase->query_rows; result.prefix_rows = step->phase->prefix_rows;
+  }
+  return result;
+}
+
+struct BoundaryRouteEntry final {
+  BoundaryStepFacts a, b;
+  BoundaryCarrierSet carriers;
+  bool generation = false, enabled = false, unavailable = false, pending = false, ready = false;
+  std::size_t call_quota = 0, call_maximum = 0, remaining_outputs = 0, generated_outputs = 0;
+  std::size_t committed = 0, next_slot = 0, ready_slot = SIZE_MAX, reprime_slot = SIZE_MAX;
+  std::size_t successor_submissions = 0, successor_publications = 0, successor_discards = 0, successor_refusals = 0;
+};
+struct BoundaryRouteTrace final {
+  bool captured = false, continuous = false, sampled = false, device_mtp = false, device_relay = false, overflow = false;
+  unsigned selected_case = 0;
+  std::size_t sampling_index = 0, size = 0;
+  i::SamplingCursor initial_sampling;
+  BoundaryCarrierSet admission;
+  std::array<BoundaryRouteEntry, 64> entries{};
+};
+
+inline void print_boundary_trace(const char *side, const BoundaryRouteTrace &trace) {
+  std::cerr << "recovered_route_trace side=" << side << " captured=" << trace.captured;
+  if (!trace.captured) { std::cerr << '\n'; return; }
+  std::cerr << " case=" << trace.selected_case << " continuous=" << trace.continuous
+            << " sampling_index=" << trace.sampling_index << " sampled=" << trace.sampled
+            << " device_mtp=" << trace.device_mtp << " device_relay=" << trace.device_relay
+            << " initial_seed=" << trace.initial_sampling.seed << " initial_stream=" << trace.initial_sampling.stream
+            << " initial_draw=" << trace.initial_sampling.draw << " entries=" << trace.size << " overflow=" << trace.overflow << '\n';
+  const auto carriers = [&](const BoundaryCarrierSet &values, std::size_t ordinal) {
+    for (std::size_t group = 0; group < values.size(); ++group) {
+      const auto &value = values[group];
+      std::cerr << "recovered_route_carriers side=" << side << " event=" << ordinal
+                << " physical_role=" << static_cast<unsigned>(boundary_roles[group])
+                << " present=" << value.present << " count=" << value.count
+                << " initialized_mask=" << value.initialized << " closing_mask=" << value.closing
+                << " retired_mask=" << value.retired << " native_mask=" << value.native << " queues=";
+      for (const auto count : value.queues) std::cerr << count << ',';
+      std::cerr << '\n';
+    }
+  };
+  carriers(trace.admission, SIZE_MAX);
+  for (std::size_t index = 0; index < trace.size; ++index) {
+    const auto &entry = trace.entries[index];
+    std::cerr << "recovered_route_event side=" << side << " event=" << index
+              << " generation=" << entry.generation << " call_quota=" << entry.call_quota
+              << " call_maximum=" << entry.call_maximum << " remaining=" << entry.remaining_outputs
+              << " generated=" << entry.generated_outputs << " committed=" << entry.committed
+              << " enabled=" << entry.enabled << " unavailable=" << entry.unavailable
+              << " pending=" << entry.pending << " ready=" << entry.ready << " next_slot=" << entry.next_slot
+              << " ready_slot=" << entry.ready_slot << " reprime_slot=" << entry.reprime_slot
+              << " successor_submissions=" << entry.successor_submissions
+              << " successor_publications=" << entry.successor_publications
+              << " successor_discards=" << entry.successor_discards << " successor_refusals=" << entry.successor_refusals << '\n';
+    const auto step = [&](const char *name, const BoundaryStepFacts &value) {
+      std::cerr << "recovered_route_step side=" << side << " event=" << index << " step=" << name
+                << " present=" << value.present << " physical_role=" << value.physical_role << " slot=" << value.slot
+                << " query_rows=" << value.query_rows << " prefix_rows=" << value.prefix_rows
+                << " input_rows=" << value.input_rows << " draft_rows=" << value.draft_rows
+                << " submitted=" << value.submitted << " cancelled=" << value.cancelled
+                << " device_input_choice=" << value.device_input_choice << " incoming=" << value.incoming
+                << " sources=" << value.sources << " source_submission=" << value.source_submission
+                << " draft_rows_deferred=" << value.draft_rows_deferred << '\n';
+    };
+    step("a", entry.a); step("b", entry.b); carriers(entry.carriers, index);
+  }
+}
+
 struct Result final {
   std::vector<std::int32_t> ids;
   std::vector<q::GenerationCommitRecord> records;
   std::optional<s::StateImage> final_state;
   std::size_t submitted = 0, a1_published = 0, a2_published = 0, reused = 0, recorded = 0;
-  std::size_t draft_rows = 0;
+  std::size_t draft_rows = 0, native_prepared = 0;
   bool stopped = false;
+  BoundaryRouteTrace boundary_route;
 };
 
 inline q::GraphRole role(const q::Session &session) {
@@ -81,19 +206,278 @@ inline void compare_state(q::Model &model, const s::StateImage &a, const s::Stat
         "device choice changed F32 GDN beyond the existing absolute state budget");
   }
 }
+
+// Failure-only diagnostics of bytes already captured by journey(). No state
+// image, device read, synchronization or publication is performed here.
+inline void diagnose_saved_prefill(q::Model &model, const s::StateImage &a, const s::StateImage &b) {
+  std::cerr << "prefill_saved_boundary old_length=" << a.length << " new_length=" << b.length
+            << " old_frontier=" << a.frontier << " new_frontier=" << b.frontier
+            << " old_lag=" << a.lag << " new_lag=" << b.lag
+            << " old_catchup=" << a.catchup << " new_catchup=" << b.catchup << '\n';
+  std::cerr << "prefill_saved_pending old=" << a.pending << " new=" << b.pending << '\n';
+  std::cerr << "prefill_saved_logical_rng old_seed=" << a.sampling.seed << " new_seed=" << b.sampling.seed
+            << " old_stream=" << a.sampling.stream << " new_stream=" << b.sampling.stream
+            << " old_draw=" << a.sampling.draw << " new_draw=" << b.sampling.draw << '\n';
+  std::cerr << "prefill_saved_inventory old_target=" << a.target.size() << " new_target=" << b.target.size()
+            << " old_payloads=" << a.payloads.size() << " new_payloads=" << b.payloads.size()
+            << " target_bytes_equal=" << (a.target == b.target)
+            << " payload_bytes_equal=" << (a.payloads == b.payloads) << '\n';
+  const auto payload = [&](const char *name, q::cache::HostPayloadRole role, std::size_t layer,
+                           const s::Bytes &old, const s::Bytes &current) {
+    std::cerr << "prefill_saved_payload role=" << name << " layer=" << layer
+              << " old_bytes=" << old.size() << " new_bytes=" << current.size();
+    if (old.size() != current.size()) { std::cerr << " numeric_unavailable=extent_mismatch\n"; return; }
+    q::cache::HostPayloadDesc layout{};
+    layout.role = role; layout.layer = static_cast<std::uint32_t>(layer); layout.bytes = old.size();
+    p::PayloadDifference difference{layout, old.size()};
+    if (old != current) difference = p::compare_payload(model, layout, old, current);
+    std::cerr << " first_different_byte=" << difference.first_byte
+              << " different_bytes=" << difference.different_bytes
+              << " maximum_absolute=" << difference.maximum_absolute
+              << " nonfinite_differences=" << difference.nonfinite_differences;
+    if (role == q::cache::HostPayloadRole::kGdnState)
+      std::cerr << " existing_gdn_absolute_budget=" << p::gdn_state_absolute_budget
+                << " within_existing_budget=" << (!difference.nonfinite_differences &&
+                    difference.maximum_absolute <= p::gdn_state_absolute_budget);
+    std::cerr << '\n';
+  };
+  for (std::size_t bank = 0; bank < (std::min)(a.target.size(), b.target.size()) &&
+      bank / 2 < model.attention_layer_ids.size(); ++bank)
+    payload(bank % 2 ? "target_value" : "target_key",
+        bank % 2 ? q::cache::HostPayloadRole::kTargetValue : q::cache::HostPayloadRole::kTargetKey,
+        model.attention_layer_ids[bank / 2], a.target[bank], b.target[bank]);
+  std::size_t part = 0;
+  const auto next = [&](const char *name, q::cache::HostPayloadRole role, std::size_t layer) {
+    if (part < a.payloads.size() && part < b.payloads.size())
+      payload(name, role, layer, a.payloads[part], b.payloads[part]);
+    ++part;
+  };
+  for (std::size_t layer = 0; layer < model.geometry.layers.size(); ++layer) if (model.geometry.is_gdn(layer)) {
+    next("history", q::cache::HostPayloadRole::kConvHistory, layer);
+    next("gdn_state_f32", q::cache::HostPayloadRole::kGdnState, layer);
+  }
+  next("draft_key", q::cache::HostPayloadRole::kDraftKey, q::cache::HostPayloadDesc::no_layer);
+  next("draft_value", q::cache::HostPayloadRole::kDraftValue, q::cache::HostPayloadDesc::no_layer);
+  next("carry_hidden", q::cache::HostPayloadRole::kCarryHidden, q::cache::HostPayloadDesc::no_layer);
+  next("prior_hidden", q::cache::HostPayloadRole::kPriorHidden, q::cache::HostPayloadDesc::no_layer);
+}
+
+inline void compare_record(const q::GenerationCommitRecord &x, const q::GenerationCommitRecord &y,
+    std::size_t ordinal) {
+    const bool equal = qwen_legacy_ledger_case::strict_equal(x, y);
+    if (!equal) {
+      // Keep the exact oracle. Report original host ledger facts only after
+      // its failure; no extra device read or synchronization can hide it.
+      std::cerr << "continuation_record_difference ordinal=" << ordinal << '\n';
+      std::cerr << "ledger_context length=" << x.before.length << " pending=" << x.before.next_id
+                << " draft=" << x.draft << " accepted=" << x.accepted
+                << " consumed_drafts=" << x.consumed_drafts << " agreed=" << x.agreed
+                << " accepted_draft=" << x.accepted_draft << " target_first=" << x.target_first
+                << " target_second_old=" << x.target_second << " target_second_new=" << y.target_second << '\n';
+      std::cerr << "ledger_verification_inputs=";
+      for (const auto id : x.verification_inputs) std::cerr << id << ',';
+      std::cerr << '\n';
+      const auto scalar = [](const char *name, auto old, auto current) {
+        if (old != current) std::cerr << "ledger_field=" << name << " old=" << old << " new=" << current << '\n';
+      };
+      scalar("role", static_cast<unsigned>(x.role), static_cast<unsigned>(y.role));
+      scalar("completion", static_cast<unsigned>(x.completion), static_cast<unsigned>(y.completion));
+      scalar("generation", x.generation, y.generation);
+      scalar("committed", x.committed, y.committed);
+      scalar("user_output", x.user_output, y.user_output);
+      scalar("imported", x.imported, y.imported);
+      scalar("input_deferred", x.input_deferred, y.input_deferred);
+      scalar("prefill_complete", x.prefill_complete, y.prefill_complete);
+      scalar("requests", x.requests, y.requests);
+      scalar("member_index", x.member_index, y.member_index);
+      scalar("input_begin", x.input_begin, y.input_begin);
+      scalar("turn", x.turn, y.turn);
+      scalar("quota", x.quota, y.quota);
+      scalar("accepted", x.accepted, y.accepted);
+      scalar("draft_rows", x.draft_rows, y.draft_rows);
+      scalar("draft_limit", x.draft_limit, y.draft_limit);
+      scalar("verified_rows", x.verified_rows, y.verified_rows);
+      scalar("consumed_drafts", x.consumed_drafts, y.consumed_drafts);
+      scalar("auxiliary_graph_calls", x.auxiliary_graph_calls, y.auxiliary_graph_calls);
+      scalar("draft", x.draft, y.draft);
+      scalar("target_first", x.target_first, y.target_first);
+      scalar("target_second", x.target_second, y.target_second);
+      scalar("agreed", x.agreed, y.agreed);
+      scalar("accepted_draft", x.accepted_draft, y.accepted_draft);
+      scalar("stopped", x.stopped, y.stopped);
+      scalar("emitted_count", x.emitted_count, y.emitted_count);
+      const auto boundary = [](const char *name, const q::GenerationBoundary &value) {
+        std::cerr << "ledger_boundary=" << name << " length=" << value.length << " frontier=" << value.frontier
+                  << " lag=" << value.lag << " pending=" << value.next_id << " catchup=" << value.catchup_token
+                  << " rotary_offset=" << value.rotary_offset << " seed=" << value.sampling.seed
+                  << " stream=" << value.sampling.stream << " draw=" << value.sampling.draw << '\n';
+      };
+      boundary("before_old", x.before); boundary("before_new", y.before);
+      boundary("after_old", x.after); boundary("after_new", y.after);
+      const auto tokens = [](const char *name, const auto &old, const auto &current) {
+        if (std::ranges::equal(old, current)) return;
+        std::cerr << "ledger_tokens=" << name << " old=";
+        for (const auto id : old) std::cerr << id << ',';
+        std::cerr << " new=";
+        for (const auto id : current) std::cerr << id << ',';
+        std::cerr << '\n';
+      };
+      tokens("emitted", x.emitted, y.emitted);
+      tokens("accepted_inputs", x.accepted_inputs, y.accepted_inputs);
+      tokens("verification_inputs", x.verification_inputs, y.verification_inputs);
+      tokens("ids", x.ids(), y.ids());
+      tokens("committed_ids", x.committed_ids(), y.committed_ids());
+    }
+    require(equal,
+        "device choice changed an actual role, quota, token, prefix, frontier or RNG ledger fact");
+}
+
 inline void compare_records(const Result &a, const Result &b) {
+  if (a.ids != b.ids || a.records.size() != b.records.size()) {
+    // Failure-only host observations: preserve the strict oracle and do not
+    // read device payloads or change the completed journeys' synchronization.
+    std::cerr << "continuation_complete_difference old_ids=" << a.ids.size() << " new_ids=" << b.ids.size()
+              << " old_records=" << a.records.size() << " new_records=" << b.records.size() << '\n';
+    const auto ids = [](const char *name, const auto &tokens) {
+      std::cerr << name << '=';
+      for (const auto id : tokens) std::cerr << id << ',';
+      std::cerr << '\n';
+    };
+    ids("continuation_ids_old", a.ids); ids("continuation_ids_new", b.ids);
+    std::size_t first_id = 0;
+    while (first_id < (std::min)(a.ids.size(), b.ids.size()) && a.ids[first_id] == b.ids[first_id]) ++first_id;
+    std::cerr << "continuation_first_different_id ordinal=" << first_id << '\n';
+    std::size_t ordinal = 0;
+    while (ordinal < (std::min)(a.records.size(), b.records.size()) &&
+        qwen_legacy_ledger_case::strict_equal(a.records[ordinal], b.records[ordinal])) ++ordinal;
+    std::cerr << "continuation_first_different_record ordinal=" << ordinal << '\n';
+    if (ordinal < (std::min)(a.records.size(), b.records.size())) {
+      const auto prefix = [&](const char *name, const Result &result) {
+        std::cerr << name << '=';
+        for (std::size_t index = 0; index < ordinal; ++index)
+          for (const auto id : result.records[index].committed_ids()) std::cerr << id << ',';
+        for (const auto id : result.records[ordinal].verification_inputs) std::cerr << id << ',';
+        std::cerr << '\n';
+      };
+      prefix("continuation_verifier_prefix_old", a); prefix("continuation_verifier_prefix_new", b);
+      compare_record(a.records[ordinal], b.records[ordinal], ordinal);
+    }
+  }
   require(a.ids == b.ids && a.records.size() == b.records.size(),
       "device choice changed the complete IDs or ledger length");
+  for (std::size_t ordinal = 0; ordinal < a.records.size(); ++ordinal)
+    compare_record(a.records[ordinal], b.records[ordinal], ordinal);
+}
+
+inline void compare_legacy_records(std::string_view source, const q::SamplingConfiguration &sampling,
+    std::int32_t vocabulary, const Result &a, const Result &b) {
+  require(a.ids == b.ids && a.records.size() == b.records.size(),
+      "legacy geometry changed the complete IDs or ledger length");
   for (std::size_t ordinal = 0; ordinal < a.records.size(); ++ordinal) {
-    const auto &x = a.records[ordinal]; const auto &y = b.records[ordinal];
-    require(x.same_result(y) && x.committed == y.committed && x.user_output == y.user_output &&
-        x.imported == y.imported && x.turn == y.turn &&
-        std::ranges::equal(x.ids(), y.ids()) && std::ranges::equal(x.committed_ids(), y.committed_ids()),
-        "device choice changed an actual role, quota, token, prefix, frontier or RNG ledger fact");
+    const auto &expected = a.records[ordinal];
+    const auto &actual = b.records[ordinal];
+    if (!qwen_legacy_ledger_case::strict_equal(expected, actual) &&
+        qwen_legacy_ledger_case::cross_geometry_compound_semantic_equal(
+            sampling.enabled, vocabulary, expected, actual)) {
+      // Only the cross-recipe comparison projects the unconsumed proposal tail
+      // and unpublished second diagnostic. Keep every original record intact.
+      std::cout << "legacy_unselected_compound_rows ordinal=" << ordinal
+                << " consumed_prefix=" << expected.accepted << " old_draft=" << expected.draft
+                << " new_draft=" << actual.draft << " old_second=" << expected.target_second
+                << " new_second=" << actual.target_second << " emitted_count=" << expected.emitted_count
+                << " published_first=" << expected.target_first << " old_verification_inputs=";
+      for (const auto id : expected.verification_inputs) std::cout << id << ',';
+      std::cout << " new_verification_inputs=";
+      for (const auto id : actual.verification_inputs) std::cout << id << ',';
+      std::cout << " raw_records_preserved=1" << '\n';
+      continue;
+    }
+    const auto *witness = qwen_legacy_ledger_case::match_rejected_second_witness(
+        source, !sampling.enabled && sampling.modifiers.empty(), a.records, b.records, ordinal);
+    if (witness) {
+      std::cout << "legacy_unconsumed_second_teacher source=" << source << " prefix=";
+      for (const auto id : witness->prefix) std::cout << id << ',';
+      std::cout << " old=" << a.records[ordinal].target_second
+                << " new=" << b.records[ordinal].target_second << " teacher_top1=" << witness->top1
+                << " teacher_top2=" << witness->top2 << " raw_gap=" << witness->gap() << '\n';
+      continue;
+    }
+    compare_record(a.records[ordinal], b.records[ordinal], ordinal);
   }
 }
 
 inline void compare_request_records(const Result &a, const Result &b) {
+  // Failure-only observations of the already completed host records. Preserve
+  // the original quota normalization and every assertion below; these prints
+  // neither observe GPU storage nor change the original execution schedule.
+  bool trace_printed = false;
+  const auto diagnose = [&](std::size_t ordinal) {
+    if (!trace_printed) {
+      print_boundary_trace("old", a.boundary_route); print_boundary_trace("new", b.boundary_route);
+      trace_printed = true;
+    }
+    std::cerr << "recovered_first_different_record ordinal=" << ordinal << '\n';
+    for (const bool old : {true, false}) {
+      const auto &result = old ? a : b;
+      const auto name = old ? "old" : "new";
+      if (ordinal >= result.records.size()) {
+        std::cerr << "recovered_record=" << name << " missing=1\n";
+        continue;
+      }
+      const auto &r = result.records[ordinal];
+      std::cerr << "recovered_record=" << name << " logical_role=" << static_cast<unsigned>(r.role)
+                << " completion=" << static_cast<unsigned>(r.completion) << " generation=" << r.generation
+                << " committed=" << r.committed << " user_output=" << r.user_output << " imported=" << r.imported
+                << " input_deferred=" << r.input_deferred << " prefill_complete=" << r.prefill_complete
+                << " requests=" << r.requests << " member_index=" << r.member_index << " input_begin=" << r.input_begin
+                << " turn=" << r.turn << " quota=" << r.quota << " accepted=" << r.accepted
+                << " consumed_drafts=" << r.consumed_drafts << " draft_limit=" << r.draft_limit
+                << " verified_rows=" << r.verified_rows << " draft_rows=" << r.draft_rows
+                << " auxiliary_graph_calls=" << r.auxiliary_graph_calls << " pending_input=" << r.pending_input
+                << " draft=" << r.draft << " target_first=" << r.target_first << " target_second=" << r.target_second
+                << " agreed=" << r.agreed << " accepted_draft=" << r.accepted_draft
+                << " stopped=" << r.stopped << " emitted_count=" << r.emitted_count << '\n';
+      const auto boundary = [&](const char *phase, const q::GenerationBoundary &v) {
+        std::cerr << "recovered_boundary=" << name << ':' << phase << " length=" << v.length
+                  << " frontier=" << v.frontier << " lag=" << v.lag << " pending=" << v.next_id
+                  << " catchup=" << v.catchup_token << " rotary_offset=" << v.rotary_offset
+                  << " seed=" << v.sampling.seed << " stream=" << v.sampling.stream << " draw=" << v.sampling.draw << '\n';
+      };
+      boundary("before", r.before); boundary("after", r.after);
+      const auto tokens = [&](const char *field, const auto &values) {
+        std::cerr << "recovered_tokens=" << name << ':' << field << '=';
+        for (const auto id : values) std::cerr << id << ',';
+        std::cerr << '\n';
+      };
+      tokens("ids", r.ids()); tokens("committed_ids", r.committed_ids());
+      tokens("verification_inputs", r.verification_inputs); tokens("accepted_inputs", r.accepted_inputs);
+      tokens("emitted", r.emitted);
+    }
+  };
+  if (a.ids != b.ids || a.records.size() != b.records.size()) {
+    std::size_t first_id = 0;
+    while (first_id < (std::min)(a.ids.size(), b.ids.size()) && a.ids[first_id] == b.ids[first_id]) ++first_id;
+    std::cerr << "recovered_request_difference old_ids=" << a.ids.size() << " new_ids=" << b.ids.size()
+              << " old_records=" << a.records.size() << " new_records=" << b.records.size()
+              << " old_successor_submissions=" << a.submitted << " new_successor_submissions=" << b.submitted
+              << " first_different_id=" << first_id << '\n';
+    std::cerr << "recovered_ids_old=";
+    for (const auto id : a.ids) std::cerr << id << ',';
+    std::cerr << "\nrecovered_ids_new=";
+    for (const auto id : b.ids) std::cerr << id << ',';
+    std::cerr << '\n';
+    std::size_t ordinal = 0;
+    for (; ordinal < (std::min)(a.records.size(), b.records.size()); ++ordinal) {
+      const auto &expected = a.records[ordinal]; auto actual = b.records[ordinal];
+      const bool quota = !expected.generation || (actual.quota > 0 && actual.quota <= expected.quota);
+      actual.quota = expected.quota;
+      if (!quota || !expected.same_result(actual) || expected.committed != actual.committed ||
+          expected.user_output != actual.user_output || expected.turn != actual.turn ||
+          !std::ranges::equal(expected.ids(), actual.ids()) ||
+          !std::ranges::equal(expected.committed_ids(), actual.committed_ids())) break;
+    }
+    diagnose(ordinal);
+  }
   require(a.ids == b.ids && a.records.size() == b.records.size(),
       "recovered request changed complete IDs or ledger length");
   for (std::size_t index = 0; index < a.records.size(); ++index) {
@@ -101,9 +485,14 @@ inline void compare_request_records(const Result &a, const Result &b) {
     auto actual = b.records[index];
     // The queued successor reserves a smaller quota and records its real
     // imported Source. Those are scheduling facts, not different outputs.
+    if (expected.generation && !(actual.quota > 0 && actual.quota <= expected.quota)) diagnose(index);
     require(!expected.generation || (actual.quota > 0 && actual.quota <= expected.quota),
         "recovered successor exceeded its synchronous output quota");
     actual.quota = expected.quota;
+    if (!(expected.same_result(actual) && expected.committed == actual.committed &&
+        expected.user_output == actual.user_output && expected.turn == actual.turn &&
+        std::ranges::equal(expected.ids(), actual.ids()) &&
+        std::ranges::equal(expected.committed_ids(), actual.committed_ids()))) diagnose(index);
     require(expected.same_result(actual) && expected.committed == actual.committed &&
         expected.user_output == actual.user_output && expected.turn == actual.turn &&
         std::ranges::equal(expected.ids(), actual.ids()) &&
@@ -206,10 +595,18 @@ inline Result journey(q::Model &model, std::span<const std::int32_t> prompt, boo
           : role(*session) == q::GraphRole::kMtpCatchupRound ? std::size_t{1} : std::size_t{0};
       child = &model.prepare_relay_evaluations(future, current_source, next_slot, q::GraphRole::kMtpContinuation);
       lifetimes[index + 1] = model.successor_step;
+      const auto &carrier = child->phase->slots[child->state_slot].carrier;
+      const bool native_source = carrier.queues().empty() && carrier.native_source_dependencies();
+      if (native_source) {
+        const auto report = q::take(child->execution.run->input_source_report());
+        require(report.source_count && report.device_wait_count && !report.host_wait_count,
+            "native MTP successor lost its actual pending device Source edge");
+      }
       require(child->device_input_choice && child->draft_rows_deferred &&
           !child->members[0].selected_input_choice && !child->active_draft_rows &&
-          child->state_slot == next_slot && !child->capture_recorded && child->capture_reused,
-          "successor was not an unobserved recorded device-choice continuation");
+          child->state_slot == next_slot && !child->capture_recorded && (child->capture_reused || native_source),
+          "successor was not an unobserved prepared device-choice continuation");
+      result.native_prepared += native_source;
       result.reused += child->capture_reused; result.recorded += child->capture_recorded;
       // Every nonterminal continuation exports its own actual cB outputs and
       // filled physical envelope before submission, so it can in turn feed C.
@@ -333,6 +730,15 @@ inline Result boundary_journey(q::Model &model, std::span<const std::int32_t> pr
       (void)request.session->try_retire(); request.session.reset();
     }
   }};
+  // Buffer the admission facts before submitting any work. Printing is
+  // confined to compare_request_records' original failure path below.
+  BoundaryRouteTrace route;
+  route.captured = true; route.continuous = continuous;
+  route.selected_case = static_cast<unsigned>(selected); route.sampling_index = request.sampling_index;
+  route.sampled = model.sampling_configuration(request.sampling_index).configuration.enabled;
+  route.device_mtp = model.device_mtp_successor_enabled(); route.device_relay = model.supports_device_relay(0);
+  route.initial_sampling = request.progress.initial_sampling;
+  route.admission = boundary_carriers(model, request.sampling_index);
   bool observed_successor = false, interrupted = false;
   std::optional<s::StateImage> before;
   std::vector<std::int32_t> before_ids;
@@ -347,6 +753,24 @@ inline Result boundary_journey(q::Model &model, std::span<const std::int32_t> pr
     }
     try {
       q::execute_generation_calls(model, calls, false, nullptr, requests, [&] {
+        // Fixed scalar slots only: no allocation, output, native query,
+        // completion poll, shared_ptr copy or payload read in this callback.
+        if (route.size == route.entries.size()) route.overflow = true;
+        else {
+          auto &entry = route.entries[route.size++];
+          entry.a = boundary_step(model.active_step.get()); entry.b = boundary_step(model.successor_step.get());
+          entry.carriers = boundary_carriers(model, request.sampling_index);
+          entry.generation = calls[0].generation; entry.call_quota = calls[0].quota;
+          entry.call_maximum = calls[0].maximum; entry.remaining_outputs = request.progress.remaining_outputs();
+          entry.generated_outputs = request.progress.generated.size(); entry.committed = request.ledger->committed_count;
+          entry.enabled = continuation.enabled; entry.unavailable = continuation.unavailable;
+          entry.pending = !continuation.pending_calls.empty(); entry.ready = bool(continuation.ready);
+          entry.next_slot = continuation.next_slot; entry.ready_slot = continuation.ready_slot.value_or(SIZE_MAX);
+          entry.reprime_slot = continuation.reprime_slot.value_or(SIZE_MAX);
+          entry.successor_submissions = continuation.successor_submissions;
+          entry.successor_publications = continuation.successor_publications;
+          entry.successor_discards = continuation.successor_discards; entry.successor_refusals = continuation.successor_refusals;
+        }
         if (!model.successor_step || !model.successor_step->submitted) return;
         observed_successor = true;
         if (selected == BoundaryCase::kCancel) {
@@ -378,11 +802,26 @@ inline Result boundary_journey(q::Model &model, std::span<const std::int32_t> pr
     compare_state(model, *before, s::image(model, *request.session->head));
   }
   continuation.reset();
-  Result result; result.ids = request.progress.generated;
+  Result result; result.ids = request.progress.generated; result.boundary_route = route;
   result.submitted = continuation.successor_submissions;
   result.records.assign(request.ledger->records.begin(), request.ledger->records.begin() + request.ledger->committed_count);
   result.final_state = s::image(model, *request.session->head);
-  h::retire(request.session);
+  if (selected == BoundaryCase::kCancel) {
+    // A real native cancellation may remain the stopped Session's terminal
+    // outcome. It does not prove retirement or permit any other native error.
+    const auto check_cancelled = [](const hyle::Status &status) {
+      if (status.IsCancelled() && !status.has_native_error()) return;
+      q::check(status);
+    };
+    require(request.session->stopping, "cancel boundary lost the original stopped owner");
+    check_cancelled(request.session->stop());
+    const auto drained = request.session->drain(); check_cancelled(drained.status);
+    require(drained.retired, "cancel boundary did not drain its original native work");
+    const auto observed = request.session->try_retire(); check_cancelled(observed.status);
+    require(observed.retired && !request.session->head && !request.session->pending,
+        "cancel boundary did not retire the original Session head and pending owner");
+    request.session.reset();
+  } else h::retire(request.session);
   require(!model.active_step && !model.successor_step && !model.carrier_borrowed && !model.snapshot_versions.live &&
       model.page_inventory.free_ids.size() == model.page_inventory.owners.size() &&
       model.draft_inventory.free_ids.size() == model.draft_inventory.owners.size(),

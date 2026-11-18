@@ -9,7 +9,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--engine', required=True)
     parser.add_argument('--inputs', required=True)
-    parser.add_argument('--draft-count', type=int, choices=(0, 1, 3), default=0)
+    parser.add_argument('--draft-count', type=int, choices=(0, 1, 2, 3), default=0)
     parser.add_argument('--backend', choices=('cpu', 'cuda', 'apple', 'vulkan'), default='cuda')
     parser.add_argument('--cpu-ffn-layers', type=int, default=0)
     parser.add_argument('--prefill-chunk-tokens', type=int)
