@@ -10,6 +10,7 @@
 #include <numeric>
 
 #include "ggml-backend.h"
+#include "ggml-vulkan.h"
 #include "ggml.h"
 #include "explicit_rope.h"
 #include "sink_mask.h"
@@ -1264,7 +1265,21 @@ Result<Region> Region::create(NativeDevice device,
                                         arguments[2], arguments[3]);
       } else if (node.operation.get_if<MatMul>() ||
                  node.operation.custom_as<model_ops::DenseLinearF32>()) {
-        const bool dense_matvec=node.operation.custom_as<model_ops::DenseLinearF32>() &&
+        bool mixed_dense_matrix = false;
+        if (node.operation.custom_as<model_ops::DenseLinearF32>() &&
+            recipe.values[node.inputs[0]].rank() == 2 &&
+            recipe.values[node.inputs[1]].rank() == 2 &&
+            left->type == GGML_TYPE_F32 && arguments[1]->type == GGML_TYPE_BF16 && left->ne[1] > 8) {
+          // The same retained device/Scope is used by native storage validation.
+          // Probe the actual prepared map before choosing matrix metadata.
+          auto *probe = ggml_mul_mat(context, arguments[1], left);
+          if (!ggml_prec_set_acc(probe, GGML_PREC_F32) ||
+              !ggml_prec_set_src(probe, GGML_PREC_F32, 1))
+            return std::unexpected(Status::Unimplemented("ggml Vulkan dense F32 operands"));
+          const auto native = ggml_backend_reg_dev_get(ggml_backend_vk_reg(), 0);
+          mixed_dense_matrix = ggml_backend_dev_supports_op(native, probe);
+        }
+        const bool dense_matvec=node.operation.custom_as<model_ops::DenseLinearF32>() && !mixed_dense_matrix &&
             !(recipe.values[node.inputs[0]].rank()==2 &&
               recipe.values[node.inputs[0]].data_type()==DataType::kBFloat16 &&
               recipe.values[node.inputs[1]].data_type()==DataType::kBFloat16);
@@ -1314,7 +1329,8 @@ Result<Region> Region::create(NativeDevice device,
           if (!ggml_prec_set_acc(product, GGML_PREC_F32))
             return std::unexpected(
                 Status::Unimplemented("ggml Vulkan MatMul F32 accumulation"));
-          if (b->type == GGML_TYPE_F32 && a->type == GGML_TYPE_F32 &&
+          if (((b->type == GGML_TYPE_F32 && a->type == GGML_TYPE_F32) ||
+               (mixed_dense_matrix && b->type == GGML_TYPE_BF16 && a->type == GGML_TYPE_F32)) &&
               !ggml_prec_set_src(product, GGML_PREC_F32, 1))
             return std::unexpected(
                 Status::Unimplemented("ggml Vulkan MatMul F32 operands"));

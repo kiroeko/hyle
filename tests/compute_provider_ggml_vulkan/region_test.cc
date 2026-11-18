@@ -8,6 +8,8 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstdio>
+#include <limits>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -389,6 +391,162 @@ TEST(GgmlVulkanRegion, DenseLinearRetainsOriginalHalfBfloatAndFloatSources) {
   dense_original_sources<BF16,BF16>(*device);dense_original_sources<BF16,float>(*device);
   dense_original_sources<float,F16>(*device);dense_original_sources<float,BF16>(*device);
   dense_original_sources<float,float>(*device);
+}
+
+TEST(GgmlVulkanRegion, DenseBfloatWeightsF32MatrixKeepsActivationBitsAndRebinds) {
+  namespace d = c::ggml_vulkan::detail;
+  using BF16 = hyle::simd::bfloat16_t;
+  constexpr std::int64_t n = 257;
+  auto device = NativeDevice::create();
+  ASSERT_TRUE(device) << device.error().message();
+  auto scope = device->activate();
+  // Only the existing native backend is borrowed for its actual cold query.
+  // This creates no new provider protocol or parallel device/queue.
+  auto backend = device->create_backend();
+  ASSERT_TRUE(backend) << backend.error().message();
+  std::unique_ptr<ggml_backend, decltype(&ggml_backend_free)>
+      backend_owner(*backend, ggml_backend_free);
+  // K66 exercises scalar/tail loading; K128 is aligned for every one of the
+  // original32/64/128 alignment choices and exercises the same shader's vec4.
+  for (const std::int64_t k : {66, 128}) for (const std::int64_t m : {17, 105}) {
+    SCOPED_TRACE(testing::Message() << "M=" << m << " K=" << k << " N=" << n);
+    const auto ad = c::TensorDesc::dense(c::DataType::kFloat32, std::array{m, k}).value();
+    const auto wd = c::TensorDesc::dense(c::DataType::kBFloat16, std::array{n, k}).value();
+    const std::array inputs{ad, wd};
+    const auto yd = c::infer_single_output(c::model_ops::dense_linear_f32(), inputs).value();
+    d::RegionRecipe recipe;
+    recipe.values = {ad, wd, yd};
+    recipe.inputs = {0, 1};
+    recipe.outputs = {2};
+    recipe.nodes = {{c::model_ops::dense_linear_f32(), {0, 1}, {2}}};
+    auto region = d::Region::create(*device, recipe);
+    ASSERT_TRUE(region) << region.error().message();
+    std::vector<VkBuffer> previous;
+    for (int generation = 0; generation != 2; ++generation) {
+      auto arena = MetadataArena::create(8 * ggml_tensor_overhead() +
+          ggml_graph_overhead_custom(8, false), hyle::mem::system_allocator());
+      ASSERT_TRUE(arena) << arena.error().message();
+      auto *context = arena->get();
+      auto *a = ggml_new_tensor_2d(context, GGML_TYPE_F32, k, m);
+      auto *w = ggml_new_tensor_2d(context, GGML_TYPE_BF16, k, n);
+      auto *y = ggml_mul_mat(context, w, a);
+      ASSERT_TRUE(ggml_prec_set_acc(y, GGML_PREC_F32));
+      ASSERT_TRUE(ggml_prec_set_src(y, GGML_PREC_F32, 1));
+      ggml_set_input(a);
+      ggml_set_input(w);
+      ggml_set_output(y);
+      auto *graph = ggml_new_graph_custom(context, 8, false);
+      ggml_build_forward_expand(graph, y);
+      // The direct reader exercises the actual matrix map even if a provider
+      // eligibility bug would accidentally retain its old matvec fallback.
+      ASSERT_EQ(ggml_graph_n_nodes(graph), 1);
+      ASSERT_EQ(ggml_graph_node(graph, 0), y);
+      ASSERT_EQ(y->op, GGML_OP_MUL_MAT);
+      ASSERT_EQ(y->src[0], w);
+      ASSERT_EQ(y->src[1], a);
+      ASSERT_EQ(a->type, GGML_TYPE_F32);
+      ASSERT_EQ(w->type, GGML_TYPE_BF16);
+      ASSERT_EQ(a->ne[1], m);
+      ASSERT_EQ(w->ne[1], n);
+      ASSERT_TRUE(ggml_backend_dev_supports_op(ggml_backend_get_device(*backend), y));
+
+      auto owners = std::make_shared<std::vector<std::shared_ptr<ggml_backend_buffer>>>();
+      const std::array tensors{a, w, y};
+      std::vector<d::RegionBinding> bindings;
+      std::vector<VkBuffer> handles;
+      for (auto *tensor : tensors) {
+        const auto bytes = ggml_nbytes(tensor);
+        auto buffer = device->allocate_buffer(bytes);
+        ASSERT_TRUE(buffer) << buffer.error().message();
+        owners->emplace_back(*buffer, [owner = *device](auto *p) {
+          auto active = owner.activate();
+          ggml_backend_buffer_free(p);
+        });
+        const auto handle = device->buffer_handle(*buffer);
+        // The region still holds the previous generation until this bind.
+        ASSERT_EQ(std::ranges::find(previous, handle), previous.end());
+        handles.push_back(handle);
+        ASSERT_EQ(ggml_backend_tensor_alloc(*buffer, tensor,
+            ggml_backend_buffer_get_base(*buffer)), GGML_STATUS_SUCCESS);
+        bindings.push_back({handle, 0, bytes, owners->back()});
+      }
+      auto native_graph = NativeGraph::allocate(*device, std::move(*arena), graph, owners);
+      ASSERT_TRUE(native_graph) << native_graph.error().message();
+      auto work = device->create_work();
+      ASSERT_TRUE(work) << work.error().message();
+      ASSERT_TRUE(region->bind(bindings).ok());
+      // There is no Cast node/full F32 bank in either native graph's arena.
+      // This bounds arena storage only, not unrelated driver/Work allocations.
+      ASSERT_LT(native_graph->storage_bytes(), std::size_t(n * k) * sizeof(BF16));
+      ASSERT_LT(region->storage_bytes(), std::size_t(n * k) * sizeof(BF16));
+      for (int replay = 1; replay <= 2; ++replay) {
+        SCOPED_TRACE(testing::Message() << "owner generation=" << generation
+                                      << " stable-binding replay=" << replay);
+        std::vector<float> values(std::size_t(m * k), 0.F);
+        std::vector<BF16> weights(std::size_t(n * k), half_test::encode<BF16>(0.));
+        for (std::int64_t row = 0; row < m; ++row) {
+          const auto first = std::size_t(row * k);
+          // This delta vanishes if F32 A is silently narrowed to BF16.
+          values[first] = 1.F + float(2 * generation + replay + row % 3) / 262144.F;
+          values[first + 1] = -1.F;
+          values[first + std::size_t(k - 1)] = .25F; // Real BK tail, not only leading values.
+        }
+        for (std::int64_t col = 0; col < n; ++col) {
+          const auto first = std::size_t(col * k);
+          weights[first] = weights[first + 1] = half_test::encode<BF16>(1. + col % 4);
+          weights[first + std::size_t(k - 1)] = half_test::encode<BF16>(.5 + double(col % 65) / 256.);
+        }
+        ggml_backend_tensor_set(a, values.data(), 0, values.size() * sizeof(float));
+        ggml_backend_tensor_set(w, weights.data(), 0, weights.size() * sizeof(BF16));
+        const std::vector<float> sentinel(std::size_t(m * n), std::numeric_limits<float>::quiet_NaN());
+        ggml_backend_tensor_set(y, sentinel.data(), 0, sentinel.size() * sizeof(float));
+        auto submitted = work->submit(native_graph->get(), native_graph->lease());
+        ASSERT_TRUE(submitted.status.ok()) << submitted.status.message();
+        const auto done = work->wait();
+        ASSERT_TRUE(done.status.ok()) << done.status.message();
+        ASSERT_FALSE(done.pending);
+        std::vector<float> direct(std::size_t(m * n));
+        ggml_backend_tensor_get(y, direct.data(), 0, direct.size() * sizeof(float));
+        // The provider shares caller-owned output storage with this direct
+        // witness. Poison it AFTER reading direct so a provider no-op cannot
+        // accidentally pass by observing the previous reader's valid output.
+        ggml_backend_tensor_set(y, sentinel.data(), 0, sentinel.size() * sizeof(float));
+        ASSERT_TRUE(region->submit().status.ok());
+        const auto provider_done = region->wait();
+        ASSERT_TRUE(provider_done.status.ok()) << provider_done.status.message();
+        ASSERT_FALSE(provider_done.pending);
+        std::vector<float> actual(std::size_t(m * n));
+        ggml_backend_tensor_get(y, actual.data(), 0, actual.size() * sizeof(float));
+        double direct_raw_max = 0., provider_raw_max = 0.;
+        for (std::int64_t row = 0; row < m; ++row)
+          for (std::int64_t col = 0; col < n; ++col) {
+            double expected = 0.;
+            for (std::int64_t inner = 0; inner < k; ++inner)
+              expected += double(values[std::size_t(row * k + inner)]) *
+                          half_test::decode(weights[std::size_t(col * k + inner)]);
+            const auto index = std::size_t(row * n + col);
+            ASSERT_NEAR(direct[index], float(expected), 2.e-8F) << "direct row=" << row << " col=" << col;
+            ASSERT_NEAR(actual[index], float(expected), 2.e-8F) << "provider row=" << row << " col=" << col;
+            direct_raw_max = std::max(direct_raw_max, std::abs(double(direct[index]) - expected));
+            provider_raw_max = std::max(provider_raw_max, std::abs(double(actual[index]) - expected));
+          }
+        std::printf("mixed_gemm M=%lld K=%lld N=%lld owner=%d replay=%d direct_raw_double_max=%.12g provider_raw_double_max=%.12g nan_sentinel_overwritten=1\n",
+            static_cast<long long>(m), static_cast<long long>(k), static_cast<long long>(n),
+            generation, replay, direct_raw_max, provider_raw_max);
+        std::vector<float> a_after(values.size());
+        std::vector<BF16> w_after(weights.size());
+        ggml_backend_tensor_get(a, a_after.data(), 0, a_after.size() * sizeof(float));
+        ggml_backend_tensor_get(w, w_after.data(), 0, w_after.size() * sizeof(BF16));
+        ASSERT_TRUE(std::equal(a_after.begin(), a_after.end(), values.begin(),
+            [](float first, float second) {
+              return std::bit_cast<std::uint32_t>(first) == std::bit_cast<std::uint32_t>(second);
+            }));
+        ASSERT_TRUE(std::equal(w_after.begin(), w_after.end(), weights.begin(),
+            [](BF16 first, BF16 second) { return first.bits == second.bits; }));
+      }
+      previous = std::move(handles);
+    }
+  }
 }
 
 TEST(GgmlVulkanRegion, FloatMatMulUsesActualShaderSharedMemoryAndRebindsOwners) {
