@@ -701,6 +701,17 @@ Status NativeProgram::run_impl(std::span<const BufferView> ports,
     for (auto wait : group) {
       if (!wait.event || !wait.value)
         return Status::InvalidArgument("native Metal input wait is incomplete");
+      // Several ports can own views of the same producer. The entire wait
+      // list is encoded before this command buffer's graph runs.
+      bool already_waited = false;
+      for (std::size_t i = 0; i < wait_index; ++i) {
+        if (wait_events[i] == wait.event && wait_values[i] == wait.value) {
+          already_waited = true;
+          break;
+        }
+      }
+      if (already_waited)
+        continue;
       wait_events[wait_index] = wait.event;
       wait_values[wait_index++] = wait.value;
     }
@@ -754,7 +765,7 @@ Status NativeProgram::run_impl(std::span<const BufferView> ports,
     if (signal.valid()) {
       if (!ggml_hyle_metal_signal_begin(s.backend, signal.event, signal.value,
                                         signal.completed, signal.state,
-                                        wait_events, wait_values, wait_count))
+                                        wait_events, wait_values, wait_index))
         return Status::Unimplemented("native Metal signal does not match its original endpoint");
       signal_armed = true;
     }
