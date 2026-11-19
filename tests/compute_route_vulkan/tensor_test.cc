@@ -17,26 +17,33 @@ constexpr std::array types{c::DataType::kFloat32,  c::DataType::kFloat16,
 TEST(VulkanTensor, ExactPreparedPipelinesShareOnlyImmutableArtifacts) {
   auto context = vulkan_test::context().value();
   const auto description = dense(c::DataType::kFloat32, {1024});
+  const auto other_shape = dense(c::DataType::kFloat32, {2, 384});
   const c::Operation cast(c::Cast{c::DataType::kBFloat16});
   std::weak_ptr<v::detail::Pipeline> original;
   {
     auto first = v::prepare(context, cast, description).value();
-    auto second = v::prepare(context, cast, description).value();
+    auto second = v::prepare(context, cast, other_shape).value();
     const auto &a = v::detail::Access::program(first)->dispatches.front().pipeline;
     const auto &b = v::detail::Access::program(second)->dispatches.front().pipeline;
     ASSERT_TRUE(a); ASSERT_EQ(a, b); original = a;
-    auto other = v::prepare(context, cast, dense(c::DataType::kFloat32, {1025})).value();
-    EXPECT_NE(a, v::detail::Access::program(other)->dispatches.front().pipeline);
+    // 255 BF16 values round up to a full workgroup of words but still have a
+    // partial final word. That dispatch must preserve its element bounds.
+    auto tail = v::prepare(context, cast, dense(c::DataType::kFloat32, {255})).value();
+    EXPECT_NE(a, v::detail::Access::program(tail)->dispatches.front().pipeline);
     auto one = first.create_invocation().value(), two = second.create_invocation().value();
     const auto positive = make(context, description, std::vector<double>(1024, 1.25));
-    const auto negative = make(context, description, std::vector<double>(1024, -2.5));
+    std::vector<double> negative_values(768);
+    std::iota(negative_values.begin(), negative_values.end(), -768.0);
+    const auto negative = make(context, other_shape, negative_values);
     ASSERT_TRUE(one.bind(positive).ok()); ASSERT_TRUE(two.bind(negative).ok());
     auto left = one.submit().value(), right = two.submit().value();
     auto left_ready = left.wait().value(), right_ready = right.wait().value();
     EXPECT_EQ(bits(context, left_ready.get()->tensors()[0]),
         std::vector<std::uint64_t>(1024, encode(1.25, c::DataType::kBFloat16)));
-    EXPECT_EQ(bits(context, right_ready.get()->tensors()[0]),
-        std::vector<std::uint64_t>(1024, encode(-2.5, c::DataType::kBFloat16)));
+    std::vector<std::uint64_t> expected;
+    for (auto value : negative_values)
+      expected.push_back(encode(value, c::DataType::kBFloat16));
+    EXPECT_EQ(bits(context, right_ready.get()->tensors()[0]), expected);
   }
   ASSERT_TRUE(context.drain().ok());
   EXPECT_TRUE(original.expired()); // The device index owns no executable.

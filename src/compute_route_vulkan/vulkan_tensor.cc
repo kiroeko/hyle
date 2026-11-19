@@ -68,6 +68,8 @@ std::optional<std::uint32_t> tensor_storage_type(DataType type) noexcept {
 }
 
 namespace {
+constexpr std::uint32_t kTensorWorkgroupSize = 128;
+
 Status tensor_layout(const ProgramState &program,
                      std::span<const std::uint32_t> inputs,
                      std::uint32_t output_id,
@@ -608,19 +610,35 @@ Status lower_tensor(ProgramState &program, const PlanStep &step) {
   specialization[8].value = static_cast<std::uint32_t>(fill >> 32);
   // Odd-width half rows share an output word. One group owns both rows.
   specialization[9].value = rows_per_group;
-  const auto words = (*output.required_bytes() + 3) / 4;
+  const auto output_bytes = *output.required_bytes();
+  const auto words = (output_bytes + 3) / 4;
   const auto groups = static_cast<std::uint32_t>(
       normalization
           ? (elements / output.dimensions().back() + rows_per_group - 1) /
                 rows_per_group
-          : (words + 127) / 128);
+          : (words + kTensorWorkgroupSize - 1) / kTensorWorkgroupSize);
   // Keep representation-specific code out of unrelated shader modules. Native
   // compilers can process every branch before applying specialization, so a
   // cold fallback must not enlarge the ordinary Copy/arithmetic preparation.
   const auto input_type = specialization[1].value;
-  const bool representation = (operation == 2 &&
+  const bool bfloat_cast = operation == 2 &&
       ((input_type == 2 && *output_type == 0) ||
-       (input_type == 0 && *output_type == 2))) ||
+       (input_type == 0 && *output_type == 2));
+  if (bfloat_cast && output_bytes % (4 * kTensorWorkgroupSize) == 0) {
+    const auto &device = *program.runtime->device;
+    const auto x = (std::min)(groups, device.properties.limits.maxComputeWorkGroupCount[0]);
+    const auto &input = program.values[step.inputs[0]].description;
+    // The dispatch must cover exactly the logical output, including when the
+    // native group grid wraps onto a second axis. A padded tail needs bounds.
+    if (x != 0 && groups % x == 0 &&
+        tensor_representation_cast_supported(device, input, output)) {
+      const std::array dense_cast{specialization[0], specialization[1],
+          specialization[4], SpecializationConstant{42, 1}};
+      return append_tensor_dispatch(program, std::move(dispatch),
+                                    shaders::representation(), dense_cast, groups);
+    }
+  }
+  const bool representation = bfloat_cast ||
       (operation == 3 && mode == static_cast<std::uint32_t>(UnaryKind::kRelu));
   return append_tensor_dispatch(program, std::move(dispatch),
                                 normalization ? shaders::normalization()

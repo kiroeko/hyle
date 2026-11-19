@@ -58,6 +58,10 @@ layout(constant_id = 38) const uint sc4 = 0;
 layout(constant_id = 39) const uint sc5 = 0;
 layout(constant_id = 40) const uint sc6 = 0;
 layout(constant_id = 41) const uint sc7 = 0;
+#ifdef HYLE_TENSOR_REPRESENTATION
+// Preparation admits this only for a dense cast with exact dispatch coverage.
+layout(constant_id = 42) const bool exact_dense_cast = false;
+#endif
 #ifdef HYLE_TENSOR_SCATTER
 layout(constant_id = 42) const uint scatter_count = 1;
 layout(constant_id = 43) const uint scatter_extent = 1;
@@ -232,6 +236,9 @@ float binary(float x, float y) {
 }
 uvec3 tensor_address(uint index) {
     uvec3 offsets = uvec3(origin.a, origin.b, origin.c);
+#ifdef HYLE_TENSOR_REPRESENTATION
+    if (exact_dense_cast) return offsets + uvec3(index * width(type_a), 0u, 0u);
+#endif
     uint remaining = index;
     address_axis(remaining, offsets, dim7, uvec3(sa7,sb7,sc7));
     address_axis(remaining, offsets, dim6, uvec3(sa6,sb6,sc6));
@@ -634,7 +641,11 @@ void main() {
     if (mode != 0 && c[0] != 0) return;
 #endif
     uint size = width(type_d), bytes = count * size;
-    if (index >= (bytes + 3u) / 4u) return;
+    if (
+#ifdef HYLE_TENSOR_REPRESENTATION
+        !exact_dense_cast &&
+#endif
+        index >= (bytes + 3u) / 4u) return;
     uint output_word = 0;
     if (size == 8) output_word = evaluate(index / 2u, index % 2u);
     else {
@@ -642,7 +653,12 @@ void main() {
         for (uint lane = 0; lane < lanes; ++lane) {
             uint element = index * lanes + lane;
             uint mask = size == 4 ? 0xffffffffu : (1u << (size * 8u)) - 1u;
-            if (element < count) output_word |= (evaluate(element, 0) & mask) << (lane * size * 8u);
+            if (
+#ifdef HYLE_TENSOR_REPRESENTATION
+                exact_dense_cast ||
+#endif
+                element < count)
+                output_word |= (evaluate(element, 0) & mask) << (lane * size * 8u);
         }
     }
     d[index] = output_word;
