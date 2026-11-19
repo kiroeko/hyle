@@ -11,12 +11,13 @@
 
 #include "hyle/compute/sequence_ops.h"
 #include "hyle/core/compiler.h"
+#include "hyle/mem/resource.h"
 #include "hyle/platform/cpu.h"
 
-#if HYLE_ARCH_X64 && HYLE_COMPILER_MSVC
+#if HYLE_ARCH_X64 && (HYLE_COMPILER_MSVC || HYLE_COMPILER_GCC || HYLE_COMPILER_CLANG)
+#define HYLE_NATIVE_SEQUENCE_AVX2 1
 #include <immintrin.h>
 #endif
-#include "hyle/mem/resource.h"
 
 namespace hyle::compute::native::internal {
 namespace {
@@ -174,12 +175,15 @@ void run_gdn(void *context, std::size_t, std::size_t begin, std::size_t end) noe
 }
 
 
-#if HYLE_ARCH_X64 && HYLE_COMPILER_MSVC
+#if defined(HYLE_NATIVE_SEQUENCE_AVX2)
 inline constexpr std::size_t kChannelTile = 8;
 inline constexpr std::size_t kKeyTileCapacity = 256;
 
 // Each lane owns one value channel. The F32 accumulators traverse keys in
 // the original order and the tile is private to this GDN range invocation.
+#if HYLE_COMPILER_GCC || HYLE_COMPILER_CLANG
+__attribute__((target("avx2,fma")))
+#endif
 void run_gdn_channel_tile(void *context, std::size_t, std::size_t begin,
                           std::size_t end) noexcept {
   const auto &episode = *static_cast<GdnEpisode<float> *>(context);
@@ -263,7 +267,7 @@ detail::EnqueueResult submit_gdn(const NativePlan &plan, std::span<const ConstTe
         static_cast<std::size_t>(inputs[0].description().dimensions()[1]),
         static_cast<std::size_t>(state[1]), static_cast<std::size_t>(state[3]),
         static_cast<std::size_t>(state[2]), static_cast<std::size_t>(inputs[3].description().dimensions()[2])};
-#if HYLE_ARCH_X64 && HYLE_COMPILER_MSVC
+#if defined(HYLE_NATIVE_SEQUENCE_AVX2)
     if constexpr (ChannelTile) {
       parallel_for_ranges(plan, plan.parameters[0] / kChannelTile, &run_gdn_channel_tile, &episode);
     } else
@@ -358,7 +362,7 @@ Status prepare_sequence(Operation operation, std::span<const TensorDesc> inputs,
     plan.scalar_bits = gdn->snapshot_count;
     plan.scalar = gdn->output_scale.value_or(1.0F / std::sqrt(static_cast<float>(state[3])));
     plan.submit_route = select_gdn_submit<>(type);
-#if HYLE_ARCH_X64 && HYLE_COMPILER_MSVC
+#if defined(HYLE_NATIVE_SEQUENCE_AVX2)
     // The copy into a channel tile is amortized by more than one row.
     // Each sequence has one final state and one gate per value head.
     using enum platform::CpuFeature;
