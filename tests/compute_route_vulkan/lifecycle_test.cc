@@ -75,6 +75,7 @@ struct NativeBoundary final {
   std::atomic<bool> hold_wait{false}, waiting{false}, release_wait{false},
       wait_timed_out{false};
   int submissions = 0, fail_submit_on = 0;
+  bool fail_fenced_submit = false;
   unsigned command_allocations = 0;
   VkResult command_allocation_failure = VK_SUCCESS;
   VkCommandPool rejected_pool = VK_NULL_HANDLE;
@@ -169,6 +170,7 @@ struct NativeBoundary final {
                                                      const VkSubmitInfo *info,
                                                      VkFence fence) {
     if (++active->submissions == active->fail_submit_on ||
+        (fence != VK_NULL_HANDLE && std::exchange(active->fail_fenced_submit, false)) ||
         std::exchange(active->fail_submit, false))
       return VK_ERROR_OUT_OF_HOST_MEMORY;
     return active->original.QueueSubmit(queue, count, info, fence);
@@ -819,7 +821,7 @@ TEST(VulkanLifetime, DeferredNativeChildAllocationFailureLeavesSlotUnsubmitted) 
   }
 }
 
-TEST(VulkanLifetime, ManagedPrefixSurvivesRejectedNativeSuffixUntilDrain) {
+TEST(VulkanLifetime, ManagedResourcesSurviveRejectedNativeTailUntilDrain) {
   for (bool selection : {false, true}) {
     SCOPED_TRACE(selection);
     for (bool abandon : {false, true}) {
@@ -865,13 +867,12 @@ TEST(VulkanLifetime, ManagedPrefixSurvivesRejectedNativeSuffixUntilDrain) {
       auto slot = program.create_invocation().value();
       ASSERT_TRUE(slot.bind(input).ok());
       NativeBoundary boundary(context);
-      // Provider submits use their original PFNs. This rejects only the HYLE
-      // suffix after the real HYLE prefix and real managed region were
-      // accepted.
-      boundary.fail_submit_on = 2;
+      // Match the terminal native fence. A driver may accept prefix work
+      // separately or receive the whole sequence in the rejected batch.
+      boundary.fail_fenced_submit = true;
       auto work = slot.submit();
       ASSERT_TRUE(work) << work.error().message();
-      ASSERT_EQ(boundary.submissions, 2);
+      ASSERT_FALSE(boundary.fail_fenced_submit);
       ASSERT_NE(d::Access::runtime(context)->pending, nullptr);
       auto observed = work->poll();
       ASSERT_TRUE(observed);
@@ -1029,7 +1030,7 @@ TEST(VulkanLifecycle, CheckedGatherFlushInvalidateCancelAndAbandon) {
 }
 
 TEST(VulkanLifecycle,
-     CheckedGatherPartialAcceptanceDrainsAndPreservesNativeFailure) {
+     CheckedGatherRejectedTailDrainsAndPreservesNativeFailure) {
   auto context = t::context().value();
   const auto source_desc = t::dense({5, 7});
   const auto source = t::upload(context, source_desc, t::data(35, 2)).value();
@@ -1043,11 +1044,12 @@ TEST(VulkanLifecycle,
   auto slot = program.create_invocation().value();
   ASSERT_TRUE(slot.bind(indices).ok());
   NativeBoundary boundary(context);
-  // Native check and original managed GetRows accept work; final HYLE output
-  // publication rejects admission. Keep that native error and drain the prefix.
-  boundary.fail_submit_on = 2;
+  // Reject the native output tail whether it submits alone or with the
+  // checked gather prefix. Preserve the native error at retirement.
+  boundary.fail_fenced_submit = true;
   auto work = slot.submit();
   ASSERT_TRUE(work) << work.error().message();
+  ASSERT_FALSE(boundary.fail_fenced_submit);
   const auto result = work->wait();
   ASSERT_FALSE(result);
   EXPECT_TRUE(result.error().IsResourceExhausted());

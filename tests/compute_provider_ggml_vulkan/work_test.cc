@@ -287,6 +287,76 @@ TEST(GgmlVulkanWork, RepeatedIndependentSlotsRetainTheirResourceLeases) {
   }
 }
 
+#if defined(__APPLE__)
+TEST(GgmlVulkanWork, OrderedPrefixRetainsBothLeasesThroughRejectedTail) {
+  auto device = NativeDevice::create().value();
+  if (!device.supports_ordered_submits())
+    GTEST_SKIP() << "requires native ordered MoltenVK submission";
+  const auto &native = device.native();
+  const auto device_proc = reinterpret_cast<PFN_vkGetDeviceProcAddr>(
+      native.get_instance_proc_addr(native.instance, "vkGetDeviceProcAddr"));
+  ASSERT_NE(device_proc, nullptr);
+  const auto queue_submit = reinterpret_cast<PFN_vkQueueSubmit>(
+      device_proc(native.device, "vkQueueSubmit"));
+  auto queue_idle = reinterpret_cast<PFN_vkQueueWaitIdle>(
+      device_proc(native.device, "vkQueueWaitIdle"));
+  ASSERT_NE(queue_submit, nullptr);
+  ASSERT_NE(queue_idle, nullptr);
+
+  const auto first = make_graph(device, GraphMath::kAdd).value();
+  const auto second = make_graph(device, GraphMath::kAdd).value();
+  auto first_work = device.create_work().value();
+  auto second_work = device.create_work().value();
+  const std::vector<float> inputs(2048, 1.25f), weights(2048, 0.75f);
+  const auto bytes = inputs.size() * sizeof(float);
+  for (const auto &graph : {first, second}) {
+    auto active = device.activate();
+    ggml_backend_tensor_set(graph->input, inputs.data(), 0, bytes);
+    ggml_backend_tensor_set(graph->weight, weights.data(), 0, bytes);
+  }
+
+  hyle::compute::ggml_vulkan::bridge::OrderedSubmitBatch batch;
+  batch.submit = queue_submit;
+  auto first_lease = std::make_shared<std::shared_ptr<GraphStorage>>(first);
+  auto second_lease = std::make_shared<std::shared_ptr<GraphStorage>>(second);
+  const std::weak_ptr held_first = first_lease;
+  const std::weak_ptr held_second = second_lease;
+  EXPECT_TRUE(first_work.submit(first->graph, std::move(first_lease), &batch).status.ok());
+  EXPECT_GT(batch.count, 0u);
+  EXPECT_TRUE(device.flush_ordered_submits(batch).ok());
+  EXPECT_TRUE(batch.accepted);
+  EXPECT_TRUE(second_work.submit(second->graph, std::move(second_lease), &batch).status.ok());
+  EXPECT_GT(batch.count, 0u);
+  batch.submit = [](VkQueue, std::uint32_t, const VkSubmitInfo *, VkFence) {
+    return VK_ERROR_OUT_OF_HOST_MEMORY;
+  };
+  EXPECT_TRUE(device.flush_ordered_submits(batch).IsResourceExhausted());
+  EXPECT_TRUE(first_work.poll().pending);
+  EXPECT_TRUE(second_work.poll().pending);
+  EXPECT_FALSE(held_first.expired());
+  EXPECT_FALSE(held_second.expired());
+
+  // The grouped Works' own fences were never signaled. Only the actual
+  // parent queue drain licenses access to their output and releasing leases.
+  ASSERT_TRUE(device.with_queue([](void *call, VkQueue queue) {
+    return (*static_cast<PFN_vkQueueWaitIdle *>(call))(queue);
+  }, &queue_idle).ok());
+  EXPECT_FALSE(first_work.retire_ordered(true).pending);
+  EXPECT_FALSE(second_work.retire_ordered(true).pending);
+  EXPECT_TRUE(held_first.expired());
+  EXPECT_TRUE(held_second.expired());
+
+  std::vector<float> actual(2048);
+  auto active = device.activate();
+  ggml_backend_tensor_get(first->output, actual.data(), 0, bytes);
+  EXPECT_EQ(actual, std::vector<float>(2048, 2.0f));
+  ASSERT_TRUE(second_work.submit(second->graph, second).status.ok());
+  ASSERT_TRUE(second_work.wait().status.ok());
+  ggml_backend_tensor_get(second->output, actual.data(), 0, bytes);
+  EXPECT_EQ(actual, std::vector<float>(2048, 2.0f));
+}
+#endif
+
 TEST(GgmlVulkanWork, AlternatingAddAndAddRmsGraphsKeepOriginalMathAndRetirement) {
   auto device = NativeDevice::create().value();
   auto work = device.create_work().value();

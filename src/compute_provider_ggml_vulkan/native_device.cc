@@ -307,9 +307,26 @@ void NativeWork::reset() noexcept {
   pending_ = false;
   device_ = {};
 }
+bool NativeDevice::supports_ordered_submits() const noexcept {
+  return state_ && bridge::supports_ordered_submits(state_->runtime);
+}
+Status NativeDevice::append_ordered_submit(bridge::OrderedSubmitBatch &batch,
+                                          VkCommandBuffer command) const noexcept {
+  return failure(bridge::append_ordered_submit(state_->runtime, batch, command));
+}
+Status NativeDevice::flush_ordered_submits(bridge::OrderedSubmitBatch &batch,
+                                          VkFence fence) const noexcept {
+  return failure(bridge::flush_ordered_submits(state_->runtime, batch, fence));
+}
+
 WorkState
 NativeWork::submit(ggml_cgraph *graph,
                    std::shared_ptr<const void> resource_lease) noexcept {
+  return submit(graph, std::move(resource_lease), nullptr);
+}
+WorkState NativeWork::submit(ggml_cgraph *graph,
+                             std::shared_ptr<const void> resource_lease,
+                             bridge::OrderedSubmitBatch *batch) noexcept {
   if (!work_ || !graph || !resource_lease)
     return {Status::InvalidArgument("ggml Vulkan graph resource lease"),
             pending_};
@@ -323,7 +340,10 @@ NativeWork::submit(ggml_cgraph *graph,
     graph_identity_ = resource_lease;
   }
   lease_ = std::move(resource_lease);
-  const auto result = bridge::submit_work(work_, graph);
+  return report(batch ? bridge::submit_work(work_, graph, *batch)
+                      : bridge::submit_work(work_, graph));
+}
+WorkState NativeWork::report(bridge::WorkReport result) noexcept {
   pending_ = result.pending;
   if (!pending_)
     lease_.reset();
@@ -332,14 +352,13 @@ NativeWork::submit(ggml_cgraph *graph,
 WorkState NativeWork::observe(bool wait) noexcept {
   if (!work_)
     return {Status::InvalidArgument("empty ggml Vulkan region slot")};
-  const auto result = bridge::observe_work(work_, wait);
-  pending_ = result.pending;
-  if (!pending_)
-    lease_.reset();
-  return {failure(result.failure), result.pending, result.device_lost};
+  return report(bridge::observe_work(work_, wait));
 }
 WorkState NativeWork::poll() noexcept { return observe(false); }
 WorkState NativeWork::wait() noexcept { return observe(true); }
+WorkState NativeWork::retire_ordered(bool wait) noexcept {
+  return report(bridge::retire_ordered_work(work_, wait));
+}
 Status NativeWork::invalidate_recording() noexcept {
   if (!work_ || pending_)
     return Status::FailedPrecondition(

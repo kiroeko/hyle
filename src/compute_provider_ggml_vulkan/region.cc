@@ -2113,10 +2113,13 @@ void Region::detach_bindings() noexcept {
   for (auto *view : state_->views) view->data = nullptr;
 }
 WorkState Region::submit() noexcept {
+  return submit(nullptr);
+}
+WorkState Region::submit(bridge::OrderedSubmitBatch *batch) noexcept {
   if (!state_ || !state_->bound)
     return {Status::FailedPrecondition("ggml Vulkan region ports are unbound")};
   const auto result =
-      state_->work.submit(state_->graph.get(), state_->graph.lease());
+      state_->work.submit(state_->graph.get(), state_->graph.lease(), batch);
   state_->pending = result.pending;
   return result;
 }
@@ -2131,6 +2134,13 @@ WorkState Region::wait() noexcept {
   if (!state_)
     return {Status::FailedPrecondition("empty ggml Vulkan region")};
   const auto result = state_->work.wait();
+  state_->pending = result.pending;
+  return result;
+}
+WorkState Region::retire_ordered(bool wait) noexcept {
+  if (!state_)
+    return {Status::FailedPrecondition("empty ggml Vulkan region")};
+  const auto result = state_->work.retire_ordered(wait);
   state_->pending = result.pending;
   return result;
 }

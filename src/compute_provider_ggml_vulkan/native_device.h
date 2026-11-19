@@ -81,6 +81,12 @@ public:
   HYLE_GGML_VULKAN_INTERNAL_API Status
   with_transfer_queue(VkResult (*)(void *, VkQueue), void *) const noexcept;
 
+  HYLE_GGML_VULKAN_INTERNAL_API bool supports_ordered_submits() const noexcept;
+  HYLE_GGML_VULKAN_INTERNAL_API Status append_ordered_submit(
+      bridge::OrderedSubmitBatch &, VkCommandBuffer) const noexcept;
+  HYLE_GGML_VULKAN_INTERNAL_API Status flush_ordered_submits(
+      bridge::OrderedSubmitBatch &, VkFence = VK_NULL_HANDLE) const noexcept;
+
   // One cold controller for one original composed Run, not a global pool.
   HYLE_GGML_VULKAN_INTERNAL_API Result<std::shared_ptr<bridge::RunArena>>
   create_run_arena() const noexcept;
@@ -122,8 +128,12 @@ public:
   HYLE_GGML_VULKAN_INTERNAL_API ~NativeWork();
   HYLE_GGML_VULKAN_INTERNAL_API WorkState
   submit(ggml_cgraph *, std::shared_ptr<const void> resource_lease) noexcept;
+  HYLE_GGML_VULKAN_INTERNAL_API WorkState submit(
+      ggml_cgraph *, std::shared_ptr<const void> resource_lease,
+      bridge::OrderedSubmitBatch *) noexcept;
   HYLE_GGML_VULKAN_INTERNAL_API WorkState poll() noexcept;
   HYLE_GGML_VULKAN_INTERNAL_API WorkState wait() noexcept;
+  HYLE_GGML_VULKAN_INTERNAL_API WorkState retire_ordered(bool wait) noexcept;
   // Idle binding changes invalidate original native commands before dropping
   // their input owners. Pending/failing work retains its original boundary.
   HYLE_GGML_VULKAN_INTERNAL_API Status invalidate_recording() noexcept;
@@ -135,6 +145,7 @@ public:
 private:
   friend class NativeDevice;
   WorkState observe(bool wait) noexcept;
+  WorkState report(bridge::WorkReport) noexcept;
   void reset() noexcept;
   NativeDevice device_;
   bridge::Work *work_ = nullptr;

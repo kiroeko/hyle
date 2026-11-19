@@ -2,6 +2,7 @@
 
 // Private C++17 seam compiled into the locked upstream runtime. None of these
 // declarations or ggml types are part of the installed HYLE interface.
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -95,6 +96,14 @@ struct WorkReport {
   bool pending = false;
   bool device_lost = false;
 };
+// Temporary command list owned by one composed Run's admission call. Its
+// commands reference the original slots, retained through parent retirement.
+struct OrderedSubmitBatch {
+  std::array<VkCommandBuffer, 128> commands;
+  PFN_vkQueueSubmit submit = nullptr;
+  std::uint32_t count = 0;
+  bool accepted = false;
+};
 
 struct Charge {
   void *token = nullptr;
@@ -143,9 +152,15 @@ Failure create_work(Runtime *, Work **) noexcept;
 // its existing pending owner instead of reaching this destructor while busy.
 void destroy_work(Work *) noexcept;
 WorkReport submit_work(Work *, ggml_cgraph *) noexcept;
+WorkReport submit_work(Work *, ggml_cgraph *, OrderedSubmitBatch &) noexcept;
+bool supports_ordered_submits(Runtime *) noexcept;
+Failure append_ordered_submit(Runtime *, OrderedSubmitBatch &,
+                              VkCommandBuffer) noexcept;
+Failure flush_ordered_submits(Runtime *, OrderedSubmitBatch &, VkFence) noexcept;
 Failure invalidate_work_recording(Work *) noexcept;
 bool work_recording_ready(const Work *) noexcept;
 WorkReport observe_work(Work *, bool wait) noexcept;
+WorkReport retire_ordered_work(Work *, bool wait) noexcept;
 VkFence work_fence(const Work *) noexcept;
 Failure create_storage(Runtime *, ggml_cgraph *, bool owns_imports, Storage **,
                        std::size_t *bytes) noexcept;

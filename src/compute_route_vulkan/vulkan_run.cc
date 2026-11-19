@@ -189,7 +189,11 @@ bool retire_regions(Run &run, bool drain) noexcept {
   for (auto &stage : run.stages) {
     if (!stage.managed)
       continue;
+#if defined(__APPLE__)
+    const auto state = stage.managed->retire_ordered(drain);
+#else
     const auto state = drain ? stage.managed->wait() : stage.managed->poll();
+#endif
     if (!state.status.ok() && run.observation_error.ok())
       run.observation_error = state.status;
     if (state.device_lost)
@@ -562,6 +566,45 @@ Status qualify_copy_dependency(const std::shared_ptr<Runtime> &runtime, cd::Comp
 Result<CompletionPoll> poll_native(const std::shared_ptr<Run> &run) noexcept { return observe(run, false); }
 
 namespace {
+#if defined(__APPLE__)
+Status submit_ordered_stages(Run &run, bool &accepted) noexcept {
+  auto &runtime = *run.runtime;
+  const auto &device = *runtime.device;
+  ggml_vulkan::bridge::OrderedSubmitBatch batch;
+  batch.submit = device.fn.QueueSubmit;
+  Status status;
+  for (std::size_t index = 0; index < run.stages.size(); ++index) {
+    auto &stage = run.stages[index];
+    const bool last = index + 1 == run.stages.size();
+    if (stage.managed) {
+      // A managed tail retains its original fence. Submit the ordered prefix
+      // before entering it, including any need for host staging in that tail.
+      if (last) {
+        status = device.provider.flush_ordered_submits(batch);
+        if (!status.ok())
+          break;
+      }
+      const auto submitted = stage.managed->submit(last ? nullptr : &batch);
+      status = submitted.status;
+      accepted = accepted || submitted.pending;
+      if (submitted.device_lost)
+        runtime.failure =
+            native_status(VK_ERROR_DEVICE_LOST, "Vulkan managed submit lost");
+    } else {
+      status = device.provider.append_ordered_submit(batch, stage.native->command);
+      if (status.ok() && last)
+        status = device.provider.flush_ordered_submits(batch, run.fence);
+    }
+    if (!status.ok())
+      break;
+  }
+  // On rejection, an encoded suffix may never have reached the device. The
+  // caller drains the accepted prefix before releasing any stage owner.
+  accepted = accepted || batch.accepted;
+  return status;
+}
+#endif
+
 Status submit_transfer(Run &run, bool &accepted) noexcept {
   auto &device = *run.runtime->device;
   HYLE_RETURN_IF_ERROR(native_status(device.fn.ResetFences(device.native.device, 1, &run.transfer_fence), "vkResetFences(transfer)"));
@@ -680,6 +723,15 @@ Result<Completion> submit_locked(const std::shared_ptr<Run> &run,
       status = submit_native(device, run->command, run->fence);
       accepted = status.ok();
     }
+#if defined(__APPLE__)
+  } else if (run->stages.size() > 1 &&
+             device.provider.supports_ordered_submits()) {
+    status = submit_ordered_stages(*run, accepted);
+    if (!status.ok()) {
+      run->submission_failure = status;
+      run->needs_drain = accepted;
+    }
+#endif
   } else {
     for (std::size_t index = 0; index < run->stages.size(); ++index) {
       auto &stage = run->stages[index];

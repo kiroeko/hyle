@@ -5,6 +5,7 @@
 #include <chrono>
 #include <memory>
 #include <thread>
+#include <utility>
 
 namespace hyle::compute::ggml_vulkan::bridge {
 struct Work {
@@ -14,6 +15,7 @@ struct Work {
   Failure failure;
   bool pending = false;
   bool needs_drain = false;
+  bool ordered_completion = false;
   ggml_cgraph *recorded_graph = nullptr;
   std::vector<vk::CommandBuffer> recorded_commands;
   bool recorded = false;
@@ -32,7 +34,120 @@ bool work_recording_ready(const Work *work) noexcept {
   return work && work->recorded && !work->pending;
 }
 
+bool supports_ordered_submits(Runtime *runtime) noexcept {
+#if defined(__APPLE__) && !defined(GGML_VULKAN_CHECK_RESULTS)
+  Active active(runtime);
+  const auto &device = runtime->instance.devices[0];
+  return device->driver_id == vk::DriverId::eMoltenvk && device->support_async &&
+         !device->serialize_submissions && !vk_perf_logger_enabled;
+#else
+  (void)runtime;
+  return false;
+#endif
+}
+
+Failure flush_ordered_submits(Runtime *runtime, OrderedSubmitBatch &batch,
+                             VkFence fence) noexcept {
+  if (batch.count == 0 && fence == VK_NULL_HANDLE)
+    return {};
+  VkSubmitInfo info{};
+  info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+  info.commandBufferCount = std::exchange(batch.count, 0);
+  info.pCommandBuffers = batch.commands.data();
+  struct Call {
+    PFN_vkQueueSubmit submit;
+    const VkSubmitInfo &info;
+    VkFence fence;
+  } call{batch.submit, info, fence};
+  const auto submitted = with_queue(runtime, [](void *state, VkQueue queue) {
+    const auto &call = *static_cast<const Call *>(state);
+    return call.submit(queue, 1, &call.info, call.fence);
+  }, &call);
+  batch.accepted = batch.accepted || submitted.error == Error::None;
+  return submitted;
+}
+
+Failure append_ordered_submit(Runtime *runtime, OrderedSubmitBatch &batch,
+                              VkCommandBuffer command) noexcept {
+  if (batch.count == batch.commands.size()) {
+    const auto flushed = flush_ordered_submits(runtime, batch, VK_NULL_HANDLE);
+    if (flushed.error != Error::None)
+      return flushed;
+  }
+  batch.commands[batch.count++] = command;
+  return {};
+}
+
 namespace {
+struct OrderedWorkScope;
+thread_local OrderedWorkScope *active_ordered_work = nullptr;
+
+// Vendor encoding may submit a serial prefix or need host staging. Only this
+// Work's resident final batch may join the parent's ordered command list.
+struct OrderedWorkScope {
+  Work &work;
+  ggml_backend_vk_context *context;
+  OrderedSubmitBatch *batch;
+  OrderedWorkScope *previous = nullptr;
+
+  OrderedWorkScope(Work &work, ggml_backend_vk_context *ctx,
+                   OrderedSubmitBatch *batch) noexcept
+      : work(work), context(ctx), batch(batch) {
+    if (batch)
+      previous = std::exchange(active_ordered_work, this);
+  }
+  ~OrderedWorkScope() {
+    if (batch)
+      active_ordered_work = previous;
+  }
+};
+
+void check_ordered_submit(Failure failure) {
+  if (failure.error == Error::None)
+    return;
+  if (failure.native != VK_SUCCESS)
+    throw vk::SystemError(vk::make_error_code(static_cast<vk::Result>(failure.native)),
+                          "Vulkan ordered submit");
+  if (failure.error == Error::Exhausted)
+    throw std::bad_alloc();
+  throw std::runtime_error("Vulkan ordered submit");
+}
+
+void flush_active_ordered_work() {
+  if (const auto *active = active_ordered_work)
+    check_ordered_submit(flush_ordered_submits(active->work.runtime, *active->batch,
+                                               VK_NULL_HANDLE));
+}
+
+void append_work_command(Work &work, OrderedSubmitBatch &batch,
+                         vk::CommandBuffer command) {
+  work.ordered_completion = true;
+  check_ordered_submit(append_ordered_submit(work.runtime, batch,
+                                             static_cast<VkCommandBuffer>(command)));
+}
+
+bool defer_work_submit(ggml_backend_vk_context *ctx, const vk_context &commands) {
+  auto *active = active_ordered_work;
+  if (!active || active->context != ctx || commands->p != &ctx->compute_cmd_pool ||
+      !commands->in_memcpys.empty() || !commands->out_memcpys.empty() ||
+      !commands->memsets.empty())
+    return false;
+  for (const auto &sequence : commands->seqs)
+    for (const auto &submission : sequence)
+      if (!submission.wait_semaphores.empty() || !submission.signal_semaphores.empty())
+        return false;
+
+  for (const auto &sequence : commands->seqs) {
+    for (const auto &submission : sequence) {
+      if (commands->p->hyle_record_commands)
+        commands->p->hyle_record_commands->push_back(submission.buffer->buf);
+      append_work_command(active->work, *active->batch, submission.buffer->buf);
+    }
+  }
+  commands->seqs.clear();
+  return true;
+}
+
 void prepare_descriptors(Work &work, ggml_backend_vk_context &context,
                          const ggml_cgraph &graph) {
   if (work.descriptor_pool || !context.descriptor_sets.empty() ||
@@ -132,6 +247,7 @@ void retire(Work &work) noexcept {
   // This function is called only after the completion fence/all relevant
   // queues have retired, or device loss has terminated their work.
   work.pending = false;
+  work.ordered_completion = false;
   ctx->hyle_completion_fence = nullptr;
   ctx->compute_ctx.reset();
   ctx->transfer_ctx.reset();
@@ -231,7 +347,8 @@ Failure create_work(Runtime *runtime, Work **result) noexcept {
   }
 }
 
-WorkReport submit_work(Work *work, ggml_cgraph *graph) noexcept {
+static WorkReport submit_work_impl(Work *work, ggml_cgraph *graph,
+                                  OrderedSubmitBatch *batch) noexcept {
   if (!work || !graph || graph->n_nodes <= 0)
     return {{Error::InvalidArgument}};
   if (work->pending)
@@ -244,6 +361,7 @@ WorkReport submit_work(Work *work, ggml_cgraph *graph) noexcept {
   }
   Active active(work->runtime);
   auto *ctx = static_cast<ggml_backend_vk_context *>(work->backend->context);
+  OrderedWorkScope ordered(*work, ctx, batch);
   if (work->recorded && work->recorded_graph != graph) {
     const auto invalidated = invalidate_work_recording(work);
     if (invalidated.error != Error::None)
@@ -272,7 +390,12 @@ WorkReport submit_work(Work *work, ggml_cgraph *graph) noexcept {
           work->recorded_commands.data(),
           0,
           nullptr};
-      ctx->device->compute_queue->handle->submit(submitted, work->fence);
+      if (batch) {
+        for (const auto command : work->recorded_commands)
+          append_work_command(*work, *batch, command);
+      } else {
+        ctx->device->compute_queue->handle->submit(submitted, work->fence);
+      }
       ctx->submit_pending = true;
       ctx->hyle_completion_submitted = true;
       ctx->hyle_completion_fence = nullptr;
@@ -332,6 +455,7 @@ WorkReport submit_work(Work *work, ggml_cgraph *graph) noexcept {
     } else if (!ctx->hyle_completion_submitted) {
       // Upstream's explicit serial/diagnostic mode, or a graph without an
       // emitted final batch. One region marker, never a per-kernel wrapper.
+      flush_active_ordered_work();
       ctx->device->compute_queue->handle->submit({}, work->fence);
     }
     const std::array<vk_buffer, 4> current_scratch{
@@ -365,6 +489,14 @@ WorkReport submit_work(Work *work, ggml_cgraph *graph) noexcept {
   return report(*work);
 }
 
+WorkReport submit_work(Work *work, ggml_cgraph *graph) noexcept {
+  return submit_work_impl(work, graph, nullptr);
+}
+WorkReport submit_work(Work *work, ggml_cgraph *graph,
+                       OrderedSubmitBatch &batch) noexcept {
+  return submit_work_impl(work, graph, &batch);
+}
+
 WorkReport observe_work(Work *work, bool wait) noexcept {
   if (!work)
     return {{Error::InvalidArgument}};
@@ -380,7 +512,7 @@ WorkReport observe_work(Work *work, bool wait) noexcept {
       // ownership. Explicit wait/close performs exceptional queue-wide drain.
       if (wait && drain(*work))
         retire(*work);
-    } else {
+    } else if (!work->ordered_completion) {
       const auto device =
           static_cast<VkDevice>(work->runtime->instance.devices[0]->device);
       const auto fence = static_cast<VkFence>(work->fence);
@@ -409,9 +541,21 @@ WorkReport observe_work(Work *work, bool wait) noexcept {
   return report(*work);
 }
 
+WorkReport retire_ordered_work(Work *work, bool wait) noexcept {
+  if (!work || !work->ordered_completion || work->needs_drain)
+    return observe_work(work, wait);
+  // The parent proof covers every accepted command on its compute queue.
+  Active active(work->runtime);
+  if (work->runtime->device_lost.load())
+    remember(*work, {Error::Native, VK_ERROR_DEVICE_LOST});
+  retire(*work);
+  return report(*work);
+}
+
 void destroy_work(Work *work) noexcept {
   if (!work)
     return;
+  GGML_ASSERT(!work->ordered_completion);
   while (work->pending) {
     observe_work(work, true);
     if (work->pending)
@@ -430,3 +574,20 @@ void destroy_work(Work *work) noexcept {
   delete work;
 }
 } // namespace hyle::compute::ggml_vulkan::bridge
+
+static void hyle_flush_ordered_work() {
+#if defined(__APPLE__)
+    hyle::compute::ggml_vulkan::bridge::flush_active_ordered_work();
+#endif
+}
+
+static bool hyle_defer_work_submit(ggml_backend_vk_context *ctx,
+                                   const vk_context &commands) {
+#if defined(__APPLE__)
+    return hyle::compute::ggml_vulkan::bridge::defer_work_submit(ctx, commands);
+#else
+    (void)ctx;
+    (void)commands;
+    return false;
+#endif
+}

@@ -570,9 +570,25 @@
         {
           "before": "            src_clone[2], src_clone[3], src_clone[4], src_clone[5],\n            ggml_get_op_params_i32(tensor, 0));",
           "after": "            src_clone[2], src_clone[3], src_clone[4], src_clone[5],\n            ggml_get_op_params_i32(tensor, 0));\n            // Retain explicit-scale presence and F32 bits in the CPU oracle clone.\n            tensor_clone->op_params[hyle::compute::ggml_runtime::kGdnOutputScaleSlot] =\n                tensor->op_params[hyle::compute::ggml_runtime::kGdnOutputScaleSlot];\n            tensor_clone->op_params[hyle::compute::ggml_runtime::kGdnOutputScalePresenceSlot] =\n                tensor->op_params[hyle::compute::ggml_runtime::kGdnOutputScalePresenceSlot];"
+        },
+        {
+          "before": "static void ggml_vk_submit(vk_context& ctx, vk::Fence fence) {\n",
+          "after": "static void hyle_flush_ordered_work();\nstatic bool hyle_defer_work_submit(ggml_backend_vk_context *, const vk_context &);\n\nstatic void ggml_vk_submit(vk_context& ctx, vk::Fence fence) {\n    hyle_flush_ordered_work();\n"
+        },
+        {
+          "before": "static void ggml_vk_synchronize(ggml_backend_vk_context * ctx) {\n",
+          "after": "static void ggml_vk_synchronize(ggml_backend_vk_context * ctx) {\n    hyle_flush_ordered_work();\n"
+        },
+        {
+          "before": "    // Only run if ctx hasn't been submitted yet\n    if (!subctx->seqs.empty()) {\n#ifdef GGML_VULKAN_CHECK_RESULTS\n        ggml_vk_check_results_0(ctx, cgraph, tensor_idx);\n#endif\n\n        // Do staging buffer copies\n",
+          "after": "    // Only run if ctx hasn't been submitted yet\n    if (!subctx->seqs.empty()) {\n#ifdef GGML_VULKAN_CHECK_RESULTS\n        ggml_vk_check_results_0(ctx, cgraph, tensor_idx);\n#endif\n\n        if (!subctx->in_memcpys.empty() || !subctx->out_memcpys.empty() || !subctx->memsets.empty()) {\n            hyle_flush_ordered_work();\n        }\n        // Do staging buffer copies\n"
+        },
+        {
+          "before": "        if (ctx->hyle_completion_fence && tensor_idx == subctx->exit_tensor_idx) {\n            ggml_vk_submit(subctx, ctx->hyle_completion_fence);\n",
+          "after": "        if (ctx->hyle_completion_fence && tensor_idx == subctx->exit_tensor_idx) {\n            if (!hyle_defer_work_submit(ctx, subctx)) {\n                ggml_vk_submit(subctx, ctx->hyle_completion_fence);\n            }\n"
         }
       ],
-      "after_sha256": "3ab72d2af7f13aff8855f0f1857e5c061b663e9c4112e7d1de969c4045c17837"
+      "after_sha256": "b0a40b5c55998b911a8d8610554ba6e2cd3d5757e983308e70dc65f0bb42958e"
     },
     {
       "path": "src/ggml.cpp",

@@ -96,8 +96,12 @@ public:
       std::span<const std::int32_t> kv_indptr,
       std::span<const std::int32_t> last_page_lengths) noexcept;
   HYLE_GGML_VULKAN_INTERNAL_API WorkState submit() noexcept;
+  HYLE_GGML_VULKAN_INTERNAL_API WorkState submit(
+      bridge::OrderedSubmitBatch *) noexcept;
   HYLE_GGML_VULKAN_INTERNAL_API WorkState poll() noexcept;
   HYLE_GGML_VULKAN_INTERNAL_API WorkState wait() noexcept;
+  // Called after the parent compute fence or queue drain proves retirement.
+  HYLE_GGML_VULKAN_INTERNAL_API WorkState retire_ordered(bool wait) noexcept;
   HYLE_GGML_VULKAN_INTERNAL_API VkFence fence() const noexcept;
   HYLE_GGML_VULKAN_INTERNAL_API std::size_t storage_bytes() const noexcept;
 
