@@ -197,6 +197,8 @@ void rows(i::Backend &backend, Type type, const c::ResourceBudget &budget) {
         selected.codec == q::prepared::ProjectionCodec::kDense && !selected.group_size &&
         read(backend, selected.tensor.ready) == expected && read(backend, source.tensor.ready) == bytes,
         "cold Gather changed source bytes, selected order, storage type or dense codec");
+    require(q::take(selected.tensor.ready.view()).resource() == backend.device(),
+        "selected rows do not belong to the allocation domain used by model constants");
     {
       constexpr std::array<std::int32_t, 3> repeats{5, 2, 5};
       const auto repeated = q::select_stored_weight_rows(backend, source, repeats, budget);
@@ -231,6 +233,25 @@ void rows(i::Backend &backend, Type type, const c::ResourceBudget &budget) {
   require(read(backend, escaped) == expected && q::take(budget.usage(backend.device())).live_bytes > baseline,
       "selected row lease failed to outlive cold Invocation/LoadedWeight or lost its budget charge");
   escaped.reset(); q::check(backend.collect_retired());
+  if (backend.kind() == i::BackendKind::kApple) {
+    // MLX can still hold the last input in a completed command's native
+    // callback. Check exact retirement after real follow-up work on the same
+    // endpoint, using a separate allocation scope for that work.
+    const auto description = q::dense(Type::kFloat32, {4});
+    const std::array input_values{1.0f, -2.0f, 3.0f, -4.0f};
+    q::Tensor next_input(backend.device(), description, true);
+    q::check(backend.write(next_input.storage(), std::as_bytes(std::span(input_values))));
+    next_input.freeze(backend);
+    q::GraphAssembly assembly(backend);
+    auto builder = q::take(g::GraphBuilder::create());
+    const auto input = q::take(builder.input(description));
+    const auto output = q::take(builder.add(c::Unary{.kind = c::UnaryKind::kNeg}, input));
+    q::check(builder.publish(output));
+    const auto graph = q::take(std::move(builder).finish());
+    const auto result = execute(backend, assembly, graph, input, next_input, std::span(&output, 1), {}, {});
+    require(values<float>(backend, result[0]) == std::vector{-1.0f, 2.0f, -3.0f, 4.0f},
+        "same-endpoint work after releasing the selected rows was incorrect");
+  }
   require(q::take(budget.usage(backend.device())).live_bytes == baseline,
       "released original row consumer retained native resources or requested-byte charges");
 }
@@ -693,10 +714,13 @@ int main(int argc, char **argv) {
       auto backend = q::take(i::Backend::create({.primary = i::BackendKind::kCuda}));
       full_head(backend, argv[3], argv[4], argv[5]); return 0;
     }
-    if ((argc != 2 && argc != 4) || (std::string_view(argv[1]) != "cpu" && std::string_view(argv[1]) != "cuda"))
-      throw std::runtime_error("usage: qwen_draft_vocabulary_probe cpu|cuda [LOCAL_MANIFEST SCRATCH_DIR]");
+    const std::string_view backend_name = argc > 1 ? argv[1] : "";
+    if ((argc != 2 && argc != 4) || (backend_name != "cpu" && backend_name != "cuda" && backend_name != "apple"))
+      throw std::runtime_error("usage: qwen_draft_vocabulary_probe cpu|cuda|apple [LOCAL_MANIFEST SCRATCH_DIR]");
     if (argc == 4) metadata(argv[2], argv[3]);
-    const auto kind = std::string_view(argv[1]) == "cpu" ? i::BackendKind::kCpu : i::BackendKind::kCuda;
+    auto kind = i::BackendKind::kCpu;
+    if (backend_name == "cuda") kind = i::BackendKind::kCuda;
+    if (backend_name == "apple") kind = i::BackendKind::kApple;
     auto backend = q::take(i::Backend::create({.primary = kind}));
     std::vector<c::ResourceBudgetLimit> limits;
     for (const auto resource : {backend.device(), backend.host_device(), backend.staging(), m::system_resource()})

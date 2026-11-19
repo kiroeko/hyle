@@ -628,30 +628,46 @@ LoadedWeight select_stored_weight_rows(Backend &backend, const LoadedWeight &wei
     check(hyle::Status::FailedPrecondition("stored weight row selection requires its original loaded ready lease"));
   const auto original = take(weight.tensor.ready.tensor(description));
   const auto resource = original.storage().resource();
-  hyle::inference::GraphBindings bindings(backend.storage_domains());
-  const auto storage = take(bindings.storage_for(resource));
+  const auto storage = take(hyle::inference::GraphBindings(backend.storage_domains()).storage_for(resource));
   const auto index_description = dense(Type::kInt32, {static_cast<std::int64_t>(ids.size())});
   Tensor indices(resource, index_description, true, budget);
   check(backend.write(indices.storage(), std::as_bytes(ids)));
   indices.freeze(backend);
-  auto builder = take(g::GraphBuilder::create());
-  const auto input = take(builder.input(input_description));
-  const auto index = take(builder.input(index_description));
-  const auto output = take(builder.add(c::Gather{.axis = 0, .bounds = c::IndexBoundsPolicy::kChecked}, input, index));
-  check(builder.publish(output));
-  const auto graph = take(std::move(builder).finish());
-  for (const auto value : {input, index, output}) check(bindings.external(value, storage));
-  const std::array placement{g::ValuePlacement{output, storage, g::PlacementStrength::kRequired}};
-  const auto compiled = take(backend.compile(graph, {}, bindings.options(
-      {.resource_budget = budget, .value_placements = placement})));
-  const auto facts = take(hyle::inference::prepare_output(compiled, output));
+  struct RowSelection final {
+    g::CompiledGraph compiled;
+    g::ValueId input;
+    g::ValueId index;
+    hyle::inference::PreparedOutputFacts facts;
+  };
+  const auto compile_selection = [&](bool materialize) {
+    auto builder = take(g::GraphBuilder::create());
+    const auto input = take(builder.input(input_description));
+    const auto index = take(builder.input(index_description));
+    const auto gathered = take(builder.add(c::Gather{.axis = 0, .bounds = c::IndexBoundsPolicy::kChecked}, input, index));
+    const auto output = materialize ? take(builder.add(c::Copy{}, gathered)) : gathered;
+    check(builder.publish(output));
+    const auto graph = take(std::move(builder).finish());
+    hyle::inference::GraphBindings bindings(backend.storage_domains());
+    for (const auto value : {input, index, output}) check(bindings.external(value, storage));
+    const std::array placement{g::ValuePlacement{output, storage, g::PlacementStrength::kRequired}};
+    auto compiled = take(backend.compile(graph, {}, bindings.options(
+        {.resource_budget = budget, .value_placements = placement})));
+    const auto facts = take(hyle::inference::prepare_output(compiled, output));
+    return RowSelection{std::move(compiled), input, index, facts};
+  };
+  auto selection = compile_selection(false);
+  // The selected rows become a borrowed model constant. A native result can
+  // have its own readonly resource even when placed in the right device
+  // domain. Materialize it into the original allocation owner in that case.
+  if (!selection.facts.caller_owned()) selection = compile_selection(true);
+  const auto &[compiled, input, index, facts] = selection;
   if (facts.description != output_description || facts.storage != storage)
     check(hyle::Status::Internal("selected weight output differs from its original stored row contract"));
-  if (facts.caller_owned()) {
-    const auto bytes = take(result.tensor.description.required_bytes());
-    result.tensor.pool = take(c::LeasePool::create(resource, bytes, {.max_blocks = 1, .resource_budget = budget}));
-    result.tensor.writer = take(result.tensor.pool.allocate(bytes));
-  }
+  if (!facts.caller_owned())
+    check(hyle::Status::Internal("selected weight output requires the original allocation owner"));
+  const auto bytes = take(result.tensor.description.required_bytes());
+  result.tensor.pool = take(c::LeasePool::create(resource, bytes, {.max_blocks = 1, .resource_budget = budget}));
+  result.tensor.writer = take(result.tensor.pool.allocate(bytes));
   auto run = take(compiled.executable.create_invocation());
   // The original Invocation retains admitted input/output leases. Retire it
   // before either cold tensor can unwind, preserving the first thrown error.
@@ -663,7 +679,7 @@ LoadedWeight select_stored_weight_rows(Backend &backend, const LoadedWeight &wei
   check(run.prepare_resources({.resource_budget = budget}));
   check(run.bind(input, input_description, weight.tensor.ready));
   check(run.bind(index, index_description, indices.ready));
-  if (facts.caller_owned()) check(run.bind(output, facts.description, std::move(result.tensor.writer)));
+  check(run.bind(facts.value, facts.description, std::move(result.tensor.writer)));
   const auto queues = take(hyle::inference::prepare_queue_bindings(backend.queue_bindings(), compiled.report));
   const auto selected_queues = hyle::inference::queue_span(queues);
   check(run.prepare_replay(selected_queues, {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kAllow}));

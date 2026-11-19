@@ -202,6 +202,7 @@ JSON 的 `mtp_selection_reason` 报告冷期选择或回落原因，`mtp_depth_s
 子集头的接受率取决于实际生成内容；多语言或长尾词较多时，全词表头可能更快。
 选择完整词表时，自动发现的compact头不适用，引擎改用原始头；显式指定不匹配的compact头会报错。
 支持原BF16／F16／F32稠密head；CUDA还支持GGUF Q8_0／Q4_K／Q5_K／Q6_K编码行的子集，保持原量化代码与scale字节。
+Metal 的 BF16 模型可用 `--backend apple --draft-count 2 --draft-vocabulary FILE` 选择来源匹配的子词表。加载时从原始头选行并生成可复用的权重副本。
 子集会增加所选头的行副本；自动选择不按剩余显存回落，显存紧张时可选 `--mtp-draft-vocabulary full` 或 `--mtp off`。
 Q5_K 的行复制、1～4行投影与原ID映射已用合成数据验证；本地2B模型已验证Q5_K完整头及子集头的CUDA单请求greedy生成。
 可用于K1与多草稿；完整target head与embedding继续保留。编码行副本目前只支持CUDA，其它后端跳过自动词表并拒绝显式编码词表。
