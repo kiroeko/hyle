@@ -7,6 +7,7 @@
 #include <cstring>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -101,10 +102,22 @@ struct Indices final {
     HYLE_ASSIGN_OR_RETURN(auto source, c::ConstTensorView::create(description, input));
     return gd::ConstantCopy{destination, source};
   }
-  Status upload(const ExecutionSource &execution, const cd::QueueRef &queue,
-      const std::shared_ptr<c::Queue> &metadata_queue,
-      ResourceOptions options, std::span<const IndexFragment> fragments,
+  Status publish(std::span<const IndexFragment> fragments,
       std::span<std::int32_t> uploaded_ids) noexcept {
+    HYLE_ASSIGN_OR_RETURN(ready, writer.publish());
+    for (const auto &fragment : fragments)
+      for (std::size_t i = 0; i < fragment.sources.size() + fragment.destinations.size(); ++i) {
+        const auto &address = i < fragment.sources.size() ? fragment.sources[i]
+            : fragment.destinations[i - fragment.sources.size()];
+        uploaded_ids[fragment.offset + i] = static_cast<std::int32_t>(address.index);
+      }
+    uploaded = true;
+    return Status::Ok();
+  }
+  Status prepare_upload(const ExecutionSource &execution, const cd::QueueRef &queue,
+      const std::shared_ptr<c::Queue> &metadata_queue,
+      std::span<const IndexFragment> fragments, std::span<std::int32_t> uploaded_ids,
+      std::optional<gd::ConstantCopy> &native) noexcept {
     if (failed || pending.valid() || (!direct && uses.active_batches()))
       return Status::FailedPrecondition("slot index upload is failed or not actually retired");
     std::size_t count = 0;
@@ -138,15 +151,6 @@ struct Indices final {
     HYLE_ASSIGN_OR_RETURN(auto host, host_writer.view());
     if (count != host.size() / sizeof(std::int32_t))
       return Status::InvalidArgument("slot index storage differs from its fixed carrier");
-    const auto remember = [&]() noexcept {
-      for (const auto &fragment : fragments)
-        for (std::size_t i = 0; i < fragment.sources.size() + fragment.destinations.size(); ++i) {
-          const auto &address = i < fragment.sources.size() ? fragment.sources[i]
-              : fragment.destinations[i - fragment.sources.size()];
-          uploaded_ids[fragment.offset + i] = static_cast<std::int32_t>(address.index);
-        }
-      uploaded = true;
-    };
     HYLE_ASSIGN_OR_RETURN(auto mapping, host.map_host());
     HYLE_ASSIGN_OR_RETURN(auto bytes, mapping.writable_bytes());
     for (const auto &fragment : fragments) {
@@ -159,36 +163,17 @@ struct Indices final {
     }
     HYLE_RETURN_IF_ERROR(mapping.flush());
     HYLE_RETURN_IF_ERROR(mapping.close());
-    if (direct) {
-      HYLE_ASSIGN_OR_RETURN(ready, writer.publish());
-      remember();
-      return Status::Ok();
-    }
+    if (direct) return publish(fragments, uploaded_ids);
     HYLE_ASSIGN_OR_RETURN(source, staging.publish());
     HYLE_ASSIGN_OR_RETURN(auto input, source.view());
     HYLE_ASSIGN_OR_RETURN(auto output, writer.view());
     if (!queue.valid()) {
-      // Original native cold transfer, not a second Queue or runtime. The
-      // source prevalidates all ranges and succeeds only after actual native
-      // retirement. Its native owners protect an accepted failing prefix.
+      // Keep the original source and destination leases until their native
+      // batch retires. Only this descriptor is borrowed by the caller.
       HYLE_ASSIGN_OR_RETURN(auto copy, native_copy(output, input));
       HYLE_ASSIGN_OR_RETURN(auto supported, gd::ExecutionSourceAccess::can_copy_constant(execution, copy));
       if (!supported) return Status::Unimplemented("original native source cannot upload slot metadata");
-      const std::array copies{copy};
-      if (options.resource_budget.valid()) {
-        HYLE_ASSIGN_OR_RETURN(auto scratch_bytes, gd::ExecutionSourceAccess::constant_copy_scratch_bytes(execution, copies));
-        HYLE_ASSIGN_OR_RETURN(native_scratch, options.resource_budget.reserve_unattributed(scratch_bytes));
-      }
-      const auto copied = gd::ExecutionSourceAccess::copy_constants(execution, copies, options.allocator);
-      if (!copied.ok()) {
-        // No retry/fallback/publication after possibly accepted native work.
-        // Keep our original endpoints, private backing and scratch charge.
-        failed = true;
-        return copied;
-      }
-      native_scratch = {};
-      HYLE_ASSIGN_OR_RETURN(ready, writer.publish());
-      remember();
+      native = copy;
       return Status::Ok();
     }
     HYLE_ASSIGN_OR_RETURN(auto use, uses.begin());
@@ -204,9 +189,7 @@ struct Indices final {
       return terminal.ok() ? Status::Unavailable("slot metadata upload retirement is unproven") : terminal;
     }
     pending = {};
-    HYLE_ASSIGN_OR_RETURN(ready, writer.publish());
-    remember();
-    return Status::Ok();
+    return publish(fragments, uploaded_ids);
   }
 };
 
@@ -238,8 +221,50 @@ struct ControlBatch final : util::RefCounted<ControlBatch> {
         candidates(mem::StdAllocator<BindCandidate>{selected}),
         transactions(mem::StdAllocator<SlotBindings *>{selected}),
         release_readers(mem::StdAllocator<ValueId>{selected}),
-        release_writers(mem::StdAllocator<NodeId>{selected}) {}
+        release_writers(mem::StdAllocator<NodeId>{selected}),
+        upload_groups(mem::StdAllocator<ControlGroup *>{selected}),
+        upload_copies(mem::StdAllocator<gd::ConstantCopy>{selected}) {}
   void destroy() noexcept { const auto selected = allocator; selected.destroy(this); }
+  Status flush_native_uploads() noexcept {
+    if (upload_groups.empty()) return Status::Ok();
+    auto &first = *upload_groups.front();
+    auto &scratch = first.indices.native_scratch;
+    if (options.resource_budget.valid()) {
+      HYLE_ASSIGN_OR_RETURN(auto bytes, gd::ExecutionSourceAccess::constant_copy_scratch_bytes(first.execution, upload_copies));
+      HYLE_ASSIGN_OR_RETURN(scratch, options.resource_budget.reserve_unattributed(bytes));
+    }
+    const auto copied = gd::ExecutionSourceAccess::copy_constants(first.execution, upload_copies, options.allocator);
+    if (!copied.ok()) {
+      // Any prefix may have been accepted. Retain each endpoint and the
+      // batch's scratch charge. No participant may retry or publish it.
+      for (auto *group : upload_groups) group->indices.failed = true;
+      return copied;
+    }
+    scratch = {};
+    for (auto *group : upload_groups)
+      HYLE_RETURN_IF_ERROR(group->indices.publish(group->fragments, group->uploaded_ids));
+    upload_groups.clear();
+    upload_copies.clear();
+    return Status::Ok();
+  }
+  Status upload_indices() noexcept {
+    for (auto &group : groups) {
+      if (!group.participants) continue;
+      if (!upload_groups.empty() && (group.indices.direct || group.queue.valid() ||
+          !upload_groups.front()->execution.same_owner(group.execution)))
+        HYLE_RETURN_IF_ERROR(flush_native_uploads());
+      std::optional<gd::ConstantCopy> copy;
+      HYLE_RETURN_IF_ERROR(group.indices.prepare_upload(group.execution, group.queue,
+          group.metadata_queue, group.fragments, group.uploaded_ids, copy));
+      if (copy) {
+        // The independent control groups and lifetimes stay intact. The
+        // original native source alone accepts and retires the whole batch.
+        upload_groups.push_back(&group);
+        upload_copies.push_back(*copy);
+      }
+    }
+    return flush_native_uploads();
+  }
   mem::AllocatorRef allocator;
   ResourceOptions options;
   std::vector<ControlGroup, mem::StdAllocator<ControlGroup>> groups;
@@ -247,6 +272,8 @@ struct ControlBatch final : util::RefCounted<ControlBatch> {
   std::vector<SlotBindings *, mem::StdAllocator<SlotBindings *>> transactions;
   std::vector<ValueId, mem::StdAllocator<ValueId>> release_readers;
   std::vector<NodeId, mem::StdAllocator<NodeId>> release_writers;
+  std::vector<ControlGroup *, mem::StdAllocator<ControlGroup *>> upload_groups;
+  std::vector<gd::ConstantCopy, mem::StdAllocator<gd::ConstantCopy>> upload_copies;
 };
 } // namespace
 
@@ -1060,6 +1087,13 @@ Status prepare_impl(Invocation &invocation, const Graph *graph,
     controls->transactions.reserve(pending.size());
     controls->release_readers.reserve(pending.size());
     controls->release_writers.reserve(pending.size());
+    if (std::ranges::any_of(pending, [](const auto &item) {
+          return !item.queue.valid() &&
+              !item.found.facts.resource.properties().has(mem::MemoryProperty::kHostAccessible);
+        })) {
+      controls->upload_groups.reserve(pending.size());
+      controls->upload_copies.reserve(pending.size());
+    }
   } catch (...) { return Status::ResourceExhausted("slot carrier group metadata"); }
   for (std::size_t i = 0; i < pending.size(); ++i) {
     auto &item = pending[i];
@@ -1157,6 +1191,8 @@ Status bind(Invocation &invocation, const Graph &graph,
         }
       }
       controls.transactions.clear();
+      controls.upload_groups.clear();
+      controls.upload_copies.clear();
     }
   } scratch_reset{*controls};
   // Scratch belongs to cold preparation, not to the caller or an executor.
@@ -1263,11 +1299,7 @@ Status bind(Invocation &invocation, const Graph &graph,
         : std::span<const c::LeaseSlotAddress>{};
     fragment.destinations = candidate.bindings->destination_addresses();
   }
-  for (auto &group : controls->groups) {
-    if (!group.participants) continue;
-    HYLE_RETURN_IF_ERROR(group.indices.upload(group.execution, group.queue, group.metadata_queue, controls->options,
-        group.fragments, group.uploaded_ids));
-  }
+  HYLE_RETURN_IF_ERROR(controls->upload_indices());
   const auto install = [&]() noexcept -> Status {
     // Configure every selected artifact before installing even the first
     // writer. All controls are exact slices of their single fixed group lease.
