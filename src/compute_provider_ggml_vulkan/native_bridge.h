@@ -99,7 +99,8 @@ struct WorkReport {
 // Temporary command list owned by one composed Run's admission call. Its
 // commands reference the original slots, retained through parent retirement.
 struct OrderedSubmitBatch {
-  std::array<VkCommandBuffer, 128> commands;
+  // Bound how long MoltenVK waits for the rest of a Run to be encoded.
+  std::array<VkCommandBuffer, 8> commands;
   PFN_vkQueueSubmit submit = nullptr;
   std::uint32_t count = 0;
   bool accepted = false;

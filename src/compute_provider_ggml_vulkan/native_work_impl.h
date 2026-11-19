@@ -21,7 +21,7 @@ struct Work {
   bool recorded = false;
   ggml_cgraph *assessed_graph = nullptr;
   bool fixed_attention = false;
-  bool has_rms_norm = true;
+  bool needs_rms_partials = true;
   bool has_dispatch = false;
   DescriptorPoolBlock *descriptor_pool = nullptr;
   std::vector<vk::DescriptorSet> borrowed_descriptors;
@@ -269,6 +269,21 @@ void retire(Work &work) noexcept {
   }
   ctx->device->diag_cgraph = nullptr;
 }
+bool may_use_rms_partials(const ggml_backend_vk_context &context,
+                          const ggml_cgraph &graph) {
+  if (!context.device->add_rms_fusion)
+    return false;
+  // A fused producer starts with an Add. Its last node must feed the next
+  // RMS norm directly. Keep the original scratch for every such candidate.
+  bool seen_add = false;
+  for (int index = 0; index < graph.n_nodes; ++index) {
+    if (seen_add && ggml_vk_rms_partials_consumer(graph, index))
+      return true;
+    seen_add = seen_add || graph.nodes[index]->op == GGML_OP_ADD;
+  }
+  return false;
+}
+
 bool fixed_attention_graph(const ggml_cgraph *graph) {
   bool attention = false;
   for (int i = 0; i < graph->n_nodes; ++i) {
@@ -404,8 +419,7 @@ static WorkReport submit_work_impl(Work *work, ggml_cgraph *graph,
     prepare_descriptors(*work, *ctx, *graph);
     if (work->assessed_graph != graph) {
       work->fixed_attention = fixed_attention_graph(graph);
-      work->has_rms_norm = std::any_of(graph->nodes, graph->nodes + graph->n_nodes,
-          [](const ggml_tensor *node) { return node->op == GGML_OP_RMS_NORM; });
+      work->needs_rms_partials = may_use_rms_partials(*ctx, *graph);
       work->has_dispatch = std::any_of(graph->nodes, graph->nodes + graph->n_nodes,
           [](ggml_tensor *node) {
             return !ggml_vk_is_empty(node) &&
@@ -422,11 +436,10 @@ static WorkReport submit_work_impl(Work *work, ggml_cgraph *graph,
     const std::array<std::weak_ptr<vk_buffer_struct>, 4> recording_scratch{
         ctx->prealloc_x, ctx->prealloc_y, ctx->prealloc_split_k,
         ctx->prealloc_add_rms_partials};
-    // Only an Add -> RmsNorm fusion consumes these partials. Every unrelated
-    // finite region otherwise inherits a private allocation and clear, even
-    // when it is not eligible for attention recording. Keep RMS regions on
-    // the original sizing path and restore that metadata after execution.
-    if (!work->has_rms_norm)
+    // A graph without a candidate consumer does not read the partial sums.
+    // Avoid its private allocation and host clear. Restore the original
+    // sizing metadata after execution so another graph can use it.
+    if (!work->needs_rms_partials)
       ctx->prealloc_size_add_rms_partials = 0;
     ctx->compute_cmd_pool.hyle_record_commands =
         eligible ? &work->recorded_commands : nullptr;

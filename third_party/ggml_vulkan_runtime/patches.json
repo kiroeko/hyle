@@ -586,9 +586,17 @@
         {
           "before": "        if (ctx->hyle_completion_fence && tensor_idx == subctx->exit_tensor_idx) {\n            ggml_vk_submit(subctx, ctx->hyle_completion_fence);\n",
           "after": "        if (ctx->hyle_completion_fence && tensor_idx == subctx->exit_tensor_idx) {\n            if (!hyle_defer_work_submit(ctx, subctx)) {\n                ggml_vk_submit(subctx, ctx->hyle_completion_fence);\n            }\n"
+        },
+        {
+          "before": "static void ggml_vk_compute_forward(ggml_backend_vk_context* ctx, ggml_cgraph * cgraph, ggml_tensor* tensor, int tensor_idx, bool almost_ready);\n",
+          "after": "// The preceding producer may be the last operation in a fused Add group.\nstatic bool ggml_vk_rms_partials_consumer(const ggml_cgraph & graph, int index) {\n    if (index <= 0 || index >= graph.n_nodes) {\n        return false;\n    }\n    const auto * node = graph.nodes[index];\n    return node->op == GGML_OP_RMS_NORM && node->src[0] == graph.nodes[index - 1] &&\n           ggml_nrows(node) == 1;\n}\n\nstatic void ggml_vk_compute_forward(ggml_backend_vk_context* ctx, ggml_cgraph * cgraph, ggml_tensor* tensor, int tensor_idx, bool almost_ready);\n"
+        },
+        {
+          "before": "        if (next_node_idx < cgraph->n_nodes &&\n            cgraph->nodes[next_node_idx]->op == GGML_OP_RMS_NORM &&\n            cgraph->nodes[next_node_idx]->src[0] == cgraph->nodes[next_node_idx - 1] &&\n            ggml_nrows(cgraph->nodes[next_node_idx]) == 1 &&\n            ctx->device->add_rms_fusion) {\n",
+          "after": "        if (ctx->device->add_rms_fusion && ggml_vk_rms_partials_consumer(*cgraph, next_node_idx)) {\n"
         }
       ],
-      "after_sha256": "b0a40b5c55998b911a8d8610554ba6e2cd3d5757e983308e70dc65f0bb42958e"
+      "after_sha256": "a8e84359a1ee044cee83bfcc730e6a51ac89c6771d17b263de36e46cdeebcffd"
     },
     {
       "path": "src/ggml.cpp",

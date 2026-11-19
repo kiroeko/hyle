@@ -366,30 +366,27 @@ TEST(VulkanLeaseLifetime,
       std::weak_ptr<const void> owner = input.native_owner();
       auto source =
           memory.import_readonly(input, {.allocator = stats.get()}).value();
-      // The same original native/managed/native plan as the established prefix
-      // fixture. Only binding/admission now goes through the public lease
-      // owner.
+      // Use enough native and managed stages to submit a real prefix even
+      // when the queue can combine a short sequence into one submission.
+      constexpr std::uint32_t pairs = 6;
+      constexpr std::uint32_t tail = 2 * pairs + 1;
       d::Plan plan;
-      plan.values.assign(4, {desc, {}});
+      plan.values.assign(tail + 1, {desc, {}});
       plan.inputs = {0};
-      plan.outputs = {3};
-      plan.steps = {{c::Operation(c::Unary{c::UnaryKind::kRelu}),
-                     {0},
-                     {1},
-                     {},
-                     {1, 1, 1},
-                     {}},
-                    {c::Operation(c::RmsNorm{}), {1}, {2}, {}, {1, 1, 1}, {}},
-                    {c::Operation(c::Unary{c::UnaryKind::kRelu}),
-                     {2},
-                     {3},
-                     {},
-                     {1, 1, 1},
-                     {}}};
+      plan.outputs = {tail};
+      for (std::uint32_t index = 0; index < pairs; ++index) {
+        const auto input_index = 2 * index;
+        plan.steps.push_back({c::Operation(c::Unary{c::UnaryKind::kRelu}),
+                              {input_index}, {input_index + 1}, {}, {1, 1, 1}, {}});
+        plan.steps.push_back({c::Operation(c::RmsNorm{}), {input_index + 1},
+                              {input_index + 2}, {}, {1, 1, 1}, {}});
+      }
+      plan.steps.push_back({c::Operation(c::Unary{c::UnaryKind::kRelu}),
+                            {tail - 1}, {tail}, {}, {1, 1, 1}, {}});
       d::PlanFacts facts;
       auto program = d::prepare_plan(context, plan, &facts).value();
-      ASSERT_EQ(facts.native_dispatch_count, 2U);
-      ASSERT_EQ(facts.managed_region_count, 1U);
+      ASSERT_EQ(facts.native_dispatch_count, pairs + 1);
+      ASSERT_EQ(facts.managed_region_count, pairs);
       NativeBoundary boundary(context);
       DrainLeaseContext drain{context};
       auto slot = v::LeasedInvocation::create(program, memory,
