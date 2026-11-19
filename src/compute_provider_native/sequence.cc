@@ -10,6 +10,12 @@
 #include <utility>
 
 #include "hyle/compute/sequence_ops.h"
+#include "hyle/core/compiler.h"
+#include "hyle/platform/cpu.h"
+
+#if HYLE_ARCH_X64 && HYLE_COMPILER_MSVC
+#include <immintrin.h>
+#endif
 #include "hyle/mem/resource.h"
 
 namespace hyle::compute::native::internal {
@@ -95,7 +101,16 @@ template <class Value> struct GdnEpisode final {
   std::size_t key_heads, value_heads, key_depth, value_depth, gate_depth;
 };
 
-template <class Value, bool Prefixes = false>
+template <bool HardwareFma>
+HYLE_FORCE_INLINE float recurrent_fma(float a, float b, float c) noexcept {
+#if HYLE_ARCH_X64 && HYLE_COMPILER_MSVC
+  if constexpr (HardwareFma)
+    return _mm_cvtss_f32(_mm_fmadd_ss(_mm_set_ss(a), _mm_set_ss(b), _mm_set_ss(c)));
+#endif
+  return std::fma(a, b, c);
+}
+
+template <class Value, bool Prefixes, bool HardwareFma>
 void run_gdn(void *context, std::size_t, std::size_t begin, std::size_t end) noexcept {
   const auto &episode = *static_cast<GdnEpisode<Value> *>(context);
   const auto &maps = *episode.maps;
@@ -125,15 +140,15 @@ void run_gdn(void *context, std::size_t, std::size_t begin, std::size_t end) noe
       float prediction = 0.0F;
       for (std::size_t key = 0; key != dk; ++key) {
         state[key] *= decay;
-        prediction = std::fma(state[key], numeric::load<Value>(maps.source[1] +
+        prediction = recurrent_fma<HardwareFma>(state[key], numeric::load<Value>(maps.source[1] +
             (key_base + key) * sizeof(Value)), prediction);
       }
       const float delta = beta * (numeric::load<Value>(maps.source[2] + value_index * sizeof(Value)) - prediction);
       float attended = 0.0F;
       for (std::size_t key = 0; key != dk; ++key) {
-        state[key] = std::fma(delta, numeric::load<Value>(maps.source[1] +
+        state[key] = recurrent_fma<HardwareFma>(delta, numeric::load<Value>(maps.source[1] +
             (key_base + key) * sizeof(Value)), state[key]);
-        attended = std::fma(state[key], numeric::load<Value>(maps.source[0] +
+        attended = recurrent_fma<HardwareFma>(state[key], numeric::load<Value>(maps.source[0] +
             (key_base + key) * sizeof(Value)), attended);
       }
       numeric::store<Value>(maps.target[0] + value_index * sizeof(Value), attended * episode.plan->scalar);
@@ -158,7 +173,7 @@ void run_gdn(void *context, std::size_t, std::size_t begin, std::size_t end) noe
   }
 }
 
-template <class Value, bool Prefixes = false>
+template <class Value, bool Prefixes = false, bool HardwareFma = false>
 detail::EnqueueResult submit_gdn(const NativePlan &plan, std::span<const ConstTensorView> inputs,
                                 std::span<const TensorView> outputs) noexcept {
   if (inputs.size() != 7 || outputs.size() != 2)
@@ -181,9 +196,25 @@ detail::EnqueueResult submit_gdn(const NativePlan &plan, std::span<const ConstTe
         static_cast<std::size_t>(inputs[0].description().dimensions()[1]),
         static_cast<std::size_t>(state[1]), static_cast<std::size_t>(state[3]),
         static_cast<std::size_t>(state[2]), static_cast<std::size_t>(inputs[3].description().dimensions()[2])};
-    parallel_for_ranges(plan, plan.parameters[0], &run_gdn<Value, Prefixes>, &episode);
+    parallel_for_ranges(plan, plan.parameters[0], &run_gdn<Value, Prefixes, HardwareFma>, &episode);
   }
   return completed(maps.close(std::move(status), outputs));
+}
+
+template <bool Prefixes = false>
+SubmitRoute select_gdn_submit(DataType type) noexcept {
+  if (type == DataType::kFloat32) {
+#if HYLE_ARCH_X64 && HYLE_COMPILER_MSVC
+    // The baseline x64 build otherwise calls the CRT for each FMA.
+    // Select the identical ordered hardware operation during preparation.
+    using enum platform::CpuFeature;
+    if (platform::cpu_features().has_all(platform::CpuFeatureSet{kX86Avx, kX86Fma}))
+      return &submit_gdn<float, Prefixes, true>;
+#endif
+    return &submit_gdn<float, Prefixes>;
+  }
+  return type == DataType::kFloat16 ? &submit_gdn<simd::float16_t, Prefixes>
+                                   : &submit_gdn<simd::bfloat16_t, Prefixes>;
 }
 
 template <class Value> struct ConvEpisode final {
@@ -254,16 +285,14 @@ Status prepare_sequence(Operation operation, std::span<const TensorDesc> inputs,
                         static_cast<std::size_t>(state[3]), *outputs[0].required_bytes()};
     plan.scalar_bits = gdn->snapshot_count;
     plan.scalar = gdn->output_scale.value_or(1.0F / std::sqrt(static_cast<float>(state[3])));
-    plan.submit_route = type == DataType::kFloat32 ? &submit_gdn<float>
-        : type == DataType::kFloat16 ? &submit_gdn<simd::float16_t> : &submit_gdn<simd::bfloat16_t>;
+    plan.submit_route = select_gdn_submit<>(type);
   } else if (const auto prefixes = operation.custom_as<sequence_ops::PackedGatedDeltaNetPrefixes>()) {
     const auto state = inputs[5].dimensions();
     plan.parameters = {*inputs[5].element_count() / static_cast<std::size_t>(state[3]),
                         static_cast<std::size_t>(state[3]), *outputs[0].required_bytes()};
     plan.scalar_bits = prefixes->max_prefixes;
     plan.scalar = prefixes->output_scale.value_or(1.0F / std::sqrt(static_cast<float>(state[3])));
-    plan.submit_route = type == DataType::kFloat32 ? &submit_gdn<float, true>
-        : type == DataType::kFloat16 ? &submit_gdn<simd::float16_t, true> : &submit_gdn<simd::bfloat16_t, true>;
+    plan.submit_route = select_gdn_submit<true>(type);
   } else if (operation.custom_as<sequence_ops::PackedCausalConv1d>()) {
     const auto history = inputs[2].dimensions();
     // A K=1 empty history still needs one independent work unit for every
