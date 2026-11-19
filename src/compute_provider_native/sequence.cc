@@ -173,7 +173,74 @@ void run_gdn(void *context, std::size_t, std::size_t begin, std::size_t end) noe
   }
 }
 
-template <class Value, bool Prefixes = false, bool HardwareFma = false>
+
+#if HYLE_ARCH_X64 && HYLE_COMPILER_MSVC
+inline constexpr std::size_t kChannelTile = 8;
+inline constexpr std::size_t kKeyTileCapacity = 256;
+
+// Each lane owns one value channel. The F32 accumulators traverse keys in
+// the original order and the tile is private to this GDN range invocation.
+void run_gdn_channel_tile(void *context, std::size_t, std::size_t begin,
+                          std::size_t end) noexcept {
+  const auto &episode = *static_cast<GdnEpisode<float> *>(context);
+  const auto &maps = *episode.maps;
+  const auto heads = episode.value_heads, dv = episode.value_depth, dk = episode.key_depth;
+  const auto q = reinterpret_cast<const float *>(maps.source[0]);
+  const auto k = reinterpret_cast<const float *>(maps.source[1]);
+  const auto v = reinterpret_cast<const float *>(maps.source[2]);
+  const auto gate = reinterpret_cast<const float *>(maps.source[3]);
+  const auto beta = reinterpret_cast<const float *>(maps.source[4]);
+  const auto initial_state = reinterpret_cast<const float *>(maps.source[5]);
+  auto *values = reinterpret_cast<float *>(maps.target[0]);
+  auto *final_state = reinterpret_cast<float *>(maps.target[1]);
+  const auto scale = _mm256_set1_ps(episode.plan->scalar);
+  const auto strides = _mm256_mullo_epi32(_mm256_setr_epi32(0, 1, 2, 3, 4, 5, 6, 7),
+                                         _mm256_set1_epi32(static_cast<int>(dk)));
+  alignas(32) __m256 state[kKeyTileCapacity];
+  for (auto tile = begin; tile != end; ++tile) {
+    const auto unit = tile * kChannelTile;
+    const auto batch = unit / (heads * dv), head = unit / dv % heads, channel = unit % dv;
+    const auto first = offset_at(maps.source[6], batch), last = offset_at(maps.source[6], batch + 1);
+    const auto initial = initial_state + unit * dk;
+    auto *result_state = final_state + unit * dk;
+    if (first == last) {
+      std::memcpy(result_state, initial, kChannelTile * dk * sizeof(float));
+      continue;
+    }
+    for (std::size_t key = 0; key != dk; ++key)
+      state[key] = _mm256_i32gather_ps(initial + key, strides, 4);
+    for (auto row = first; row != last; ++row) {
+      const auto key_base = (row * episode.key_heads + head % episode.key_heads) * dk;
+      const auto gate_index = row * heads + head;
+      const auto value_index = gate_index * dv + channel;
+      const auto decay = _mm256_set1_ps(std::exp(gate[gate_index]));
+      auto prediction = _mm256_setzero_ps();
+      for (std::size_t key = 0; key != dk; ++key) {
+        const auto decayed = _mm256_mul_ps(state[key], decay);
+        prediction = _mm256_fmadd_ps(decayed, _mm256_set1_ps(k[key_base + key]), prediction);
+        state[key] = decayed;
+      }
+      const auto remaining = _mm256_sub_ps(_mm256_loadu_ps(v + value_index), prediction);
+      const auto delta = _mm256_mul_ps(_mm256_set1_ps(beta[gate_index]), remaining);
+      auto attended = _mm256_setzero_ps();
+      for (std::size_t key = 0; key != dk; ++key) {
+        const auto updated = _mm256_fmadd_ps(delta, _mm256_set1_ps(k[key_base + key]), state[key]);
+        attended = _mm256_fmadd_ps(updated, _mm256_set1_ps(q[key_base + key]), attended);
+        state[key] = updated;
+      }
+      _mm256_storeu_ps(values + value_index, _mm256_mul_ps(attended, scale));
+    }
+    alignas(32) float column[kChannelTile];
+    for (std::size_t key = 0; key != dk; ++key) {
+      _mm256_store_ps(column, state[key]);
+      for (std::size_t lane = 0; lane != kChannelTile; ++lane)
+        result_state[lane * dk + key] = column[lane];
+    }
+  }
+}
+#endif
+
+template <class Value, bool Prefixes = false, bool HardwareFma = false, bool ChannelTile = false>
 detail::EnqueueResult submit_gdn(const NativePlan &plan, std::span<const ConstTensorView> inputs,
                                 std::span<const TensorView> outputs) noexcept {
   if (inputs.size() != 7 || outputs.size() != 2)
@@ -196,6 +263,11 @@ detail::EnqueueResult submit_gdn(const NativePlan &plan, std::span<const ConstTe
         static_cast<std::size_t>(inputs[0].description().dimensions()[1]),
         static_cast<std::size_t>(state[1]), static_cast<std::size_t>(state[3]),
         static_cast<std::size_t>(state[2]), static_cast<std::size_t>(inputs[3].description().dimensions()[2])};
+#if HYLE_ARCH_X64 && HYLE_COMPILER_MSVC
+    if constexpr (ChannelTile) {
+      parallel_for_ranges(plan, plan.parameters[0] / kChannelTile, &run_gdn_channel_tile, &episode);
+    } else
+#endif
     parallel_for_ranges(plan, plan.parameters[0], &run_gdn<Value, Prefixes, HardwareFma>, &episode);
   }
   return completed(maps.close(std::move(status), outputs));
@@ -286,6 +358,17 @@ Status prepare_sequence(Operation operation, std::span<const TensorDesc> inputs,
     plan.scalar_bits = gdn->snapshot_count;
     plan.scalar = gdn->output_scale.value_or(1.0F / std::sqrt(static_cast<float>(state[3])));
     plan.submit_route = select_gdn_submit<>(type);
+#if HYLE_ARCH_X64 && HYLE_COMPILER_MSVC
+    // The copy into a channel tile is amortized by more than one row.
+    // Each sequence has one final state and one gate per value head.
+    using enum platform::CpuFeature;
+    if (type == DataType::kFloat32 && gdn->snapshot_count == 1 &&
+        inputs[0].dimensions()[0] > 1 && inputs[3].dimensions()[2] == 1 &&
+        state[2] % kChannelTile == 0 && state[3] <= kKeyTileCapacity &&
+        platform::cpu_features().has_all(platform::CpuFeatureSet{kX86Avx2, kX86Fma}))
+      plan.submit_route = &submit_gdn<float, false, true, true>;
+#endif
+
   } else if (const auto prefixes = operation.custom_as<sequence_ops::PackedGatedDeltaNetPrefixes>()) {
     const auto state = inputs[5].dimensions();
     plan.parameters = {*inputs[5].element_count() / static_cast<std::size_t>(state[3]),

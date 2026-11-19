@@ -56,6 +56,49 @@ TEST(CpuPackedSequence, GdnPackedRowsAndPerChannelDecayMatchReference) {
   p::gdn_math<hyle::simd::bfloat16_t>(context,hyle::mem::system_resource());
 }
 
+TEST(CpuPackedSequence, GdnChannelTilesMatchIdenticalPerChannelGates) {
+  auto context = c::cpu::create_context().value();
+  const auto resource = hyle::mem::system_resource();
+  const auto f32 = c::DataType::kFloat32;
+  constexpr std::int64_t rows = 8, batches = 2, hk = 2, hv = 4, dv = 16;
+  for (const auto dk : {std::int64_t{17}, std::int64_t{128}, std::int64_t{256}, std::int64_t{257}}) {
+    SCOPED_TRACE(dk);
+    const auto q = p::values<float>(rows * hk * dk, 1);
+    const auto k = p::values<float>(rows * hk * dk, 2);
+    const auto v = p::values<float>(rows * hv * dv, 3);
+    const auto gates = p::values<float>(rows * hv, 4);
+    const auto beta = p::values<float>(rows * hv, 5);
+    auto initial = p::values<float>(batches * hv * dv * dk, 6);
+    initial[0] = -0.0F;
+    std::vector<float> channel_gates;
+    for (const auto gate : gates)
+      channel_gates.insert(channel_gates.end(), dv, gate);
+
+    std::array descriptions{p::desc(f32,{rows,hk,dk}), p::desc(f32,{rows,hk,dk}),
+        p::desc(f32,{rows,hv,dv}), p::desc(f32,{rows,hv,1}), p::desc(f32,{rows,hv,1}),
+        p::desc(f32,{batches,hv,dv,dk}), p::desc(c::DataType::kInt32,{batches+1})};
+    std::vector data{p::bytes(q), p::bytes(k), p::bytes(v), p::bytes(gates), p::bytes(beta),
+        p::bytes(initial), p::bytes(std::vector<std::int32_t>{0,1,4})};
+    const auto operation = c::sequence_ops::packed_gated_delta_net();
+    p::Case shared_gate(context, resource, operation, descriptions, data);
+    descriptions[3] = p::desc(f32,{rows,hv,dv});
+    data[3] = p::bytes(channel_gates);
+    p::Case channel_gate(context, resource, operation, descriptions, data);
+    for (const auto offsets : {std::array<std::int32_t,3>{0,1,4}, std::array<std::int32_t,3>{0,0,3}}) {
+      shared_gate.offsets(offsets);
+      channel_gate.offsets(offsets);
+      ASSERT_TRUE(shared_gate.submit().ok());
+      ASSERT_TRUE(channel_gate.submit().ok());
+      EXPECT_EQ(shared_gate.read<std::uint32_t>(0), channel_gate.read<std::uint32_t>(0));
+      EXPECT_EQ(shared_gate.read<std::uint32_t>(1), channel_gate.read<std::uint32_t>(1));
+    }
+    shared_gate.poison();
+    shared_gate.offsets(std::array<std::int32_t,3>{0,4,9});
+    EXPECT_TRUE(shared_gate.submit().IsInvalidArgument());
+    shared_gate.expect_poison();
+  }
+}
+
 TEST(CpuPackedSequence, GdnSnapshotsFollowEachRealSequenceAndRejectShortTail) {
   auto context = c::cpu::create_context().value();
   p::gdn_snapshots(context,hyle::mem::system_resource());
