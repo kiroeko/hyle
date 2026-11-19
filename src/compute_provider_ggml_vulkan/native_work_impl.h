@@ -320,6 +320,11 @@ WorkReport submit_work(Work *work, ggml_cgraph *graph) noexcept {
       imported_inputs = ggml_vk_get_compute_ctx(ctx);
       ggml_vk_sync_buffers(ctx, imported_inputs);
     }
+    // This ordered Work is already a prepared graph fragment. MoltenVK
+    // allocates Metal command buffers for its split submissions. Keep the
+    // original node and completion boundaries without its FLOP heuristic.
+    if (ctx->device->driver_id == vk::DriverId::eMoltenvk)
+      ctx->last_total_flops = 0;
     if (ggml_backend_vk_graph_compute(work->backend, graph) !=
         GGML_STATUS_SUCCESS) {
       remember(*work, {Error::Internal});
