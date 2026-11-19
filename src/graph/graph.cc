@@ -13,6 +13,8 @@
 namespace hyle::graph {
 namespace {
 
+using container::detail::SmallVectorAccess;
+
 std::uint64_t next_generation() noexcept {
   static std::atomic<std::uint64_t> next{1};
   std::uint64_t generation = next.fetch_add(1, std::memory_order_relaxed);
@@ -251,13 +253,19 @@ append_node(detail::BuilderState &state,
     else if (!value.error().IsFailedPrecondition())
       return std::unexpected(std::move(value).error());
   }
+  // Reserve every affected record before publishing any part of the node.
   const auto *view = std::get_if<ViewSpec>(&descriptor);
-  if (view != nullptr && (!fits_value_ordinal(state.views.size()) ||
-                          !state.views.try_reserve(state.views.size() + 1)))
+  if (view != nullptr &&
+      (!fits_value_ordinal(state.views.size()) ||
+       !SmallVectorAccess::try_reserve_growth(state.views,
+                                              state.views.size() + 1)))
     return std::unexpected(allocation_failure());
-  if (!state.edges.try_reserve(state.edges.size() + inputs.size()) ||
-      !state.nodes.try_reserve(state.nodes.size() + 1) ||
-      !state.values.try_reserve(state.values.size() + outputs.size()))
+  if (!SmallVectorAccess::try_reserve_growth(state.edges,
+                                             state.edges.size() + inputs.size()) ||
+      !SmallVectorAccess::try_reserve_growth(state.nodes,
+                                             state.nodes.size() + 1) ||
+      !SmallVectorAccess::try_reserve_growth(state.values,
+                                             state.values.size() + outputs.size()))
     return std::unexpected(allocation_failure());
   const auto ordinal = static_cast<std::uint32_t>(state.nodes.size());
   const auto edge_begin = static_cast<std::uint32_t>(state.edges.size());
@@ -1070,8 +1078,10 @@ Result<ValueId> GraphBuilder::input(TensorSpec spec) noexcept {
     return std::unexpected(
         Status::ResourceExhausted("graph value identity space is exhausted"));
   }
-  if (!state_->values.try_reserve(state_->values.size() + 1) ||
-      !state_->inputs.try_reserve(state_->inputs.size() + 1)) {
+  if (!SmallVectorAccess::try_reserve_growth(state_->values,
+                                             state_->values.size() + 1) ||
+      !SmallVectorAccess::try_reserve_growth(state_->inputs,
+                                             state_->inputs.size() + 1)) {
     return std::unexpected(allocation_failure());
   }
 
@@ -1117,8 +1127,10 @@ Result<ValueId> GraphBuilder::constant(TensorSpec spec) noexcept {
     return std::unexpected(
         Status::ResourceExhausted("graph value identity space is exhausted"));
   }
-  if (!state_->values.try_reserve(state_->values.size() + 1) ||
-      !state_->constants.try_reserve(state_->constants.size() + 1)) {
+  if (!SmallVectorAccess::try_reserve_growth(state_->values,
+                                             state_->values.size() + 1) ||
+      !SmallVectorAccess::try_reserve_growth(state_->constants,
+                                             state_->constants.size() + 1)) {
     return std::unexpected(allocation_failure());
   }
 

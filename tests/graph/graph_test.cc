@@ -913,6 +913,35 @@ TEST(GraphBuilder, AllocationFailureDoesNotPublishPartialLogicalState) {
   EXPECT_EQ(graph.node_count(), 1u);
 }
 
+TEST(GraphBuilder, MetadataGrowthIsAmortizedAcrossAppends) {
+  AllocatorProbe probe;
+  auto builder = GraphBuilder::create({probe_allocator(probe)}).value();
+  const auto description = row(4);
+  const auto view = ViewSpec::reshape(std::array{Dimension::fixed(4)}).value();
+  constexpr std::size_t groups = 512;
+  hyle::graph::ValueId output;
+  for (std::size_t i = 0; i < groups; ++i) {
+    const auto input = builder.input(description);
+    const auto constant = builder.constant(description);
+    ASSERT_TRUE(input.has_value());
+    ASSERT_TRUE(constant.has_value());
+    const auto sum = builder.add(hyle::compute::Binary{}, *input, *constant);
+    ASSERT_TRUE(sum.has_value());
+    const auto result = builder.add(view, *sum);
+    ASSERT_TRUE(result.has_value());
+    output = *result;
+  }
+  EXPECT_LT(probe.allocations, groups / 4);
+
+  ASSERT_TRUE(builder.publish(output).ok());
+  const auto graph = std::move(builder).finish().value();
+  EXPECT_EQ(graph.input_count(), groups);
+  EXPECT_EQ(graph.constant_count(), groups);
+  EXPECT_EQ(graph.node_count(), groups * 2);
+  EXPECT_EQ(graph.value_count(), groups * 4);
+  EXPECT_EQ(graph.output_id().value(), output);
+}
+
 TEST(Graph, InvalidOutOfRangeAndForeignQueriesAreRecoverable) {
   Graph invalid;
   EXPECT_TRUE(invalid.input_id().error().IsFailedPrecondition());
