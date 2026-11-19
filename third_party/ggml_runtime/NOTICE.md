@@ -33,7 +33,9 @@ fusion remain unchanged. C++ allocation failures are caught before crossing
 libdispatch callbacks; accepted commands are drained before owners are released.
 The bridge symbols are private. The original embedded Metal sources provide
 relocatable delivery; library/pipeline construction stays in cold preparation.
-The imported array remains owned and allocated by MLX, never freed by ggml.
+MLX owns the imported allocation. The ggml bridge retains its Metal buffer
+through native retirement and binds it directly on the compute encoder,
+which supplies per-dispatch residency for the imported buffer.
 Prepared native graphs can signal an original SharedEvent before command-buffer
 commit. Optional completion notification retains accepted work on its existing
 owner; original checked completion remains mandatory before public retirement.
