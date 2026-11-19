@@ -12,6 +12,7 @@
 #include "apple_internal.h"
 #include "apple_carrier.h"
 #include "../compute_provider_ggml_metal/native_program.h"
+#include "apple_sequence.h"
 #include "apple_tensor.h"
 #include "apple_static_fp8.h"
 #include "hyle/compute/low_precision.h"
@@ -228,6 +229,17 @@ Result<std::vector<mx::array>> lower(const Operation &operation,
   if (!workload.valid())
     return std::unexpected(Status::InvalidArgument("invalid Apple workload"));
   try {
+    if (const auto *gdn = operation.get_if<GatedDeltaNet>()) {
+      if (inputs.size() != 6)
+        return std::unexpected(Status::InvalidArgument("Apple GDN input count differs"));
+      std::array<TensorDesc, 6> descriptions;
+      for (std::size_t port = 0; port < inputs.size(); ++port) {
+        HYLE_ASSIGN_OR_RETURN(descriptions[port], float_description(inputs[port]));
+      }
+      if (stream.device != mx::Device::gpu || !detail::qualifies_short_gdn(operation, descriptions))
+        return std::unexpected(Status::Unimplemented("Apple MLX GDN shape or format unavailable"));
+      return detail::lower_short_gdn(*gdn, inputs, stream);
+    }
     const auto *qmm = operation.get_if<QuantizedMatMul>();
     if (qmm == nullptr)
       return detail::lower_tensor(operation, inputs, stream);
@@ -391,6 +403,7 @@ Result<detail::RegionKind> detail::analyze_native_carrier(
   if (is_mlx_gguf_view(operation, inputs) || is_mlx_exact_gguf_gather(operation, inputs))
     return RegionKind::kMlx;
   if (is_mlx_attention_blocks(operation, inputs)) return RegionKind::kAttentionBlocks;
+  if (qualifies_short_gdn(operation, inputs)) return RegionKind::kMlx;
   const auto native = ggml_metal::NativeProgram::validate(operation, inputs);
   if (native.ok()) return RegionKind::kGgml;
   if (!native.IsUnimplemented()) return std::unexpected(native);

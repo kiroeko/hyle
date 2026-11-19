@@ -2,6 +2,7 @@
 #include "apple_checks.h"
 #include "hyle/compute/sequence_ops.h"
 
+#include <algorithm>
 #include <array>
 #include <climits>
 #include <cmath>
@@ -10,6 +11,108 @@
 
 namespace hyle::compute::apple::detail {
 namespace mx = mlx::core;
+
+bool qualifies_short_gdn(const Operation &operation,
+                         std::span<const TensorDesc> inputs) noexcept {
+  if (operation.get_if<GatedDeltaNet>() == nullptr)
+    return false;
+  std::array<TensorDesc, 2> outputs;
+  if (!infer_output_descriptions(operation, inputs, outputs).ok())
+    return false;
+  const auto indexable = [](const TensorDesc &value) {
+    const auto count = value.element_count();
+    return value.is_plain() && value.is_dense() &&
+           value.data_type() == DataType::kFloat32 && count && *count <= INT32_MAX;
+  };
+  if (!std::ranges::all_of(inputs, indexable) ||
+      !std::ranges::all_of(outputs, indexable))
+    return false;
+  if (*outputs[0].element_count() + *outputs[1].element_count() > INT32_MAX)
+    return false;
+  const auto query = inputs[0].dimensions();
+  const auto value = inputs[2].dimensions();
+  // Specialize the small verification and decode shapes. Long recurrence
+  // continues through the existing native program without another MLX trace.
+  return query[1] <= 4 && query[3] == value[3] &&
+         (query[3] == 32 || query[3] == 64 || query[3] == 128) &&
+         value[2] % query[2] == 0;
+}
+
+Result<std::vector<mx::array>> lower_short_gdn(const GatedDeltaNet &operation,
+    std::span<const mx::array> inputs, mx::Stream stream) {
+  const int depth = inputs[0].shape(3);
+  const int heads = inputs[2].shape(2);
+  const int per_lane = depth / 32;
+  const int snapshots = static_cast<int>(operation.snapshot_count);
+  const int score_count = static_cast<int>(inputs[2].size());
+  const int packed_count = score_count + snapshots * static_cast<int>(inputs[5].size());
+  auto state_shape = inputs[5].shape();
+  if (snapshots > 1)
+    state_shape.insert(state_shape.begin() + 1, snapshots);
+
+  // Retain ggml Metal's F32 lane and reduction order. The kernel runs in the
+  // surrounding MLX encoder and writes the declared chronological state
+  // directly, including all requested snapshots, behind one output owner.
+  static const auto kernel = mx::fast::metal_kernel("hyle_short_dense_gdn",
+      {"q", "k", "v", "gate", "beta", "initial", "scale"}, {"packed"},
+      R"METAL(
+    const uint batch = threadgroup_position_in_grid.z;
+    const uint head = threadgroup_position_in_grid.y;
+    const uint lane = thread_position_in_threadgroup.x;
+    const uint channel = threadgroup_position_in_grid.x * KEYS_PER_LANE
+        + thread_position_in_threadgroup.y;
+    const uint state_index = (head * DEPTH + channel) * DEPTH + lane * KEYS_PER_LANE;
+    float cells[KEYS_PER_LANE];
+    for (uint i = 0; i < KEYS_PER_LANE; ++i)
+      cells[i] = initial[batch * VALUE_HEADS * DEPTH * DEPTH + state_index + i];
+    for (uint token = 0; token < TOKENS; ++token) {
+      const uint head_index = (batch * TOKENS + token) * VALUE_HEADS + head;
+      const uint key_index = ((batch * TOKENS + token) * KEY_HEADS + head % KEY_HEADS)
+          * DEPTH + lane * KEYS_PER_LANE;
+      const uint value_index = head_index * DEPTH + channel;
+      const float scalar_decay = GATE_WIDTH == 1 ? exp(gate[head_index]) : 0.0f;
+      float prediction = 0.0f;
+      for (uint i = 0; i < KEYS_PER_LANE; ++i) {
+        cells[i] *= GATE_WIDTH == 1 ? scalar_decay
+            : exp(gate[head_index * GATE_WIDTH + lane * KEYS_PER_LANE + i]);
+        prediction += cells[i] * k[key_index + i];
+      }
+      const float delta = (v[value_index] - simd_sum(prediction)) * beta[head_index];
+      float mixed = 0.0f;
+      for (uint i = 0; i < KEYS_PER_LANE; ++i) {
+        cells[i] += k[key_index + i] * delta;
+        mixed += cells[i] * q[key_index + i];
+      }
+      const float dot = simd_sum(mixed);
+      if (lane == 0)
+        packed[value_index] = dot * (EXPLICIT_SCALE ? scale : 1.0f / sqrt(float(DEPTH)));
+      if (token + SNAPSHOTS >= TOKENS) {
+        const uint snapshot = token + SNAPSHOTS - TOKENS;
+        const uint offset = SCORES + state_index
+            + (batch * SNAPSHOTS + snapshot) * VALUE_HEADS * DEPTH * DEPTH;
+        for (uint i = 0; i < KEYS_PER_LANE; ++i)
+          packed[offset + i] = cells[i];
+      }
+    }
+  )METAL", "", true, false, mx::CompileOptions(static_cast<int>(mx::MathMode::Fast)));
+  std::vector<mx::array> args(inputs.begin(), inputs.end());
+  args.emplace_back(operation.output_scale.value_or(0.0f));
+  // Each SIMD group owns one state row. The X grid contains (depth/per_lane)
+  // threadgroups, each with 32 lanes and per_lane state rows.
+  auto packed = kernel(args, {{packed_count}}, {mx::float32},
+      {32 * depth / per_lane, heads * per_lane, inputs[0].shape(0)}, {32, per_lane, 1},
+      {{"KEYS_PER_LANE", per_lane}, {"DEPTH", depth}, {"TOKENS", inputs[0].shape(1)},
+       {"KEY_HEADS", inputs[0].shape(2)}, {"VALUE_HEADS", heads},
+       {"GATE_WIDTH", inputs[3].shape(3)}, {"SNAPSHOTS", snapshots},
+       {"SCORES", score_count},
+       {"EXPLICIT_SCALE", operation.output_scale.has_value()}},
+      std::nullopt, false, stream)[0];
+  auto scores = mx::reshape(mx::slice(packed, {0}, {score_count}, stream),
+                            inputs[2].shape(), stream);
+  auto state = mx::reshape(mx::slice(packed, {score_count}, {packed_count}, stream),
+                           state_shape, stream);
+  return std::vector{std::move(scores), std::move(state)};
+}
 
 Status qualify_packed_conv(const Operation &operation,
     std::span<const TensorDesc> inputs) noexcept {

@@ -22,50 +22,55 @@ namespace mx = mlx::core;
 TEST(AppleRecurrent, GatedDeltaNetSnapshotsKeepBatchAndTimeOrder) {
   auto context = a::Context::create();
   ASSERT_TRUE(context);
-  for (const auto snapshots : {1U, 3U, 5U}) {
-    for (const auto seed : {0, 7}) {
-      SCOPED_TRACE(::testing::Message() << "K=" << snapshots << " seed=" << seed);
-      const gdn_snapshot_fixture::Fixture fixture(seed);
-      std::vector<mx::array> inputs;
-      std::vector<a::InputSpec> specs;
-      for (std::size_t i = 0; i < fixture.inputs.size(); ++i) {
-        mx::Shape shape;
-        for (const auto extent : fixture.inputs[i].dimensions())
-          shape.push_back(static_cast<int>(extent));
-        inputs.emplace_back(fixture.data[i].data(), std::move(shape));
-        specs.push_back({inputs.back().shape(), inputs.back().dtype()});
-      }
-      auto prepared = context->prepare(
-          c::GatedDeltaNet{.snapshot_count = snapshots}, specs);
-      ASSERT_TRUE(prepared) << prepared.error().message();
-      auto invocation = prepared->create_invocation();
-      ASSERT_TRUE(invocation);
-      ASSERT_TRUE(invocation->bind(inputs).ok());
-      const auto descriptions = fixture.outputs(snapshots);
-      const auto expected = fixture.oracle(snapshots);
-      for (int repeat = 0; repeat < 2; ++repeat) {
-        auto work = invocation->submit();
-        ASSERT_TRUE(work) << work.error().message();
-        auto result = work->wait();
-        ASSERT_TRUE(result) << result.error().message();
-        const auto outputs = result->get()->arrays();
-        ASSERT_EQ(outputs.size(), 2U);
-        for (std::size_t port = 0; port < outputs.size(); ++port) {
+  struct Shape { std::uint32_t tokens; int depth; };
+  constexpr Shape shapes[]{{4, 32}, {4, 64}, {4, 128}, {5, 32}};
+  for (const auto [tokens, depth] : shapes) {
+    for (const auto snapshots : {1U, 3U, tokens}) {
+      for (const auto seed : {0, 7}) {
+        SCOPED_TRACE(::testing::Message() << "T=" << tokens << " D=" << depth
+                                        << " K=" << snapshots << " seed=" << seed);
+        const gdn_snapshot_fixture::Fixture fixture(seed, 2, tokens, 2, 6, depth);
+        std::vector<mx::array> inputs;
+        std::vector<a::InputSpec> specs;
+        for (std::size_t i = 0; i < fixture.inputs.size(); ++i) {
           mx::Shape shape;
-          for (const auto extent : descriptions[port].dimensions())
+          for (const auto extent : fixture.inputs[i].dimensions())
             shape.push_back(static_cast<int>(extent));
-          EXPECT_EQ(outputs[port].shape(), shape);
-          ASSERT_EQ(outputs[port].size(), expected[port].size());
-          double max_error = 0;
-          for (std::size_t i = 0; i < expected[port].size(); ++i)
-            max_error = std::max(max_error,
-                std::abs(double(outputs[port].data<float>()[i]) -
-                         expected[port][i]));
-          EXPECT_LT(max_error, 3e-6);
+          inputs.emplace_back(fixture.data[i].data(), std::move(shape));
+          specs.push_back({inputs.back().shape(), inputs.back().dtype()});
         }
+        auto prepared = context->prepare(
+            c::GatedDeltaNet{.snapshot_count = snapshots}, specs);
+        ASSERT_TRUE(prepared) << prepared.error().message();
+        auto invocation = prepared->create_invocation();
+        ASSERT_TRUE(invocation);
+        ASSERT_TRUE(invocation->bind(inputs).ok());
+        const auto descriptions = fixture.outputs(snapshots);
+        const auto expected = fixture.oracle(snapshots);
+        for (int repeat = 0; repeat < 2; ++repeat) {
+          auto work = invocation->submit();
+          ASSERT_TRUE(work) << work.error().message();
+          auto result = work->wait();
+          ASSERT_TRUE(result) << result.error().message();
+          const auto outputs = result->get()->arrays();
+          ASSERT_EQ(outputs.size(), 2U);
+          for (std::size_t port = 0; port < outputs.size(); ++port) {
+            mx::Shape shape;
+            for (const auto extent : descriptions[port].dimensions())
+              shape.push_back(static_cast<int>(extent));
+            EXPECT_EQ(outputs[port].shape(), shape);
+            ASSERT_EQ(outputs[port].size(), expected[port].size());
+            double max_error = 0;
+            for (std::size_t i = 0; i < expected[port].size(); ++i)
+              max_error = std::max(max_error,
+                  std::abs(double(outputs[port].data<float>()[i]) -
+                           expected[port][i]));
+            EXPECT_LT(max_error, 3e-6);
+          }
+        }
+        EXPECT_EQ(std::memcmp(inputs[5].data<float>(), fixture.data[5].data(),
+                              fixture.data[5].size() * sizeof(float)), 0);
       }
-      EXPECT_EQ(std::memcmp(inputs[5].data<float>(), fixture.data[5].data(),
-                            fixture.data[5].size() * sizeof(float)), 0);
     }
   }
 }
@@ -290,20 +295,23 @@ TEST(AppleRecurrent, AbandonedCompletionAndCancelCloseDrain) {
     EXPECT_TRUE(done.error().IsCancelled());
 }
 
-TEST(AppleRecurrent, PerChannelKdaGateUsesOriginalMetalRegion) {
-  apple_test::Recurrent fixture(3, 2, 32, 0, true);
+TEST(AppleRecurrent, PerChannelKdaGateMatchesAcrossSequenceLengths) {
   auto context = a::Context::create();
   ASSERT_TRUE(context);
-  auto program = context->prepare(c::GatedDeltaNet{}, fixture.inputs);
-  ASSERT_TRUE(program) << program.error().message();
-  auto invocation = program->create_invocation();
-  ASSERT_TRUE(invocation);
-  ASSERT_TRUE(invocation->bind(fixture.inputs).ok());
-  auto work = invocation->submit();
-  ASSERT_TRUE(work) << work.error().message();
-  auto result = work->wait();
-  ASSERT_TRUE(result) << result.error().message();
-  check(result->get()->arrays(), fixture.oracle());
+  for (const int tokens : {3, 5}) {
+    SCOPED_TRACE(tokens);
+    apple_test::Recurrent fixture(tokens, 2, 32, 0, true);
+    auto program = context->prepare(c::GatedDeltaNet{}, fixture.inputs);
+    ASSERT_TRUE(program) << program.error().message();
+    auto invocation = program->create_invocation();
+    ASSERT_TRUE(invocation);
+    ASSERT_TRUE(invocation->bind(fixture.inputs).ok());
+    auto work = invocation->submit();
+    ASSERT_TRUE(work) << work.error().message();
+    auto result = work->wait();
+    ASSERT_TRUE(result) << result.error().message();
+    check(result->get()->arrays(), fixture.oracle());
+  }
 }
 
 TEST(AppleRecurrent, CheckedNativeFailureAfterContCopyRetiresTheInvocation) {

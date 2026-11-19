@@ -243,14 +243,16 @@ CT asymmetric4 的 zero 沿输出行打包为 I32 `[ceil(N/8),K/group]`，与 AW
 
 这些接口表达具体张量与模型片段，不负责完整模型常驻；准备前仍须核对内存容量与实际设备。
 
-## 原版 Gated DeltaNet
+## Gated DeltaNet
 
-`context.prepare(GatedDeltaNet{}, inputs)` 冷绑定锁定的 ggml Metal 完整递归程序。当前接入域为
-F32、相同 Q/K/V head 数、D=32/64/128、1≤T≤32767；输入及 packed 输出元素数不超过 INT32_MAX。
+`context.prepare(GatedDeltaNet{}, inputs)` 在冷期选择实现。连续 F32 张量、D=32/64/128、
+1≤T≤4 且输入与合并输出可用 32 位索引时，递归在 MLX 的 Metal 编码器中运行。更长序列
+使用原版 ggml Metal 递归程序，长度上限为 32767。
 
-六个输入按 Q、K、V、log-decay、beta、初态排列；Q/K/V 是 `[B,T,H,D]`，两种门是
-`[B,T,H,1]`，初态是 `[B,H,D,D]`（最后两轴为 value/key）。Q/K 是否归一化、beta 是否激活由
-调用方决定，操作不隐含这些变换。两个结果分别是 V 同形输出和新 FP32 状态，初态保持不变。
+六个输入依次是 Q、K、V、log-decay、beta 和初态。Q/K 为 `[B,T,Hk,D]`，V 为
+`[B,T,Hv,D]`，Hv 是 Hk 的整数倍。beta 为 `[B,T,Hv,1]`，log-decay 的末轴可为 1 或 D。
+初态是 `[B,Hv,D,D]`，最后两轴为 value/key。调用方负责 Q/K 归一化和 beta 激活。
+结果为 V 同形输出和新的 FP32 状态。多快照沿时间正序排列，初态保持原值。
 
 ```cpp
 const std::array<apple::InputSpec, 6> specs{{
@@ -262,14 +264,13 @@ HYLE_ASSIGN_OR_RETURN(auto program,
 // 与其它 Program 相同：create_invocation → bind(六个 ready arrays) → submit → wait。
 ```
 
-Graph 使用 `add_node(GatedDeltaNet{}, inputs)` 和 `result(node, 0/1)`，自动组合递归与 MLX
-区域。纯 MLX 的 `Context::compile(callable, ...)` / `apple::lower()` 不接受外部递归程序；需要
-跨库组合时使用普通 Graph。各个 MLX 区域内部仍由 MLX 编译和融合。
+Graph 使用 `add_node(GatedDeltaNet{}, inputs)` 和 `result(node, 0/1)`。短序列可和相邻
+算子进入同一个 MLX 区域，也可在 `Context::compile(callable, ...)` 内调用 `apple::lower()`。
+涉及 ggml Metal 程序的组合由 Graph 装配，按原有依赖退休。
 
-每个 Invocation 独立持有 ggml 资源，输入保留原生 owner；输出由 MLX 分配一个 packed buffer，
-两个 array view 共享 owner。跨库边界进行 checked host wait；非连续输入由原版 MLX 在 GPU
-整理布局并计入执行成本。没有 CPU 数学 fallback，也不声明 event-only 或无分配 replay。
-`Environment::ggml_revision` 与 MLX、设备、OS/SDK/Metal 编译器身份一起用于冷规则诊断。
+两个结果是同一块 MLX 缓冲区上的视图。需要连续布局的输入由 MLX 在 GPU 上整理。
+ggml Metal 路径的 Invocation 独立持有原生资源和输入保活。冷期诊断记录
+`Environment::ggml_revision` 及 MLX、设备、OS、SDK 和 Metal 编译器身份。
 
 ## Graph 整段编译（原生 expert）
 
