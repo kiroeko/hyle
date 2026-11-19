@@ -812,6 +812,32 @@ TEST(VulkanNativeRegion, ColdConstantsCopyBothDirectionsAndAlignedDeviceSpans) {
   ASSERT_TRUE(vn::MemoryAccess::copy_constants(runtime, no_work, denied.get()).ok());
 }
 
+TEST(VulkanNativeRegion, ConstantUploadsPreserveIndependentAndOrderedDestinations) {
+  auto context = v::Context::create().value();
+  auto staging = v::MemoryResource::create(context, v::MemoryKind::kStaging).value();
+  auto memory = v::MemoryResource::create(context, v::MemoryKind::kDevice).value();
+  auto source_a = hyle::mem::Buffer::create(staging.ref(), 16, 4).value();
+  auto source_b = hyle::mem::Buffer::create(staging.ref(), 16, 4).value();
+  auto target_a = hyle::mem::Buffer::create(memory.ref(), 16, 4).value();
+  auto target_b = hyle::mem::Buffer::create(memory.ref(), 16, 4).value();
+  const std::array<float, 4> a{1.25f, -3.5f, 2.0f, -1.0f}, b{4.0f, 3.0f, -2.0f, 1.0f};
+  ASSERT_TRUE(source_a.write(0, std::as_bytes(std::span(a))).ok());
+  ASSERT_TRUE(source_b.write(0, std::as_bytes(std::span(b))).ok());
+  const auto &runtime = vn::Access::runtime(context);
+  std::array copies{
+      vn::ConstantCopy{c::TensorView::create(description, target_a.view()).value(),
+          c::ConstTensorView::create(description, source_a.view()).value()},
+      vn::ConstantCopy{c::TensorView::create(description, target_b.view()).value(),
+          c::ConstTensorView::create(description, source_b.view()).value()}};
+  const auto upload = [&] { return vn::MemoryAccess::copy_constants(runtime, copies, hyle::mem::system_allocator()); };
+  ASSERT_TRUE(upload().ok());
+  expect(context, copies[0].destination.as_const(), a);
+  expect(context, copies[1].destination.as_const(), b);
+  copies[1].destination = copies[0].destination;
+  ASSERT_TRUE(upload().ok());
+  expect(context, copies[0].destination.as_const(), b);
+}
+
 TEST(VulkanNativeRegion, ColdReadbackPreflightsAndDoesNotRetryAcceptedFailures) {
   auto context = v::Context::create().value();
   auto memory = v::MemoryResource::create(context, v::MemoryKind::kDevice).value();

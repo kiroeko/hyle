@@ -453,6 +453,52 @@ Result<bool> constant_device_range(const std::shared_ptr<Runtime> &runtime,
           capacity == backing->bytes ? backing->bytes : view.size();
   return (backing->offset % 4 + view.offset() % 4) % 4 == 0 && padded <= available;
 }
+
+Result<bool> copy_mapped_constant_uploads(const std::shared_ptr<Runtime> &runtime,
+    std::span<const ConstantCopy> copies, mem::AllocatorRef allocator) {
+  if (copies.size() < 2 || copies.size() > UINT32_MAX / 2) return false;
+  std::size_t total_bytes = 0;
+  for (const auto &copy : copies) {
+    const auto source = copy.source.storage();
+    const auto *memory = dynamic_cast<const MemoryState *>(&source.resource().resource());
+    HYLE_ASSIGN_OR_RETURN(auto bytes, copy.destination.description().required_bytes());
+    if (constant_direction(runtime, copy) != ConstantDirection::kUpload ||
+        !memory || memory->runtime != runtime || memory->kind != MemoryKind::kStaging ||
+        !bytes || bytes % 4 || bytes > SIZE_MAX - total_bytes)
+      return false;
+    const auto source_range = constant_device_range(runtime, source, bytes);
+    if (!source_range || !*source_range) return false;
+    const auto &backing = *static_cast<const AllocationToken *>(source.native_handle())->buffer;
+    // A noncoherent host source still needs the original CPU read and invalidation.
+    if (!backing.mapped || !(backing.memory_flags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) return false;
+    total_bytes += bytes;
+  }
+
+  using Range = compute::detail::CopyBackendRange;
+  std::vector<Range, mem::StdAllocator<Range>> ranges{mem::StdAllocator<Range>(allocator)};
+  std::vector<std::uint64_t, mem::StdAllocator<std::uint64_t>> destinations{
+      mem::StdAllocator<std::uint64_t>(allocator)};
+  ranges.reserve(copies.size());
+  destinations.reserve(copies.size());
+  for (const auto &copy : copies) {
+    HYLE_ASSIGN_OR_RETURN(auto bytes, copy.destination.description().required_bytes());
+    HYLE_ASSIGN_OR_RETURN(auto target, copy.destination.storage().subview(0, bytes));
+    HYLE_ASSIGN_OR_RETURN(auto source, copy.source.storage().subview(0, bytes));
+    HYLE_ASSIGN_OR_RETURN(auto span, MemoryAccess::copy_span(runtime, target));
+    destinations.push_back(span.physical.backing);
+    ranges.push_back({target, source});
+  }
+  // The original serial path also allows ordered overwrites of one backing.
+  // Send only independent destinations to the native range validator.
+  std::sort(destinations.begin(), destinations.end());
+  if (std::adjacent_find(destinations.begin(), destinations.end()) != destinations.end()) return false;
+  HYLE_ASSIGN_OR_RETURN(auto recording, prepare_copy_recording_runtime(
+      runtime, static_cast<std::uint32_t>(ranges.size()), allocator, total_bytes));
+  HYLE_RETURN_IF_ERROR(bind_copy_recording(*recording, ranges, true));
+  HYLE_ASSIGN_OR_RETURN(auto completed, submit_copy_recording(*recording));
+  HYLE_RETURN_IF_ERROR(completed.wait());
+  return true;
+}
 } // namespace
 
 Result<bool> MemoryAccess::can_copy_constant(const std::shared_ptr<Runtime> &runtime,
@@ -525,6 +571,11 @@ Status MemoryAccess::copy_constants(const std::shared_ptr<Runtime> &runtime,
       }
     }
     if (!host_maximum && !device_maximum) return Status::Ok();
+    if (host_maximum && !device_maximum) {
+      // Admission's mapped scratch bound also covers the serial fallback.
+      HYLE_ASSIGN_OR_RETURN(auto copied, copy_mapped_constant_uploads(runtime, copies, allocator));
+      if (copied) return Status::Ok();
+    }
     if (host_maximum > static_cast<std::size_t>(INT64_MAX))
       return Status::OutOfRange("Vulkan constant staging exceeds tensor range");
     struct PreparedCopy final {
