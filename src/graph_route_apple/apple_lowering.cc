@@ -773,7 +773,15 @@ static Result<ca::Program> compile_impl(const std::shared_ptr<ca::detail::Runtim
       const auto region = [plan](const auto &inputs, mx::Stream stream) {
         return trace(*plan, plan->nodes, plan->inputs, plan->outputs, inputs, stream);
       };
-      if (device_prefix)
+      // Internal MLX edges can carry the original pending arrays and their
+      // completion. Keep ordinary direct callers and published results on
+      // their selected path, and leave copy and continuation policy intact.
+      bool internal_producer = boundary && !plan->custom;
+      for (std::size_t i = 0; internal_producer && i < graph.output_count(); ++i) {
+        HYLE_ASSIGN_OR_RETURN(auto output, graph.output_id(i));
+        internal_producer = std::ranges::find(boundary->outputs, output) == boundary->outputs.end();
+      }
+      if (device_prefix || internal_producer)
         return ca::detail::ContextAccess::compile_device_prefix(runtime, region, specs, options.workload, descriptor_inputs);
       return ca::detail::ContextAccess::compile(runtime, region, specs, options.workload, descriptor_inputs);
     }();
