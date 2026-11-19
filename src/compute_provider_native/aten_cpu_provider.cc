@@ -51,6 +51,7 @@ struct Program final {
   TensorDesc output{};
   std::array<std::byte, 8> scalar{};
   std::size_t allocation_bytes = 0;
+  std::size_t output_bytes = 0;
   std::size_t axis = 0;
   std::size_t index_count = 0;
   std::array<std::int64_t, kMaxTensorRank> reduction_axes{};
@@ -428,7 +429,18 @@ at::Tensor activation(const at::Tensor &input, GatedActivationKind kind) {
     break;
   }
   }
-  return at::where(wide.eq(-(std::numeric_limits<double>::infinity)()),
+  // All three ATen activations above own their result storage. Repair the
+  // negative-infinity limit in place on dense tensors.
+  const double negative_infinity = -(std::numeric_limits<double>::infinity)();
+  if (wide.is_contiguous() && result.is_contiguous()) {
+    const auto *values = wide.const_data_ptr<double>();
+    auto *activated = result.mutable_data_ptr<double>();
+    for (std::int64_t i = 0, count = wide.numel(); i < count; ++i)
+      if (values[i] == negative_infinity)
+        activated[i] = 0.0;
+    return result.to(at::kFloat);
+  }
+  return at::where(wide.eq(negative_infinity),
                    at::zeros_like(result), result)
       .to(at::kFloat);
 }
@@ -582,7 +594,7 @@ at::Tensor transformer_norm(const Program &p, Invocation &inv,
   return at::layer_norm(first, shape, gamma, beta,
                         p.operation.get_if<LayerNorm>()->epsilon);
 }
-void execute_numeric(const Program &p, Invocation &inv, at::Tensor &output) {
+at::Tensor execute_numeric(const Program &p, Invocation &inv) {
   auto first = numeric_input(p, inv, 0);
   at::Tensor result;
   if (p.operation.get_if<Cast>()) {
@@ -670,13 +682,7 @@ void execute_numeric(const Program &p, Invocation &inv, at::Tensor &output) {
     else
       result = reduction(p, first);
   }
-  const auto shape = byte_shape(p.output);
-  auto bytes = result.to(native_type(p.output.data_type()))
-                   .contiguous()
-                   .flatten()
-                   .view(at::kByte)
-                   .view(at::IntArrayRef(shape.sizes.data(), shape.rank));
-  output.copy_(bytes);
+  return result;
 }
 
 Status execute(const Program &p, Invocation &inv,
@@ -684,15 +690,20 @@ Status execute(const Program &p, Invocation &inv,
   try {
     at::NoGradGuard guard;
     const auto &input = inv.tensors;
-    auto out = byte_tensor(p.output, destination);
     if (numeric_program(p.operation)) {
       if (p.operation.get_if<Scatter>() && p.index_count == 0) {
-        out.copy_(input[0]);
+        byte_tensor(p.output, destination).copy_(input[0]);
         return Status::Ok();
       }
-      execute_numeric(p, inv, out);
+      const auto result = execute_numeric(p, inv)
+                              .to(native_type(p.output.data_type()))
+                              .contiguous();
+      if (result.nbytes() != p.output_bytes)
+        return Status::Internal("ATen CPU numeric output byte extent differs");
+      std::memcpy(destination, result.const_data_ptr(), p.output_bytes);
       return Status::Ok();
     }
+    auto out = byte_tensor(p.output, destination);
     if (p.operation.custom_as<model_ops::GatherElements>()) {
       inv.index_destination.copy_(input[1]);
       const auto dimensions = p.inputs[1].dimensions();
@@ -964,7 +975,8 @@ ProviderPrepareOutcome prepare(void *,
         Status::ResourceExhausted("ATen CPU program allocation failed"));
   auto *p = ::new (storage) Program{.operation = request.operation,
                                     .output = request.outputs[0],
-                                    .allocation_bytes = bytes};
+                                    .allocation_bytes = bytes,
+                                    .output_bytes = request.outputs[0].required_bytes().value()};
   auto *descriptions =
       reinterpret_cast<TensorDesc *>(storage + sizeof(Program));
   for (std::size_t i = 0; i < request.inputs.size(); ++i)
