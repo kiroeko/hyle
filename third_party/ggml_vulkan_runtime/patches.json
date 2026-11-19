@@ -592,7 +592,7 @@
     {
       "path": "src/ggml-vulkan/vulkan-shaders/unary.comp",
       "before_sha256": "224257d872b7658a3d9dba118818897511596093a4c5fc9b4ff866cfc7079709",
-      "after_sha256": "05765b16011f8964ed5d59d5c9102d41424566c4e45428eb30c4a8e135bf6cb7",
+      "after_sha256": "7768add664c53aef367880fef7d4700b07b09ce6df0ada040650cc81b34e5e61",
       "edits": [
         {
           "before": "float op_silu(float x) {\n    return x / (1.0f + exp(-x));\n}",
@@ -616,7 +616,7 @@
         },
         {
           "before": "float op_sin(float x) {\n    return sin(x);\n}\n\nfloat op_cos(float x) {\n    return cos(x);\n}",
-          "after": "float hyle_reduce_phase(float x) {\n    // Preserve the computed F32 phase; reduce before approximate GPU sin/cos.\n    // Three nonoverlapping 2pi parts retain accuracy through |phase|=2^20.\n    if (abs(x) > 1048576.0f || isnan(x) || isinf(x)) return x;\n    const float turns = roundEven(x * 0.15915494309189533577f);\n    precise float reduced = fma(-turns, 6.28125f, x);\n    reduced = fma(-turns, 0.00193530716933310032f, reduced);\n    return fma(-turns, 1.02533766063780756e-11f, reduced);\n}\n\nfloat op_sin(float x) {\n    return x == 0.0f ? x : sin(hyle_reduce_phase(x));\n}\n\nfloat op_cos(float x) {\n    return cos(hyle_reduce_phase(x));\n}"
+          "after": "float hyle_reduce_phase(float x) {\n    // Preserve the computed F32 phase; reduce before approximate GPU sin/cos.\n    const float magnitude = abs(x);\n    if (magnitude > 1048576.0f || isnan(x)) return x;\n    const float turns = roundEven(x * 0.15915494309189533577f);\n    if (magnitude >= 524288.0f) {\n        // The high product can need fusion here, while some drivers implement\n        // Fma as separate multiply/add. Subtract the large terms modulo 8 in\n        // Q29, with 2pi = 3373259426 / 2^29 + 2.430840203e-10.\n        // In this F32 exponent range x is already an exact multiple of 1/16.\n        const uint scaled_x = uint(int(x * 16.0f)) << 25;\n        const uint scaled = scaled_x - uint(int(turns)) * 3373259426u;\n        const float reduced = float(int(scaled)) * (1.0f / 536870912.0f);\n        return reduced - turns * 2.430840203e-10f;\n    }\n    precise float reduced = fma(-turns, 6.28125f, x);\n    reduced = fma(-turns, 0.00193530716933310032f, reduced);\n    return fma(-turns, 1.02533766063780756e-11f, reduced);\n}\n\nfloat op_sin(float x) {\n    return x == 0.0f ? x : sin(hyle_reduce_phase(x));\n}\n\nfloat op_cos(float x) {\n    return cos(hyle_reduce_phase(x));\n}"
         }
       ]
     },

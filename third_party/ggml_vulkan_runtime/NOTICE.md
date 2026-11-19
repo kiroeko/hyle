@@ -128,14 +128,13 @@ Nonzero-scale blocks keep the original two rounded F32 quotients and ties-away
 codes. Ordinary Copy and SetRows are unchanged. This explicitly changes only
 zero-scale encoded payload bytes, not their decoded zero value.
 
-The explicit-frequency RoPE's original computed F32 phase is retained. Sin and
-Cos reduce finite arguments with absolute value at most 2^20 by a three-part
-2pi constant and explicit FMAs before using the existing GLSL intrinsic. This
-prevents large-angle intrinsic error at normal inference positions without
-adding storage or dispatches. Sin preserves signed zero. Nonfinite arguments
-and values outside this finite domain retain the native intrinsic; this patch
-does not qualify their accuracy. The original independent F32 phase oracle,
-attention tolerances, quantized storage and state feedback are unchanged.
+Explicit-frequency RoPE retains its computed F32 phase. Sin and Cos reduce
+finite magnitudes below 2^19 using a split 2pi constant and FMAs. From 2^19
+through 2^20, the phase is a multiple of 1/16, so the large subtraction uses
+Q29 integer arithmetic modulo 8. A small F32 correction accounts for the
+remaining part of 2pi before the native GLSL intrinsic. This also works on
+drivers that lose fused rounding. Sin preserves signed zero. Inputs outside
+the reduction domain go directly to the native intrinsic.
 
 The indexed matrix and vector drivers retain actual direct activation byte
 spans and token/slot strides, including shared activation views with padded
