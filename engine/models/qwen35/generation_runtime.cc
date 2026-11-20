@@ -3877,7 +3877,11 @@ ExecutionProfilePreparation prepare_execution_profile(const inference::ModelLoad
     retains_random_frontier = retains_random_frontier || policy.random;
   }
   const auto precision = PrecisionProfile::from_roles(source.roles);
-  const auto query_rows = (std::max)(prefill, mtp ? cache::add(depth, 1) : std::size_t{1});
+  // A catch-up prefill may carry the lagging draft row alongside the new prompt.
+  const auto prefill_query_rows = mtp
+      ? (std::min)(cache::add(prefill, draft_lag(GraphRole::kMtpCatchupPrefill)), config.execution.context)
+      : prefill;
+  const auto query_rows = (std::max)(prefill_query_rows, mtp ? cache::add(depth, 1) : std::size_t{1});
   const auto recurrent = recurrent_bytes(state_schema_for(geometry, config.execution.context, precision), geometry);
   const qwen35::DecodeRouteFacts facts{.workload = workload, .overlap_requested = true,
       .mtp_enabled = mtp, .max_drafts = depth, .max_device_drafts = kMaximumDeviceMtpDrafts,
