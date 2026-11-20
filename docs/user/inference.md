@@ -311,7 +311,7 @@ worker 和 `/v1/models` 的 `hyle.placement` 报告实际 `primary_backend` 与 
 
 引擎在 CPU 端点冷创建时，按进程可用的物理核心和 CPU 配额设置原有 ggml 原生线程组；
 已知性能核时优先使用性能核，线程数不超过所链接实现的上限。拓扑查询失败时保留单线程。
-这也用于混合放置的 CPU 端点，不改变纯 GPU 路线。命令行不增加线程参数。
+混合放置的 CPU 端点也按进程拓扑与配额选择线程数。标准 x64 WSL2 内核上的纯 CPU 推理在来宾未区分 CPU 容量等级时，ggml 线程组最多使用 8 个线程。
 程序集成显式传入的 `compute::cpu::DefaultContextOptions` 保持调用方的线程预算与借用 executor；
 直接调用 Compute／Graph CPU 工厂的默认值仍为单线程。allocator／executor 支撑对象须活到全部派生制品和原生工作退休，
 具体组合见 [CPU executor 示例](../../samples/package/graph/cpu_executor/README.md)和[架构说明](../architecture/inference-design.md)。

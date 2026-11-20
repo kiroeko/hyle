@@ -22,6 +22,19 @@ int main() {
   check(inference::select_cpu_native_threads(uniform, {16}, 16) == 8);
   const std::array unknown{CpuCacheClassInfo{.logical_cpus = 6}};
   check(inference::select_cpu_native_threads(unknown, {6}, 16) == 6);
+  const std::array guest{
+      CpuCacheClassInfo{.logical_cpus = 32, .physical_cores = 16}};
+  check(inference::select_cpu_native_threads(guest, {32}, 32) == 16);
+  check(inference::select_cpu_native_threads(guest, {32}, 32, true) == 8);
+  check(inference::select_cpu_native_threads(guest, {4}, 32, true) == 4);
+  check(inference::select_cpu_native_threads(guest, {32}, 6, true) == 6);
+  const std::array ranked_guest{
+      CpuCacheClassInfo{.kind = CpuKind::kPerformance, .logical_cpus = 32, .physical_cores = 16}};
+  check(inference::select_cpu_native_threads(ranked_guest, {32}, 32, true) == 8);
+  const std::array differentiated_guest{
+      CpuCacheClassInfo{.kind = CpuKind::kPerformance, .logical_cpus = 24, .physical_cores = 12},
+      CpuCacheClassInfo{.kind = CpuKind::kEfficiency, .logical_cpus = 8, .physical_cores = 8}};
+  check(inference::select_cpu_native_threads(differentiated_guest, {32}, 32, true) == 12);
   check(inference::select_cpu_native_threads({}, {32}, 16) == 1);
   check(inference::select_cpu_native_threads(mixed, {}, 16) == 1);
   check(inference::select_cpu_native_threads(mixed, {32}, 1) == 1);

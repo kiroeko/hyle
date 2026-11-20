@@ -261,7 +261,7 @@ private:
 #if defined(HYLE_COMPUTE_CPU)
     case BackendKind::kCpu: {
       auto &endpoint = state.primary.emplace<CpuEndpoint>();
-      HYLE_RETURN_IF_ERROR(initialize_cpu(endpoint, cpu_options));
+      HYLE_RETURN_IF_ERROR(initialize_cpu(endpoint, cpu_options, true));
       state.device = state.host = state.staging = endpoint.memory;
       state.domains[0] = {.resource = endpoint.memory, .workspace_budget_bytes = budgets.host};
       state.targets[0] = {endpoint.source, graph::StorageDomainId{0}};
@@ -337,7 +337,7 @@ private:
 #if defined(HYLE_COMPUTE_CPU)
     if (selection.cpu_assist) {
       auto &endpoint = state.cpu.emplace();
-      HYLE_RETURN_IF_ERROR(initialize_cpu(endpoint, cpu_options));
+      HYLE_RETURN_IF_ERROR(initialize_cpu(endpoint, cpu_options, false));
       state.host = endpoint.memory;
       state.domains[state.domain_count++] = {.resource = state.host, .workspace_budget_bytes = budgets.host};
       state.targets[state.target_count++] = {endpoint.source, graph::StorageDomainId{1}};
@@ -688,7 +688,8 @@ private:
   }
 #if defined(HYLE_COMPUTE_CPU)
   static Status initialize_cpu(CpuEndpoint &endpoint,
-                               const compute::cpu::DefaultContextOptions *cpu_options) noexcept {
+                               const compute::cpu::DefaultContextOptions *cpu_options,
+                               bool primary) noexcept {
     if (cpu_options != nullptr) {
       HYLE_ASSIGN_OR_RETURN(endpoint.context, graph::cpu::create_context(*cpu_options));
     } else {
@@ -697,7 +698,8 @@ private:
       const auto classes = platform::available_cpu_cache_classes();
       if (capacity && classes)
         options.native_threads = select_cpu_native_threads(*classes, *capacity,
-            compute::cpu::native_thread_limit());
+            compute::cpu::native_thread_limit(),
+            primary && uses_wsl2_guest_cpu_topology());
       HYLE_ASSIGN_OR_RETURN(endpoint.context, graph::cpu::create_context(options));
     }
     HYLE_ASSIGN_OR_RETURN(endpoint.memory, compute::cpu::memory_resource(compute::cpu::device()));
