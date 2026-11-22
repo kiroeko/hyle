@@ -3,6 +3,7 @@
 #include "../compute_route_apple/apple_carrier.h"
 #include "../compute_route_apple/apple_sequence.h"
 #include "hyle/compute/low_precision.h"
+#include "hyle/compute/workload_semantics.h"
 #include "hyle/compute/model_ops.h"
 #include "hyle/graph/apple.h"
 #include "apple_lowering_internal.h"
@@ -90,6 +91,53 @@ Status match(const compute::TensorDesc &description, const mx::array &value) {
   if (spec.shape != value.shape() || spec.dtype != value.dtype())
     return Status::InvalidArgument(
         "Apple Graph native array shape/dtype disagrees with schema");
+  return Status::Ok();
+}
+
+Status prepare_packed_projection(const std::shared_ptr<ca::detail::Runtime> &runtime,
+    const RegionCompileRequest &boundary, const Plan &plan, Node &node,
+    std::span<const compute::TensorDesc> inputs) {
+  if (inputs.size() != 2 || node.outputs.size() != 1) return Status::Ok();
+  const bool scores = node.carrier == ca::detail::RegionKind::kGgml &&
+      ca::detail::packed_bfloat_projection_eligible(node.operation, inputs[0], inputs[1]);
+  const bool matmul = boundary.workload.region == compute::workload_semantics::kTargetTextForward &&
+      node.carrier == ca::detail::RegionKind::kMlx &&
+      plan.descriptions[node.outputs[0]].data_type() == compute::DataType::kBFloat16 &&
+      ca::detail::packed_bfloat_matmul_eligible(node.operation, inputs[0], inputs[1]);
+  if (!scores && !matmul) return Status::Ok();
+  auto description = inputs[1];
+  if (matmul) {
+    HYLE_ASSIGN_OR_RETURN(description, inputs[1].transposed());
+    if (!description.is_dense()) return Status::Ok();
+  }
+  const auto find_constant = [&](std::size_t ordinal) -> const ConstantBinding * {
+    const auto entry = std::ranges::find_if(boundary.constants,
+        [&](const ConstantBinding &value) { return value.value.ordinal() == ordinal; });
+    return entry == boundary.constants.end() ? nullptr : &*entry;
+  };
+  const auto ordinal = node.inputs[1];
+  auto weight = find_constant(ordinal);
+  // A transpose can be an incoming constant alias or a view within the native
+  // region. Both refer to the same original contiguous immutable rows.
+  if (!weight && matmul) {
+    for (const auto &prior : plan.nodes) {
+      const auto *view = prior.operation.get_if<compute::View>();
+      constexpr std::array<std::int8_t, 2> transpose{1, 0};
+      if (!view || view->kind() != compute::ViewKind::kPermute ||
+          !std::ranges::equal(view->permutation(), transpose) ||
+          prior.inputs.size() != 1 || prior.outputs.size() != 1 ||
+          prior.outputs[0] != ordinal || plan.descriptions[prior.inputs[0]] != description)
+        continue;
+      weight = find_constant(prior.inputs[0]);
+      break;
+    }
+  }
+  if (!weight || (weight->tensor.description() != description && weight->tensor.description() != inputs[1]))
+    return Status::Ok();
+  HYLE_ASSIGN_OR_RETURN(auto original, compute::ConstTensorView::create(description, weight->tensor.storage()));
+  HYLE_ASSIGN_OR_RETURN(node.packed_projection, ca::detail::prepare_bfloat_projection(
+      runtime, original, weight->owner, weight->lease, boundary.resource_budget));
+  if (node.packed_projection) node.carrier = ca::detail::RegionKind::kMlx;
   return Status::Ok();
 }
 
@@ -419,10 +467,14 @@ Result<std::vector<mx::array>> trace(const Plan &plan,
       prepared.biases = plan.prepared_casts[node.inputs[3]];
     }
     ca::detail::RowCacheAccessFacts row_access;
-    auto fused = node.packed_projection
-        ? std::optional(ca::detail::lower_packed_bfloat_projection(
-              *node.packed_projection, arguments[1], arguments[0], stream))
-        : prepare_gated_projection(producers, uses, node, values, stream);
+    auto fused = [&]() -> std::optional<mx::array> {
+      if (!node.packed_projection)
+        return prepare_gated_projection(producers, uses, node, values, stream);
+      const bool matmul = node.operation.get_if<compute::MatMul>() != nullptr;
+      const auto weights = matmul ? mx::transpose(arguments[1], stream) : arguments[1];
+      return ca::detail::lower_packed_bfloat_projection(*node.packed_projection, weights,
+          arguments[0], matmul ? mx::bfloat16 : mx::float32, stream);
+    }();
     auto outputs =
         fused ? Result<std::vector<mx::array>>(std::vector{std::move(*fused)}) :
         prepared.scales || prepared.biases
@@ -823,17 +875,7 @@ static Result<ca::Program> compile_impl(const std::shared_ptr<ca::detail::Runtim
         descriptions.push_back(plan->descriptions[input]);
       HYLE_ASSIGN_OR_RETURN(node->carrier,
           ca::detail::analyze_native_carrier(node->operation, descriptions));
-      if (boundary && node->carrier == ca::detail::RegionKind::kGgml &&
-          descriptions.size() == 2 && ca::detail::packed_bfloat_projection_eligible(
-              node->operation, descriptions[0], descriptions[1])) {
-        const auto weight = std::ranges::find_if(boundary->constants,
-            [&](const ConstantBinding &entry) { return entry.value.ordinal() == node->inputs[1]; });
-        if (weight != boundary->constants.end() && weight->tensor.description() == descriptions[1]) {
-          HYLE_ASSIGN_OR_RETURN(node->packed_projection, ca::detail::prepare_bfloat_projection(
-              runtime, weight->tensor, weight->owner, weight->lease, boundary->resource_budget));
-          if (node->packed_projection) node->carrier = ca::detail::RegionKind::kMlx;
-        }
-      }
+      if (boundary) HYLE_RETURN_IF_ERROR(prepare_packed_projection(runtime, *boundary, *plan, *node, descriptions));
       plan->nodes.push_back(std::move(*node));
     }
     // Retain only constants reachable by the live native nodes or published

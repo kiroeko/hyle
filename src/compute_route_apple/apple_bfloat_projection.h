@@ -21,6 +21,8 @@ struct PreparedBFloatProjection final {
 // Available only for the measured short, large dense F32-score geometry.
 HYLE_COMPUTE_ROUTE_APPLE_API bool packed_bfloat_projection_eligible(
     const Operation &, const TensorDesc &activation, const TensorDesc &weights) noexcept;
+HYLE_COMPUTE_ROUTE_APPLE_API bool packed_bfloat_matmul_eligible(
+    const Operation &, const TensorDesc &activation, const TensorDesc &weights) noexcept;
 
 // A null result leaves the original carrier selected. Preparation is scoped
 // to the exact original allocation, Runtime and resource budget.
@@ -36,6 +38,6 @@ std::array<mlx::core::array, 2> pack_bfloat_projection(
 
 HYLE_COMPUTE_ROUTE_APPLE_API mlx::core::array lower_packed_bfloat_projection(
     const PreparedBFloatProjection &, const mlx::core::array &weights,
-    const mlx::core::array &activation, mlx::core::Stream);
+    const mlx::core::array &activation, mlx::core::Dtype output, mlx::core::Stream);
 
 } // namespace hyle::compute::apple::detail

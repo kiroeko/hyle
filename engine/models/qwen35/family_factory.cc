@@ -1,6 +1,7 @@
 // Complete Qwen-private cold Family assembly. No Model/Session or runtime
 // admission/publication owner is included or retained by this implementation.
 #include "family_factory.h"
+#include "hyle/compute/workload_semantics.h"
 
 #include <algorithm>
 #include <chrono>
@@ -948,6 +949,8 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
     for (const auto &point : bindings) variants.push_back({point});
     g::CompileOptions compile_options{.shape_policy = g::CompileShapePolicy::kFiniteExact,
         .exact_variants = variants, .constants = assembly.constants()};
+    if (role == GraphRole::kText)
+      compile_options.workload.region = c::workload_semantics::kTargetTextForward;
     // Search and admission counters cover the whole finite family. Give every
     // explicitly requested child the library's per-graph cold search budget;
     // storage and device-resource limits remain independent.
