@@ -15720,25 +15720,29 @@ TEST(GraphRegions, DiscoveryPreservesTheExistingExternalEntryFrontier) {
     auto finished = std::move(builder).finish();
     ASSERT_TRUE(finished) << finished.error().message();
     const auto &graph = *finished;
-    std::vector<std::vector<NodeId>> regions;
-    const auto status = hyle::graph::detail::discover_regions(
-        graph, hyle::mem::system_allocator(),
-        [&](NodeId node) -> Result<bool> { return node == a || node == c; },
-        [&](std::span<const NodeId> nodes) -> Result<bool> {
-          regions.emplace_back(nodes.begin(), nodes.end());
-          return true;
-        });
-    ASSERT_TRUE(status.ok()) << status.message();
-    const bool split = edges == Edges::kNewData || edges == Edges::kNewControl ||
-        edges == Edges::kReenterData || edges == Edges::kReenterControl;
-    if (split)
-      EXPECT_EQ(regions, (std::vector<std::vector<NodeId>>{{a}, {c}}));
-    else
-      EXPECT_EQ(regions, (std::vector<std::vector<NodeId>>{{a, c}}));
-    for (const auto &region : regions) {
-      auto contractible = hyle::graph::is_region_contractible(graph, region);
-      ASSERT_TRUE(contractible) << contractible.error().message();
-      EXPECT_TRUE(*contractible);
+    using hyle::graph::detail::RegionEntryPolicy;
+    for (auto policy : {RegionEntryPolicy::kPreserve, RegionEntryPolicy::kExtendIndependent}) {
+      SCOPED_TRACE(static_cast<int>(policy));
+      std::vector<std::vector<NodeId>> regions;
+      const auto status = hyle::graph::detail::discover_regions(
+          graph, hyle::mem::system_allocator(),
+          [&](NodeId node) -> Result<bool> { return node == a || node == c; },
+          [&](std::span<const NodeId> nodes) -> Result<bool> {
+            regions.emplace_back(nodes.begin(), nodes.end());
+            return true;
+          }, {}, policy);
+      ASSERT_TRUE(status.ok()) << status.message();
+      const bool new_dependency = edges == Edges::kNewData || edges == Edges::kNewControl;
+      const bool reentry = edges == Edges::kReenterData || edges == Edges::kReenterControl;
+      if (reentry || (new_dependency && policy == RegionEntryPolicy::kPreserve))
+        EXPECT_EQ(regions, (std::vector<std::vector<NodeId>>{{a}, {c}}));
+      else
+        EXPECT_EQ(regions, (std::vector<std::vector<NodeId>>{{a, c}}));
+      for (const auto &region : regions) {
+        auto contractible = hyle::graph::is_region_contractible(graph, region);
+        ASSERT_TRUE(contractible) << contractible.error().message();
+        EXPECT_TRUE(*contractible);
+      }
     }
   }
 }

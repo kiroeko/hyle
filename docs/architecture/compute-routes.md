@@ -46,6 +46,8 @@ launch topology；“尺寸不变”不是充分条件。ggml自有stream、pool
 MLX GPU后端本来使用Metal，优先在同一runtime内复用成熟compiled region、Primitive或合法kernel扩展，
 避免每个op跨runtime。必要时可使用独立Metal或ggml-Metal region，但须承担真实的buffer、格式、
 时间线、完成及边界成本。统一物理内存不代表任意array/buffer可零复制互换。
+原生Apple Source在冷期可把独立的外部输入归入同一次MLX评估。离开区域再返回的数据或控制边仍会切开区域，
+Graph继续检查覆盖、放置和依赖。存在显式放置限制、叶节点实现竞争或自定义lowering时，保留原先的区域划分。
 
 MLX生成array由实际owner保活，不为统一out-buffer形状强制影子复制。cache hit仍可能构造执行
 arrays/metadata，应按实际managed成本描述；不能从compile名称推断无分配重放。

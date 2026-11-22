@@ -35,11 +35,13 @@ struct RegionDiscoveryOptions final {
   bool constant_views_at_entry = false;
 };
 
+enum class RegionEntryPolicy { kPreserve, kExtendIndependent };
+
 // A native region must not leave and re-enter through another provider.
 // Discover maximal legal prefixes in topological order rather than rejecting
 // the entire eligible set. Independent interleaved nodes do not split a region.
-// A later selected node cannot add a previously uncovered external producer
-// to the entry frontier: doing so would delay the independent earlier prefix.
+// By default, a new external dependency splits the region so the earlier
+// prefix can run as soon as its own inputs are available.
 // Only direct data/control producers establish this conservative proof; no
 // general transitive closure is inferred. Each edge is visited at most three times; epoch
 // stamps avoid clearing graph-sized scratch after every boundary. The compiler
@@ -47,7 +49,8 @@ struct RegionDiscoveryOptions final {
 template <class Eligible, class Emit>
 Status discover_regions(const Graph &graph, mem::AllocatorRef allocator,
                         Eligible eligible, Emit emit,
-                        RegionDiscoveryOptions options = {}) noexcept {
+                        RegionDiscoveryOptions options = {},
+                        RegionEntryPolicy entry_policy = RegionEntryPolicy::kPreserve) noexcept {
   container::SmallVector<NodeId, 16, mem::AllocatorRef> nodes(allocator);
   container::SmallVector<std::int64_t, 16, mem::AllocatorRef> marks(allocator);
   container::SmallVector<std::int64_t, 16, mem::AllocatorRef> incoming(allocator);
@@ -117,7 +120,8 @@ Status discover_regions(const Graph &graph, mem::AllocatorRef allocator,
       new_frontier |= marks[id.ordinal()] != epoch && incoming[id.ordinal()] != epoch &&
                       incoming[id.ordinal()] != constant_entry;
     }));
-    if (selected && size != 0 && (from_outside || new_frontier)) {
+    if (selected && size != 0 &&
+        (from_outside || (new_frontier && entry_policy == RegionEntryPolicy::kPreserve))) {
       HYLE_ASSIGN_OR_RETURN(auto more, emit(std::span(nodes).first(size)));
       if (!more)
         return Status::Ok();

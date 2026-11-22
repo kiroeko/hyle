@@ -159,6 +159,15 @@ Status propose(void *context, const RegionDiscoveryRequest &request,
   if (!ct_allowed.try_resize(graph.node_count()))
     return Status::ResourceExhausted("Apple CT discovery metadata");
   std::ranges::fill(ct_allowed, std::uint8_t{0});
+  // The native-only route prepares its pure work for the original Apple
+  // runtime. A larger region can share one MLX evaluation across independent
+  // inputs. Keep the original partitioning when placement is restricted,
+  // leaf providers compete, or custom lowering is active.
+  const auto &source = *static_cast<const SourceContext *>(context);
+  const auto entry_policy = request.allowed_nodes.empty() &&
+          request.leaf_preferences.empty() && !source.custom
+      ? graph::detail::RegionEntryPolicy::kExtendIndependent
+      : graph::detail::RegionEntryPolicy::kPreserve;
   const auto ordinary_begin = writer.size();
   HYLE_RETURN_IF_ERROR(graph::detail::discover_regions(graph, allocator,
       [&](NodeId node) -> Result<bool> {
@@ -181,7 +190,7 @@ Status propose(void *context, const RegionDiscoveryRequest &request,
                      .repack_bytes = std::nullopt, .synchronization_count = 0, .dispatch_count = 1},
             .route = 1, .replay_class = compute::ProviderReplayClass::kManaged,
             .implementation = compute::ProviderImplementationId{1}, .preference = 200});
-        }));
+        }, {}, entry_policy));
   const auto ordinary_end = writer.size();
   if (!request.allowed_nodes.empty() && !writer.proposal_limit_reached() && !writer.node_limit_reached())
     HYLE_RETURN_IF_ERROR(graph::detail::add_region_singleton_fallbacks(writer, ordinary_begin));
