@@ -103,6 +103,120 @@ Result<mx::Shape> native_shape(const TensorDesc &description) {
   }
   return shape;
 }
+
+// A short projection can partition K across SIMD groups while each
+// threadgroup reuses its two weight rows for all of the queries.
+mx::array split_bfloat_projection(const mx::array &weight,
+                                 const mx::array &input, mx::Stream stream) {
+  static const auto kernel = mx::fast::metal_kernel(
+      "hyle_bfloat_split_projection", {"matrix", "activation"}, {"output"},
+      R"METAL(
+    const uint lane = thread_index_in_simdgroup;
+    const uint group = simdgroup_index_in_threadgroup;
+    const uint row = threadgroup_position_in_grid.x * 2;
+    const uint first = (group * 16 + lane / 2) * 8 + (lane % 2) * 4;
+    const auto weights = reinterpret_cast<const device bfloat4 *>(matrix);
+    float sums[QUERIES][2] = {};
+    for (uint start = first; start < INNER_VECTORS; start += 512) {
+      #pragma unroll
+      for (uint r = 0; r < 2; ++r) {
+        const uint base = (row + r) * INNER_VECTORS + start;
+        float4 w[4];
+        #pragma unroll
+        for (uint i = 0; i < 4; ++i)
+          w[i] = float4(weights[base + i]);
+        #pragma unroll
+        for (uint q = 0; q < QUERIES; ++q) {
+          float partial = 0.0f;
+          #pragma unroll
+          for (uint i = 0; i < 4; ++i) {
+            // MLX makes inputs row-contiguous. The activation can still be
+            // a view whose byte offset is only aligned to one BF16 element.
+            const uint x = 4 * (q * INNER_VECTORS + start + i);
+            const float4 value = float4(activation[x], activation[x + 1],
+                                        activation[x + 2], activation[x + 3]);
+            partial += dot(w[i], value);
+          }
+          sums[q][r] += partial;
+        }
+      }
+    }
+    threadgroup float partial[QUERIES][2][4];
+    #pragma unroll
+    for (uint q = 0; q < QUERIES; ++q) {
+      #pragma unroll
+      for (uint r = 0; r < 2; ++r) {
+        const float sum = simd_sum(sums[q][r]);
+        if (lane == 0)
+          partial[q][r][group] = sum;
+      }
+    }
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+    if (group == 0) {
+      #pragma unroll
+      for (uint q = 0; q < QUERIES; ++q) {
+        #pragma unroll
+        for (uint r = 0; r < 2; ++r) {
+          const float sum = simd_sum(lane < 4 ? partial[q][r][lane] : 0.0f);
+          if (lane == 0)
+            output[q * OUTPUT_ROWS + row + r] = static_cast<bfloat16_t>(sum);
+        }
+      }
+    }
+  )METAL",
+      "", true, false,
+      mx::CompileOptions(static_cast<int>(mx::MathMode::Fast)));
+  const auto rows = weight.shape(0);
+  const auto queries = input.shape(0);
+  return kernel({weight, input}, {{queries, rows}}, {mx::bfloat16},
+                {64 * rows, 1, 1}, {128, 1, 1},
+                {{"INNER_VECTORS", weight.shape(1) / 4},
+                 {"QUERIES", queries}, {"OUTPUT_ROWS", rows}},
+                std::nullopt, false, stream)[0];
+}
+
+std::optional<mx::array> projection_weight_rows(const mx::array &right,
+                                               mx::Stream stream) {
+  constexpr auto alignment = 4 * sizeof(std::uint16_t);
+  if (right.is_available() && right.strides(0) == 1 &&
+      right.strides(1) == right.shape(0) && right.offset() % alignment == 0)
+    return mx::transpose(right, stream);
+
+  if (!right.has_primitive() || right.inputs().size() != 1)
+    return std::nullopt;
+  const auto *transpose = dynamic_cast<const mx::Transpose *>(&right.primitive());
+  if (!transpose)
+    return std::nullopt;
+  const auto axes = transpose->state();
+  if (axes.size() != 2 || axes[0] != 1 || axes[1] != 0)
+    return std::nullopt;
+  const auto &weight = right.inputs().front();
+  if (!weight.is_available() || !weight.flags().row_contiguous ||
+      weight.offset() % alignment != 0 || weight.shape(0) != right.shape(1) ||
+      weight.shape(1) != right.shape(0))
+    return std::nullopt;
+  return weight;
+}
+
+std::optional<mx::array> lower_short_bfloat_projection(
+    const mx::array &left, const mx::array &right, mx::Stream stream) {
+  if (left.ndim() != 2 || right.ndim() != 2 ||
+      left.dtype() != mx::bfloat16 || right.dtype() != mx::bfloat16 ||
+      left.shape(0) < 1 || left.shape(0) > 4)
+    return std::nullopt;
+  const auto inner = left.shape(1);
+  const auto rows = right.shape(1);
+  // These are the two projection geometries for which split reduction and
+  // shared weight reads have been measured on M4. The normal MLX path handles
+  // other shapes and weights with a different layout.
+  if (!((inner == 2048 && rows == 6144) || (inner == 6144 && rows == 2048)))
+    return std::nullopt;
+  auto weight = projection_weight_rows(right, stream);
+  if (!weight)
+    return std::nullopt;
+  return split_bfloat_projection(*weight, left, stream);
+}
+
 mx::array scalar(ScalarValue value, mx::Stream stream) {
   const auto bits = value.bits();
   switch (value.data_type()) {
@@ -851,6 +965,8 @@ Result<std::vector<mx::array>> lower_tensor(const Operation &operation,
         return std::unexpected(Status::Unimplemented(
             "Apple MLX MatMul requires floating inputs and F32 accumulation"));
       const auto &left=inputs[0],&right=inputs[1];
+      if (auto split = lower_short_bfloat_projection(left, right, stream))
+        return std::vector{std::move(*split)};
       if(left.ndim()==2 && right.ndim()==2 && left.dtype()==mx::bfloat16 && right.dtype()==mx::bfloat16 &&
           left.shape(0)>1 && left.shape(0)<=8){
         // Retain the native single-row GEMV reduction for thin BF16 batches.

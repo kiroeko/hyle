@@ -46,6 +46,66 @@ mx::array bf16_array(std::span<const std::byte> bytes, mx::Shape shape) {
                mx::bfloat16, apple_tensor_test::stream()));
 }
 
+TEST(AppleGraph, ShortBfloatProjectionPreservesUnalignedActivationRows) {
+  constexpr int inner = 2048;
+  constexpr int columns = 6144;
+  constexpr auto type = c::DataType::kBFloat16;
+  const auto stream = apple_tensor_test::stream();
+  auto context = a::Context::create();
+  ASSERT_TRUE(context);
+
+  std::vector<std::uint16_t> stored(columns * inner);
+  for (int row = 0; row < columns; ++row)
+    stored[row * inner + row % inner] = 0x3f80;  // BF16 1.0
+  auto weight = apple_tensor_test::ready(mx::view(
+      mx::array(stored.data(), {columns, inner}, mx::uint16), mx::bfloat16,
+      stream));
+  ASSERT_EQ(weight.offset() % 8, 0);
+
+  for (const int rows : {1, 4}) {
+    SCOPED_TRACE(rows);
+    auto builder = g::GraphBuilder::create();
+    ASSERT_TRUE(builder);
+    auto x = builder->input(dense(type, {rows, inner}));
+    auto w = builder->constant(dense(type, {columns, inner}));
+    ASSERT_TRUE(x && w);
+    constexpr std::array<std::int32_t, 2> axes{1, 0};
+    auto permute = c::View::permute(axes);
+    ASSERT_TRUE(permute);
+    auto transposed = builder->add(*permute, *w);
+    ASSERT_TRUE(transposed);
+    auto y = builder->add(c::MatMul{}, *x, *transposed);
+    ASSERT_TRUE(y && builder->publish(*y).ok());
+    auto graph = std::move(*builder).finish();
+    ASSERT_TRUE(graph);
+    auto program = ga::compile(*context, *graph, std::array{weight});
+    ASSERT_TRUE(program) << program.error().message();
+    auto slot = program->create_invocation();
+    ASSERT_TRUE(slot);
+
+    const auto pattern = mx::astype(
+        mx::arange(rows * inner + 1, mx::float32, stream), mx::bfloat16, stream);
+    auto input = apple_tensor_test::ready(mx::reshape(
+        mx::slice(pattern, {1}, {rows * inner + 1}, stream), {rows, inner},
+        stream));
+    ASSERT_EQ(input.offset() % 8, 2);
+    ASSERT_TRUE(slot->bind(std::array{input}).ok());
+    auto work = slot->submit();
+    ASSERT_TRUE(work);
+    auto result = work->wait();
+    ASSERT_TRUE(result);
+    const auto &output = result->get()->arrays()[0];
+    ASSERT_EQ(output.shape(), (mx::Shape{rows, columns}));
+    auto source = mx::view(input, mx::uint16, stream);
+    auto bits = mx::view(output, mx::uint16, stream);
+    mx::eval(std::vector{source, bits});
+    for (int row = 0; row < rows; ++row)
+      for (int col = 0; col < columns; ++col)
+        ASSERT_EQ(bits.data<std::uint16_t>()[row * columns + col],
+                  source.data<std::uint16_t>()[row * inner + col % inner]);
+  }
+}
+
 TEST(AppleGraph, D5RealQwenProjectionUsesExactProfileAndReplays) {
   const auto fixture_root = d5_qwen35_fixture::root();
   if (!fixture_root)
