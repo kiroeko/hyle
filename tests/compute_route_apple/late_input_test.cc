@@ -1739,6 +1739,97 @@ TEST(AppleLateInput, SharedPendingAncestorsAreCollectedOnceBeforeNativeCopy) {
   }
   ASSERT_TRUE(context.close().ok());
 }
+TEST(AppleLateInput, CheckedStoreGroupKeepsEachOriginalWriterAndVerdict) {
+  namespace m = hyle::mem;
+  auto context = a::Context::create().value();
+  auto runtime = ad::ContextAccess::runtime(context);
+  auto memory = a::MemoryResource::create(context).value();
+  const std::array specs{a::InputSpec{{4}, mx::float32}, a::InputSpec{{4}, mx::int32}};
+  auto program = ad::ContextAccess::compile_device_prefix(runtime, [](const auto &args, mx::Stream stream) {
+    return a::lower(c::Operation{c::Gather{}}, args, stream);
+  }, specs).value();
+  const auto description = c::TensorDesc::dense(c::DataType::kFloat32,
+      std::array<std::int64_t, 1>{4}).value();
+  constexpr std::size_t writers = 3;
+  const std::array values{11.f, 23.f, 37.f, 41.f};
+  const std::array sentinel{-1.f, -2.f, -3.f, -4.f};
+  auto target = m::Buffer::create(memory.ref(), sizeof(sentinel), 256).value();
+  for (unsigned mode = 0; mode < 4; ++mode) {
+    SCOPED_TRACE(mode);
+    const bool failed_guard = mode == 1;
+    const bool overlapping_writes = mode == 2;
+    const bool cancelled = mode == 3;
+    ASSERT_TRUE(target.write(0, std::as_bytes(std::span(sentinel))).ok());
+    auto producer = program.create_invocation().value();
+    ASSERT_TRUE(producer.bind(std::array{mx::array(values.data(), {4}, mx::float32),
+        mx::array({0, 1, failed_guard ? 99 : 2, 3}, mx::int32)}).ok());
+    std::array<std::shared_ptr<ad::CopyRecording>, writers> copies;
+    for (std::size_t i = 0; i < writers; ++i) {
+      copies[i] = ad::prepare_copy_recording_runtime(runtime, 1, m::system_allocator(), sizeof(float),
+          ad::CopyRecordingMode::kReplayable).value();
+      ASSERT_TRUE(ad::prepare_device_copy_recording(*copies[i]).value());
+      ASSERT_TRUE(ad::reserve_copy_dependencies(*copies[i], 1).ok());
+      const auto position = overlapping_writes && i == 1 ? 0 : i;
+      const std::array spans{ad::HostCopyRange{i * sizeof(float),
+          target.view().subview(position * sizeof(float), sizeof(float)).value()}};
+      ASSERT_TRUE(ad::bind_device_copy_ranges(*copies[i],
+          ad::InvocationAccess::source(producer, 0).value(), description, spans).ok());
+    }
+    GpuEventGate gpu(runtime);
+    ASSERT_TRUE(gpu.enqueue().ok());
+    FifoGate admission;
+    ASSERT_TRUE(admission.enqueue(runtime).ok());
+    admission.wait_entered();
+    auto produced = producer.submit().value();
+    std::array<c::Completion, writers> completed;
+    completed[0] = ad::submit_copy_recording(*copies[0]).value();
+    for (std::size_t i = 1; i < writers; ++i) {
+      const std::array dependency{c::detail::CompletionAccess::dependency(completed[i - 1])};
+      completed[i] = ad::submit_copy_recording(*copies[i], dependency).value();
+    }
+    if (cancelled) EXPECT_TRUE(completed[1].request_cancel().ok());
+    FifoGate witness;
+    auto queued = witness.enqueue(runtime);
+    admission.open_and_join();
+    const bool pending = queued.ok() && !cancelled && witness.wait_entered_for(std::chrono::seconds(2));
+    if (pending) {
+      for (std::size_t i = 0; i < writers; ++i) {
+        EXPECT_EQ(completed[i].poll().value(), c::CompletionPoll::kPending);
+        EXPECT_TRUE(ad::copy_recording_reuse_gate(*copies[i]).IsUnavailable());
+      }
+    }
+    gpu.open();
+    witness.open_and_join();
+    ASSERT_TRUE(queued.ok()) << queued.message();
+    EXPECT_TRUE(pending || cancelled);
+    const auto producer_done = produced.completion().wait();
+    EXPECT_EQ(producer_done.IsOutOfRange(), failed_guard);
+    EXPECT_EQ(producer_done.ok(), !failed_guard);
+    for (std::size_t i = 0; i < writers; ++i) {
+      const auto terminal = completed[i].wait();
+      EXPECT_EQ(terminal.IsOutOfRange(), failed_guard) << terminal.message();
+      EXPECT_EQ(terminal.IsCancelled(), cancelled && i != 0) << terminal.message();
+      EXPECT_EQ(terminal.ok(), !failed_guard && (!cancelled || i == 0)) << terminal.message();
+    }
+    std::uint64_t dispatches = 0;
+    for (const auto &copy : copies) dispatches += ad::copy_recording_report(*copy).native_calls;
+    EXPECT_EQ(dispatches, overlapping_writes ? 2u : 1u);
+    auto expected = sentinel;
+    if (!failed_guard) {
+      expected[0] = values[overlapping_writes ? 1 : 0];
+      if (!cancelled) {
+        if (!overlapping_writes) expected[1] = values[1];
+        expected[2] = values[2];
+      }
+    }
+    std::array<float, sentinel.size()> actual{};
+    ASSERT_TRUE(target.read(0, std::as_writable_bytes(std::span(actual))).ok());
+    EXPECT_EQ(actual, expected);
+  }
+  ASSERT_TRUE(context.close().ok());
+  { std::lock_guard lock(runtime->queue_mutex); EXPECT_EQ(runtime->native_tails, 0u); }
+}
+
 TEST(AppleLateInput, PendingCheckedByteRangesPreserveBitsAndEveryUnownedByte) {
   auto context=a::Context::create().value();auto runtime=ad::ContextAccess::runtime(context);
   const std::array specs{a::InputSpec{{4},mx::float32},a::InputSpec{{4},mx::int32}};

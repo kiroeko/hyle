@@ -300,7 +300,256 @@ bool aligned_copy_commands(const CopyRecording &state) noexcept {
     return copy.source_offset%4==0 && copy.destination_offset%4==0 && copy.bytes%4==0;
   });
 }
+// A cohort borrows earlier accepted copies only while resolving this original
+// FIFO's first ready group. Public events are installed after actual encoding.
+thread_local std::span<CopyRecording *const> resolving_cohort;
+
+bool cohort_predecessor(const CopyRecording &state) noexcept {
+  return std::ranges::find(resolving_cohort, &state) != resolving_cohort.end();
+}
+
+class ResolveCohort final {
+public:
+  explicit ResolveCohort(std::span<CopyRecording *const> prefix) noexcept
+      : previous_(std::exchange(resolving_cohort, prefix)) {}
+  ~ResolveCohort() { resolving_cohort = previous_; }
+private:
+  std::span<CopyRecording *const> previous_;
+};
+
+bool eligible_store_copy(const CopyRecording &state) noexcept {
+  return state.host_copy && state.host_range_count && state.deferred_copy_active &&
+      state.source_pinned && !state.device_append_active && !state.preflight &&
+      !state.cancel.load(std::memory_order_acquire);
+}
+
+struct CohortRange final {
+  std::uintptr_t host = 0;
+  std::uint64_t gpu = 0;
+  std::size_t bytes = 0;
+};
+
+bool intersect_ranges(const CohortRange &a, const CohortRange &b) noexcept {
+  const auto intersect = [](std::uint64_t x, std::size_t x_size, std::uint64_t y, std::size_t y_size) {
+    return x <= y ? y - x < x_size : x - y < y_size;
+  };
+  return intersect(a.gpu, a.bytes, b.gpu, b.bytes) ||
+      intersect(a.host, a.bytes, b.host, b.bytes);
+}
+
+bool inspect_cohort_range(void *opaque, std::size_t offset, std::size_t bytes,
+                          std::uintptr_t device, CohortRange &range) noexcept {
+  id<MTLBuffer> buffer = (__bridge id<MTLBuffer>)opaque;
+  if (buffer == nil || !buffer.contents || !buffer.gpuAddress || !bytes ||
+      reinterpret_cast<std::uintptr_t>((__bridge void *)buffer.device) != device ||
+      offset > buffer.length || bytes > buffer.length - offset)
+    return false;
+  range = {reinterpret_cast<std::uintptr_t>(buffer.contents) + offset,
+           buffer.gpuAddress + offset, bytes};
+  return true;
+}
+
+void execute_copy(Job *job) noexcept;
+void execute_copy_single(Job *, const Status *resolved = nullptr) noexcept;
+
+class CheckedStoreCohort final {
+public:
+  static constexpr std::size_t job_capacity = 8;
+  static constexpr std::size_t span_capacity = 64;
+
+  explicit CheckedStoreCohort(CopyRecording &first) noexcept
+      : runtime_(*first.runtime), first_(&first) {}
+
+  bool prepare() noexcept {
+    std::array<CopyRecording *, job_capacity> candidates{first_};
+    std::size_t candidate_count = 1;
+    {
+      std::lock_guard lock(runtime_.queue_mutex);
+      if (!runtime_.failure.ok()) return false;
+      for (auto *next = runtime_.head; next && candidate_count < candidates.size(); next = next->next) {
+        if (next->execute != &execute_copy) break;
+        auto *copy = static_cast<CopyRecording *>(next);
+        if (!eligible_store_copy(*copy)) break;
+        candidates[candidate_count++] = copy;
+      }
+    }
+    if (candidate_count < 2) return false;
+    for (auto *candidate : std::span(candidates).first(candidate_count)) {
+      const ResolveCohort proof{members()};
+      if (!append(*candidate)) break;
+    }
+    if (count_ < 2) return false;
+
+    // A real completed callback may have joined the FIFO during the read-only
+    // proof. In that case leave the original order and all jobs intact.
+    std::lock_guard lock(runtime_.queue_mutex);
+    auto *next = runtime_.head;
+    for (std::size_t i = 1; i < count_; ++i) {
+      if (next != jobs_[i]) return false;
+      next = next->next;
+    }
+    runtime_.head = next;
+    if (!next) runtime_.tail = nullptr;
+    return true;
+  }
+
+  void run() noexcept {
+    std::array<Status, job_capacity> resolved;
+    bool ready = true;
+    for (std::size_t i = 0; i < count_; ++i) {
+      const ResolveCohort proof{members().first(i)};
+      resolved[i] = jobs_[i]->dependencies.resolve_copy();
+      ready &= resolved[i].ok() && !jobs_[i]->cancel.load(std::memory_order_acquire);
+    }
+    if (!ready || !record()) {
+      // The checked dispatch did not start. Original groups retain every
+      // captured dependency. The selected FIFO precedes later jobs like the
+      // old per-copy paths, including cancellation or a failed source.
+      for (std::size_t i = 0; i < count_; ++i) execute_copy_single(jobs_[i], &resolved[i]);
+    }
+  }
+
+private:
+  auto members() const noexcept -> std::span<CopyRecording *const> {
+    return std::span(jobs_).first(count_);
+  }
+
+  bool append(CopyRecording &state) noexcept {
+    bool selected = false;
+    if (!resolve_deferred_copy(state, &selected).ok() || !selected) return false;
+    const auto &guard = *state.deferred_copy;
+    CohortRange check{};
+    if (guard.check_count > 1 ||
+        (guard.check_count && !inspect_cohort_range(const_cast<void *>(guard.words[0].buffer),
+            guard.words[0].offset_bytes, 4, state.device, check)) ||
+        (count_ && (check.gpu != check_.gpu || check.host != check_.host ||
+                    (check.bytes && guard.words[0].buffer != guard_buffer_))))
+      return false;
+    const auto copies = std::span(state.commands).first(state.report.active_copies);
+    if (copies.empty() || copies.size() > span_capacity - span_count_ || !aligned_copy_commands(state))
+      return false;
+
+    std::size_t next = span_count_;
+    for (const auto &copy : copies) {
+      auto &source = reads_[next];
+      auto &destination = writes_[next];
+      if (!inspect_cohort_range(copy.source, copy.source_offset, copy.bytes, state.device, source) ||
+          !inspect_cohort_range(copy.destination, copy.destination_offset, copy.bytes, state.device, destination))
+        return false;
+      bool alias = intersect_ranges(source, destination) ||
+          (check.bytes && intersect_ranges(destination, check));
+      for (std::size_t previous = 0; previous < next; ++previous)
+        alias |= intersect_ranges(destination, reads_[previous]) ||
+            intersect_ranges(destination, writes_[previous]) || intersect_ranges(source, writes_[previous]);
+      if (alias) return false;
+      copies_[next] = copy;
+      ++next;
+    }
+    check_ = check;
+    guard_buffer_ = guard.check_count ? guard.words[0].buffer : nullptr;
+    span_count_ = next;
+    jobs_[count_++] = &state;
+    return true;
+  }
+
+  bool record() noexcept {
+    std::size_t reserved = 0;
+    for (; reserved < count_; ++reserved) {
+      if (runtime_.reserve_native_tail().ok()) continue;
+      for (std::size_t i = 0; i < reserved; ++i) runtime_.release_native_tail();
+      return false;
+    }
+    bool attached = false;
+    @autoreleasepool {
+      try {
+        auto &stream = *runtime_.stream;
+        auto &encoder = mlx::core::metal::get_command_encoder(stream);
+        for (auto *job : members()) job->dependencies.encode(stream);
+        encoder.end_encoding();
+        const auto native = NS::RetainPtr(encoder.get_command_buffer());
+        id<MTLCommandBuffer> command = (__bridge id<MTLCommandBuffer>)native.get();
+        auto &frontier = *runtime_.copy_fence;
+        const auto copies = std::span(copies_).first(span_count_);
+        auto &original = *first_->deferred_copy;
+        if (original.arguments.length < copies.size() * 4 * sizeof(std::uint64_t) ||
+            !original.encode(command, frontier.checked_copy, frontier.native, frontier.encoded, copies).ok()) {
+          for (std::size_t i = 0; i < reserved; ++i) runtime_.release_native_tail();
+          return false;
+        }
+        const auto originals = jobs_;
+        const auto count = count_;
+        [command addCompletedHandler:^(id<MTLCommandBuffer>) {
+          auto &runtime = *originals[0]->runtime;
+          {
+            std::lock_guard lock(runtime.queue_mutex);
+            HYLE_FATAL_ASSERT(runtime.native_tails >= count);
+            for (auto i = count; i != 0; --i) {
+              auto &tail = originals[i - 1]->native_tail;
+              tail.next = runtime.head;
+              runtime.head = &tail;
+              if (!runtime.tail) runtime.tail = &tail;
+            }
+          }
+          runtime.wake.unpark();
+        }];
+        attached = true;
+        for (auto *job : members()) {
+          job->native_command = native;
+          job->native_encoded = true;
+        }
+        frontier.encoded = true;
+        for (auto *job : members()) {
+          job->completion_event.set_value(job->submitted_epoch);
+          job->completion_event.signal(stream);
+        }
+        // Charge the physical dispatch once. The remaining original writers
+        // still report their own logical spans and completion.
+        first_->calls.fetch_add(1, std::memory_order_relaxed);
+        encoder.commit();
+        return true;
+      } catch (...) {
+        auto error = native_exception();
+        runtime_.poison(error);
+        for (auto *job : members()) job->native_terminal.Update(error);
+        try { mlx::core::metal::get_command_encoder(*runtime_.stream).synchronize(); } catch (...) {}
+        if (!attached) {
+          for (auto *job : members()) {
+            std::shared_ptr<CopyRecording> owner;
+            { std::lock_guard lock(job->completion_mutex); owner = std::move(job->admitted_owner); }
+            runtime_.release_native_tail();
+            auto terminal = job->dependencies.observe();
+            terminal.Update(error);
+            finish(*job, std::move(terminal));
+          }
+        }
+        return true;
+      }
+    }
+  }
+
+  Runtime &runtime_;
+  CopyRecording *first_;
+  std::array<CopyRecording *, job_capacity> jobs_{};
+  std::array<CopyCommand, span_capacity> copies_{};
+  std::array<CohortRange, span_capacity> reads_{}, writes_{};
+  CohortRange check_{};
+  const void *guard_buffer_ = nullptr;
+  std::size_t count_ = 0, span_count_ = 0;
+};
+
 void execute_copy(Job *job) noexcept {
+  auto &copy = *static_cast<CopyRecording *>(job);
+  if (eligible_store_copy(copy)) {
+    CheckedStoreCohort group(copy);
+    if (group.prepare()) {
+      group.run();
+      return;
+    }
+  }
+  execute_copy_single(job);
+}
+
+void execute_copy_single(Job *job, const Status *resolved) noexcept {
   auto &state = *static_cast<CopyRecording *>(job);
   std::shared_ptr<CopyRecording> owner;
   { std::lock_guard lock(state.completion_mutex); owner = std::move(state.admitted_owner); }
@@ -309,7 +558,7 @@ void execute_copy(Job *job) noexcept {
     std::lock_guard lock(state.runtime->queue_mutex); terminal = state.runtime->failure;
   }
   if (state.cancel.load(std::memory_order_acquire)) terminal.Update(Status::Cancelled("Apple copy cancelled before native recording"));
-  if (terminal.ok()) terminal.Update(state.dependencies.resolve_copy());
+  if (terminal.ok()) terminal.Update(resolved ? *resolved : state.dependencies.resolve_copy());
   bool deferred=false;
   if(terminal.ok() && state.host_copy && state.deferred_copy_active)
     terminal.Update(resolve_deferred_copy(state,&deferred));
@@ -530,8 +779,15 @@ Status prepare_deferred_copy(CopyRecording &state) noexcept {
   std::lock_guard lock(state.runtime->queue_mutex);
   @autoreleasepool {
     auto device=(__bridge id<MTLDevice>)reinterpret_cast<void *>(state.device);
-    HYLE_ASSIGN_OR_RETURN(state.deferred_copy_active,state.deferred_copy->prepare(device,state.limits.max_copies,
-        state.runtime->copy_fence->checked_copy));
+    // The first original recording supplies the group's descriptor storage.
+    // Its own capacity still suffices if a wider buffer cannot be prepared.
+    auto &pipeline = state.runtime->copy_fence->checked_copy;
+    const auto capacity = std::size_t(state.limits.max_copies);
+    const auto group_capacity = (std::max)(capacity, CheckedStoreCohort::span_capacity);
+    auto prepared = state.deferred_copy->prepare(device, group_capacity, pipeline);
+    if (!prepared && prepared.error().IsResourceExhausted() && group_capacity != capacity)
+      prepared = state.deferred_copy->prepare(device, capacity, pipeline);
+    HYLE_ASSIGN_OR_RETURN(state.deferred_copy_active, std::move(prepared));
   }
   state.prepared=true;
   return Status::Ok();
@@ -960,6 +1216,7 @@ Result<mlx::core::Event> copy_dependency_event(const CopyRecording &state, std::
     if (!state.terminal.ok()) return std::unexpected(state.terminal);
     return mlx::core::Event{};
   }
+  if (cohort_predecessor(state)) return mlx::core::Event{};
   if (!state.native_encoded || !state.native_command || state.completion_event.value() != epoch)
     return std::unexpected(Status::FailedPrecondition("Apple copy has no original pending event"));
   if (state.native_retired && !state.native_terminal.ok()) return std::unexpected(state.native_terminal);
@@ -1022,7 +1279,7 @@ Status copy_device_checks(CopyRecording &state,DeviceCheckInputs &checks) noexce
   if(state.done.load(std::memory_order_acquire))return state.terminal;
   HYLE_RETURN_IF_ERROR(state.native_terminal);
   if(state.native_retired)return Status::Ok();
-  if(!state.native_encoded)return Status::FailedPrecondition("Apple copy check has no original encoded prefix");
+  if(!state.native_encoded&&!cohort_predecessor(state))return Status::FailedPrecondition("Apple copy check has no original encoded prefix");
   HYLE_ASSIGN_OR_RETURN(auto fresh,visit_device_check(checks,&state,state.submitted_epoch));
   if(!fresh)return Status::Ok();
   HYLE_RETURN_IF_ERROR(state.dependencies.device_checks(checks));
