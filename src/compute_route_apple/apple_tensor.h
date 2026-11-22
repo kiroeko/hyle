@@ -22,6 +22,10 @@ struct PreparedMlxAffineMetadata final {
   std::optional<mlx::core::array> scales;
   std::optional<mlx::core::array> biases;
 };
+HYLE_COMPUTE_ROUTE_APPLE_API std::optional<mlx::core::array>
+lower_short_bfloat_gated_projection(const mlx::core::array &, const mlx::core::array &,
+    const mlx::core::array &, mlx::core::Stream);
+
 Result<std::vector<mlx::core::array>>
 lower_tensor(const Operation &operation,
              std::span<const mlx::core::array> inputs,

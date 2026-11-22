@@ -1,5 +1,6 @@
 #include "hyle/graph/apple.h"
 
+#include <algorithm>
 #include <array>
 #include <atomic>
 #include <cmath>
@@ -103,6 +104,85 @@ TEST(AppleGraph, ShortBfloatProjectionPreservesUnalignedActivationRows) {
       for (int col = 0; col < columns; ++col)
         ASSERT_EQ(bits.data<std::uint16_t>()[row * columns + col],
                   source.data<std::uint16_t>()[row * inner + col % inner]);
+  }
+}
+
+TEST(AppleGraph, GatedShortBfloatProjectionPreservesBothIntermediateRoundings) {
+  constexpr int inner = 2048;
+  constexpr int columns = 6144;
+  constexpr auto type = c::DataType::kBFloat16;
+  const auto stream = apple_tensor_test::stream();
+  auto context = a::Context::create();
+  ASSERT_TRUE(context);
+
+  // Exercise both signs and nontrivial BF16 fractions. Using separate gate
+  // and up matrices keeps the two row reductions independently observable.
+  std::uint32_t state = 0x5c7743u;
+  const auto operand = [&](int rows, int width, std::uint16_t exponent) {
+    std::vector<std::uint16_t> words(static_cast<std::size_t>(rows) * width);
+    for (auto &bits : words) {
+      state = 1664525u * state + 1013904223u;
+      bits = exponent | static_cast<std::uint16_t>((state >> 16) & 0x807fu);
+    }
+    return apple_tensor_test::ready(mx::view(
+        mx::array(words.data(), {rows, width}, mx::uint16), mx::bfloat16, stream));
+  };
+  const std::array weights{operand(columns, inner, 0x3c80),
+                           operand(columns, inner, 0x3b80)};
+  for (int rows : {1, 2, 3, 4}) {
+    SCOPED_TRACE(rows);
+    auto unaligned = operand(1, rows * inner + 1, 0x3f00);
+    auto input = apple_tensor_test::ready(mx::reshape(
+        mx::slice(unaligned, {0, 1}, {1, rows * inner + 1}, stream), {rows, inner}, stream));
+    ASSERT_EQ(input.offset() % 8, 2);
+    std::vector<std::uint16_t> reference;
+    for (bool expose_intermediates : {true, false}) {
+      auto builder = g::GraphBuilder::create();
+      ASSERT_TRUE(builder);
+      auto x = builder->input(dense(type, {rows, inner}));
+      auto gate_weights = builder->constant(dense(type, {columns, inner}));
+      auto up_weights = builder->constant(dense(type, {columns, inner}));
+      ASSERT_TRUE(x && gate_weights && up_weights);
+      auto permute = c::View::permute(std::array<std::int32_t, 2>{1, 0});
+      ASSERT_TRUE(permute);
+      auto g_weights = builder->add(*permute, *gate_weights);
+      auto u_weights = builder->add(*permute, *up_weights);
+      ASSERT_TRUE(g_weights && u_weights);
+      auto gate = builder->add(c::MatMul{}, *x, *g_weights);
+      auto up = builder->add(c::MatMul{}, *x, *u_weights);
+      ASSERT_TRUE(gate && up);
+      auto activated = builder->add(c::Unary{c::UnaryKind::kSilu}, *gate);
+      ASSERT_TRUE(activated);
+      auto product = builder->add(c::Binary{c::BinaryKind::kMultiply}, *activated, *up);
+      ASSERT_TRUE(product && builder->publish(*product).ok());
+      if (expose_intermediates) {
+        ASSERT_TRUE(builder->publish(*gate).ok());
+        ASSERT_TRUE(builder->publish(*up).ok());
+      }
+      auto graph = std::move(*builder).finish();
+      ASSERT_TRUE(graph);
+      auto program = ga::compile(*context, *graph, weights);
+      ASSERT_TRUE(program) << program.error().message();
+      auto slot = program->create_invocation();
+      ASSERT_TRUE(slot);
+      ASSERT_TRUE(slot->bind(std::array{input}).ok());
+      auto work = slot->submit();
+      ASSERT_TRUE(work);
+      auto result = work->wait();
+      ASSERT_TRUE(result);
+      const auto &output = result->get()->arrays()[0];
+      ASSERT_EQ(output.shape(), (mx::Shape{rows, columns}));
+      auto bits = mx::view(output, mx::uint16, stream);
+      mx::eval(bits);
+      const auto *first = bits.data<std::uint16_t>();
+      if (expose_intermediates) {
+        reference.assign(first, first + rows * columns);
+      } else {
+        auto mismatch = std::mismatch(reference.begin(), reference.end(), first);
+        ASSERT_EQ(mismatch.first, reference.end())
+            << "first differing BF16 output " << (mismatch.first - reference.begin());
+      }
+    }
   }
 }
 

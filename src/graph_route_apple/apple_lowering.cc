@@ -338,6 +338,39 @@ void prepare_gdn_inputs(const Plan &plan, std::span<const Node *const> producers
   prepare_conv_gdn_inputs(plan, producers, node, *q, *k, values, arguments, stream);
 }
 
+std::optional<mx::array> prepare_gated_projection(
+    std::span<const Node *const> producers, std::span<const std::uint8_t> uses,
+    const Node &node, const std::vector<std::optional<mx::array>> &values, mx::Stream stream) {
+  const auto *multiply = node.operation.get_if<compute::Binary>();
+  if (!multiply || multiply->kind != compute::BinaryKind::kMultiply || node.inputs.size() != 2)
+    return std::nullopt;
+  const auto unique_producer = [&](std::size_t id) -> const Node * {
+    if (uses[id] != 1) return nullptr;
+    const auto *producer = producers[id];
+    return producer && !producer->control_boundary && !producer->preserve_outputs ? producer : nullptr;
+  };
+  const auto *activate = unique_producer(node.inputs[0]);
+  const auto *silu = activate ? activate->operation.get_if<compute::Unary>() : nullptr;
+  if (!silu || silu->kind != compute::UnaryKind::kSilu || activate->inputs.size() != 1)
+    return std::nullopt;
+  const auto *gate = unique_producer(activate->inputs[0]);
+  const auto *up = unique_producer(node.inputs[1]);
+  const auto plain_projection = [](const Node *producer) {
+    const auto *operation = producer ? producer->operation.get_if<compute::MatMul>() : nullptr;
+    return operation && operation->accumulation_type == compute::DataType::kFloat32 &&
+        producer->inputs.size() == 2;
+  };
+  if (!plain_projection(gate) || !plain_projection(up) || gate->inputs[0] != up->inputs[0])
+    return std::nullopt;
+  if (values[activate->inputs[0]]->dtype() != mx::bfloat16 ||
+      values[node.inputs[0]]->dtype() != mx::bfloat16 ||
+      values[node.inputs[1]]->dtype() != mx::bfloat16)
+    return std::nullopt;
+  const auto &x = *values[gate->inputs[0]];
+  return ca::detail::lower_short_bfloat_gated_projection(x,
+      *values[gate->inputs[1]], *values[up->inputs[1]], stream);
+}
+
 Result<std::vector<mx::array>> trace(const Plan &plan,
                                      std::span<const Node> nodes,
                                      std::span<const std::size_t> input_ids,
@@ -352,13 +385,14 @@ Result<std::vector<mx::array>> trace(const Plan &plan,
   for (std::size_t i = 0; i < plan.constants.size(); ++i)
     values[plan.constants[i]] = plan.values[i];
   std::vector<const Node *> producers;
-  if (std::ranges::any_of(nodes, [](const Node &node) {
-        return node.operation.get_if<compute::GatedDeltaNet>() != nullptr;
-      })) {
-    producers.resize(plan.descriptions.size());
-    for (const auto &producer : nodes)
-      for (auto id : producer.outputs) producers[id] = &producer;
+  std::vector<std::uint8_t> uses(plan.descriptions.size());
+  producers.resize(plan.descriptions.size());
+  const auto use = [&](std::size_t id) { if (uses[id] < 2) ++uses[id]; };
+  for (const auto &producer : nodes) {
+    for (auto id : producer.outputs) producers[id] = &producer;
+    for (auto id : producer.inputs) use(id);
   }
+  for (auto id : output_ids) use(id);
   std::vector<mx::array> arguments;
   std::vector<compute::TensorDesc> descriptions;
   for (const auto &node : nodes) {
@@ -383,7 +417,9 @@ Result<std::vector<mx::array>> trace(const Plan &plan,
       prepared.biases = plan.prepared_casts[node.inputs[3]];
     }
     ca::detail::RowCacheAccessFacts row_access;
+    auto fused = prepare_gated_projection(producers, uses, node, values, stream);
     auto outputs =
+        fused ? Result<std::vector<mx::array>>(std::vector{std::move(*fused)}) :
         prepared.scales || prepared.biases
             ? ca::detail::lower_tensor(node.operation, arguments, stream, &prepared)
         : ca::detail::is_mlx_gguf_view(node.operation, descriptions)

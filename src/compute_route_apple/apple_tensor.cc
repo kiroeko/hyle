@@ -679,6 +679,101 @@ Result<std::vector<mx::array>> lower_attention_math_block(
   }
 }
 
+std::optional<mx::array> lower_short_bfloat_gated_projection(
+    const mx::array &activation, const mx::array &gate, const mx::array &up,
+    mx::Stream stream) {
+  if (stream.device != mx::Device::gpu || activation.ndim() != 2 ||
+      gate.ndim() != 2 || gate.shape() != up.shape() ||
+      activation.dtype() != mx::bfloat16 || gate.dtype() != mx::bfloat16 ||
+      up.dtype() != mx::bfloat16 || activation.shape(0) < 1 ||
+      activation.shape(0) > 4 || activation.shape(1) != 2048 ||
+      gate.shape(0) != 2048 || gate.shape(1) != 6144)
+    return std::nullopt;
+  auto gate_rows = projection_weight_rows(gate, stream);
+  auto up_rows = projection_weight_rows(up, stream);
+  if (!gate_rows || !up_rows) return std::nullopt;
+  // Each threadgroup computes both projections for two output rows.
+  // Keep the original reduction partition for each row.
+  // Both projected values and the SiLU result round to BF16 before the product.
+  static const auto kernel = mx::fast::metal_kernel(
+      "hyle_short_bfloat_gated_projection", {"gate_matrix", "up_matrix", "activation"},
+      {"output"}, R"METAL(
+    const uint lane = thread_index_in_simdgroup;
+    const uint group = simdgroup_index_in_threadgroup;
+    const uint first_row = threadgroup_position_in_grid.x * 2;
+    const uint first_vector = (group * 16 + lane / 2) * 8 + (lane % 2) * 4;
+    const auto gate_rows = reinterpret_cast<const device bfloat4 *>(gate_matrix);
+    const auto up_rows = reinterpret_cast<const device bfloat4 *>(up_matrix);
+    float gate_sum[QUERIES][2] = {};
+    float up_sum[QUERIES][2] = {};
+    for (uint start = first_vector; start < INNER_VECTORS; start += 512) {
+      float gate_block[QUERIES][2] = {};
+      float up_block[QUERIES][2] = {};
+      #pragma unroll
+      for (uint i = 0; i < 4; ++i) {
+        const uint w0 = first_row * INNER_VECTORS + start + i;
+        const uint w1 = w0 + INNER_VECTORS;
+        const float4 g0 = float4(gate_rows[w0]);
+        const float4 g1 = float4(gate_rows[w1]);
+        const float4 u0 = float4(up_rows[w0]);
+        const float4 u1 = float4(up_rows[w1]);
+        #pragma unroll
+        for (uint q = 0; q < QUERIES; ++q) {
+          const uint x = 4 * (q * INNER_VECTORS + start + i);
+          const float4 value(activation[x], activation[x + 1], activation[x + 2], activation[x + 3]);
+          gate_block[q][0] += dot(g0, value);
+          gate_block[q][1] += dot(g1, value);
+          up_block[q][0] += dot(u0, value);
+          up_block[q][1] += dot(u1, value);
+        }
+      }
+      #pragma unroll
+      for (uint q = 0; q < QUERIES; ++q) {
+        gate_sum[q][0] += gate_block[q][0];
+        gate_sum[q][1] += gate_block[q][1];
+        up_sum[q][0] += up_block[q][0];
+        up_sum[q][1] += up_block[q][1];
+      }
+    }
+    threadgroup float gate_partial[QUERIES][2][4];
+    threadgroup float up_partial[QUERIES][2][4];
+    #pragma unroll
+    for (uint q = 0; q < QUERIES; ++q) {
+      #pragma unroll
+      for (uint r = 0; r < 2; ++r) {
+        const float g = simd_sum(gate_sum[q][r]);
+        const float u = simd_sum(up_sum[q][r]);
+        if (lane == 0) {
+          gate_partial[q][r][group] = g;
+          up_partial[q][r][group] = u;
+        }
+      }
+    }
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+    if (group != 0) return;
+    #pragma unroll
+    for (uint q = 0; q < QUERIES; ++q) {
+      #pragma unroll
+      for (uint r = 0; r < 2; ++r) {
+        const float g = float(bfloat16_t(simd_sum(lane < 4 ? gate_partial[q][r][lane] : 0.0f)));
+        const float u = float(bfloat16_t(simd_sum(lane < 4 ? up_partial[q][r][lane] : 0.0f)));
+        if (lane == 0) {
+          const float s = 1.0f / (1.0f + metal::precise::exp(metal::abs(g)));
+          const float h = as_type<uint>(g) == 0xff800000u ? 0.0f : g * (g < 0.0f ? s : 1.0f - s);
+          output[q * OUTPUT_ROWS + first_row + r] = bfloat16_t(float(bfloat16_t(h)) * u);
+        }
+      }
+    }
+  )METAL",
+      "", true, false, mx::CompileOptions(static_cast<int>(mx::MathMode::Fast)));
+  const auto queries = activation.shape(0);
+  const auto rows = gate.shape(1);
+  return kernel({*gate_rows, *up_rows, activation}, {{queries, rows}}, {mx::bfloat16},
+      {64 * rows, 1, 1}, {128, 1, 1},
+      {{"INNER_VECTORS", activation.shape(1) / 4}, {"OUTPUT_ROWS", rows},
+       {"QUERIES", queries}}, std::nullopt, false, stream)[0];
+}
+
 Result<std::vector<mx::array>> lower_tensor(const Operation &operation,
                                             std::span<const mx::array> inputs,
                                             mx::Stream stream,
