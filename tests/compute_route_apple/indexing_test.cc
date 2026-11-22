@@ -203,6 +203,64 @@ TEST(AppleIndexing, BadIndicesRetireOnlyTheFailedInvocation) {
   EXPECT_TRUE(context.close().ok()); // No native device fault poisoned it.
 }
 
+TEST(AppleIndexing, ShortCheckedRowsPreserveStridesAndStorageBits) {
+  auto context = a::Context::create().value();
+  constexpr std::array<std::uint32_t, 8> wide_pattern{
+      0x00000000, 0x80000000, 0x00000001, 0x7f800001,
+      0xffc00015, 0x7f800000, 0x3f800000, 0x45123123};
+  constexpr std::array<std::uint16_t, 8> narrow_pattern{
+      0x0000, 0x8000, 0x0001, 0x7f81, 0xffc5, 0x7c01, 0x3f80, 0x4521};
+  std::array<std::uint32_t, 6 * 7> wide{};
+  std::array<std::uint16_t, 6 * 7> narrow{};
+  for (std::size_t i = 0; i < wide.size(); ++i) {
+    const auto word = (i + i / 7) % wide_pattern.size();
+    wide[i] = wide_pattern[word];
+    narrow[i] = narrow_pattern[word];
+  }
+  const auto indices = [](int last) {
+    const auto owner = mx::array({-8, 3, -8, 1, -8, 3, -8, last});
+    return ready(mx::slice(owner, {1}, {8}, {2}, stream()));
+  };
+  const auto valid = indices(0);
+  ASSERT_EQ(valid.strides()[0], 2);
+  for (const auto type : {mx::float32, mx::float16, mx::bfloat16}) {
+    const auto words = type == mx::float32
+        ? mx::array(wide.data(), {6, 7}, mx::uint32)
+        : mx::array(narrow.data(), {6, 7}, mx::uint16);
+    const auto table = ready(mx::slice(mx::view(words, type, stream()),
+        {1, 1}, {5, 6}, stream()));
+    ASSERT_EQ(table.strides()[0], 7);
+    const auto original = bits(table);
+    std::vector<std::uint64_t> expected;
+    for (const int id : {3, 1, 3, 0})
+      expected.insert(expected.end(), original.begin() + id * 5, original.begin() + (id + 1) * 5);
+    auto program = context.prepare(c::Gather{},
+        std::array{a::InputSpec{table.shape(), type}, a::InputSpec{{4}, mx::int32}});
+    ASSERT_TRUE(program) << program.error().message();
+    const auto run = [&](const mx::array &selected) -> hyle::Result<mx::array> {
+      HYLE_ASSIGN_OR_RETURN(auto slot, program->create_invocation());
+      HYLE_RETURN_IF_ERROR(slot.bind(std::array{table, selected}));
+      HYLE_ASSIGN_OR_RETURN(auto work, slot.submit());
+      HYLE_ASSIGN_OR_RETURN(auto result, work.wait());
+      return result.get()->arrays()[0];
+    };
+    auto old = run(valid);
+    ASSERT_TRUE(old) << old.error().message();
+    EXPECT_EQ(bits(*old), expected);
+    for (const int invalid : {-1, 4}) {
+      auto failed = run(indices(invalid));
+      ASSERT_FALSE(failed);
+      EXPECT_TRUE(failed.error().IsOutOfRange());
+    }
+    auto recovered = run(valid);
+    ASSERT_TRUE(recovered) << recovered.error().message();
+    EXPECT_EQ(bits(*recovered), expected);
+    EXPECT_EQ(bits(*old), expected);
+    EXPECT_EQ(bits(table), original);
+  }
+  EXPECT_TRUE(context.close().ok());
+}
+
 TEST(AppleIndexing,
      ScanMatchesIntegerAndFloatingPrefixesIncludingExclusiveTotal) {
   auto context = a::Context::create().value();

@@ -6,6 +6,7 @@
 #include <optional>
 #include <utility>
 
+#include <mlx/fast.h>
 #include <mlx/ops.h>
 
 #include "apple_checks.h"
@@ -16,6 +17,44 @@ namespace mx = mlx::core;
 namespace {
 int native_axis(std::int32_t axis, const mx::array &input) {
   return axis < 0 ? axis + static_cast<int>(input.ndim()) : axis;
+}
+
+Result<std::vector<mx::array>> checked_short_rows(
+    const mx::array &table, const mx::array &indices, mx::Stream stream) {
+  // Read the original strided rows and produce the original checked status in
+  // one dispatch. Copy storage words to preserve NaN payloads and signed zero.
+  static const auto kernel = mx::fast::metal_kernel(
+      "hyle_checked_short_rows", {"table", "indices"}, {"rows", "status"},
+      R"METAL(
+    const uint column = thread_position_in_grid.x;
+    const uint row = thread_position_in_grid.y;
+    if (column >= WIDTH || row >= COUNT) return;
+    const int index = indices[long(row) * indices_strides[0]];
+    const int safe = index >= 0 && index < EXTENT ? index : 0;
+    const auto *source = reinterpret_cast<const device Storage *>(table);
+    auto *destination = reinterpret_cast<device Storage *>(rows);
+    destination[long(row) * WIDTH + column] =
+        source[long(safe) * table_strides[0] + long(column) * table_strides[1]];
+    if (column == 0 && row == 0) {
+      bool invalid = false;
+      for (uint i = 0; i < COUNT; ++i) {
+        const int id = indices[long(i) * indices_strides[0]];
+        invalid |= id < 0 || id >= EXTENT;
+      }
+      status[0] = invalid ? INVALID : 0;
+    }
+  )METAL", "", false, false, mx::CompileOptions{});
+  const int count = indices.shape(0);
+  const int width = table.shape(1);
+  const auto storage = table.itemsize() == 4 ? mx::uint32 : mx::uint16;
+  auto outputs = kernel({table, indices}, {{count, width}, {}},
+      {table.dtype(), mx::int32}, {width, count, 1}, {(std::min)(width, 256), 1, 1},
+      {{"WIDTH", width}, {"COUNT", count}, {"EXTENT", table.shape(0)},
+       {"INVALID", kIndexOutOfRange}, {"Storage", storage}},
+      std::nullopt, false, stream);
+  HYLE_ASSIGN_OR_RETURN(auto checked,
+      with_device_status(std::move(outputs[0]), std::move(outputs[1]), stream));
+  return std::vector{std::move(checked)};
 }
 
 Result<std::vector<mx::array>> gather(const Gather &operation,
@@ -32,6 +71,12 @@ Result<std::vector<mx::array>> gather(const Gather &operation,
         : mx::take(inputs[0], inputs[1], axis, stream)};
 
   const auto index_type = inputs[1].dtype();
+  const auto type = inputs[0].dtype();
+  if (!elements && axis == 0 && inputs[0].ndim() == 2 && inputs[0].shape(1) > 0 &&
+      inputs[1].ndim() == 1 && inputs[1].shape(0) > 0 && inputs[1].shape(0) <= 4 &&
+      index_type == mx::int32 && stream.device.type == mx::Device::gpu &&
+      (type == mx::float32 || type == mx::float16 || type == mx::bfloat16))
+    return checked_short_rows(inputs[0], inputs[1], stream);
   auto invalid = mx::logical_or(
       mx::less(inputs[1], mx::array(0, index_type), stream),
       mx::greater_equal(inputs[1], mx::array(extent, index_type), stream),
