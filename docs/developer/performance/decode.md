@@ -2,7 +2,26 @@
 
 连续接力可让相邻步骤重叠。逐步 `seconds` 用于诊断该步骤的延迟，直接相加会重复计算重叠区间；decode 吞吐使用实际首末输出的墙时间隔，完整进程吞吐使用启动到正常关闭的墙时。
 
-更新 2026-11-20。加入 WSL2 CUDA 与 Vulkan 的全词表对照。
+更新 2026-11-23。加入 macOS 原生 Metal 的全词表对照。
+
+## macOS Metal 全词表 BF16
+
+MacBook Air Mac16,12（M4，16 GiB），Qwen3.5-2B，同源原始 BF16 权重、完整 248320 行目标和草稿头、BF16 KV。容量 32768，单会话贪心。Hyle 使用以 `a70b60f48` 的已验证 Release worker 为基础，重新链接 `f3e05c79f`、`c27781076` 和 `13190d533` 的 Metal 改动。参考为 llama.cpp `23b0202a1` 的本机 Metal 构建，词嵌入、目标和草稿投影、验证均放在 Metal。先完成普通和 K1／K2／K3 的单进程深度筛查，参考的 K2 热态综合最快。
+
+普通和 K2 各做三组同窗交错对照。每组每边一个独立进程，每进程八个短提示，每轮输出 64 个 token。下表按 Hyle／llama.cpp 列进程中位数。
+
+| 模式 | 首轮 prefill（秒） | 后七轮 prefill 合计（秒） | 后七轮 decode（tok/s） | 后七轮 prefill＋decode（tok/s） | 完整进程（tok/s） |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 普通 | 2.597／0.193 | 1.616／1.388 | 22.74／26.52 | 21.32／24.51 | 18.75／21.23 |
+| K2 | 4.523／0.213 | 1.634／1.466 | 28.97／31.94 | 26.58／28.92 | 20.54／27.28 |
+
+各实现在三次运行中重复了各自的 512 个 ID。Hyle K2 每进程执行 234 次三行验证。热态综合中位数，Hyle 普通和 K2 分别落后 13.0% 和 8.1%。Hyle 用 worker 请求到首 token 和首末输出间隔计时，参考使用服务端的 prompt eval 和 eval。完整进程从启动计到正常退出。
+
+补入 `b7b4ac965` 的图构造和 `2216dffe6` 的分块生成改动后，复核普通和 K2 各 512 个输出 ID，与表中对应的 Hyle 样本一致。该 worker 也通过了 K3、64-token 分块下的贪心和随机续轮。表内吞吐及资源数字使用上面固定的测量 worker。
+
+Hyle worker 选择 `--backend apple --capacity 32768 --max-sessions 1 --active-sequences 1`，用 `--draft-count 0` 或 `--draft-count 2` 选择模式。参考使用 `--device MTL0 -ngl 99 -fa on -np 1 -c 32768 --port 2048 --metrics --override-tensor '^token_embd\.weight$=MTL0'`，目标 KV 用 `--cache-type-k bf16 --cache-type-v bf16`。普通用 `--spec-type none`。K2 用 `--spec-type draft-mtp --spec-draft-n-max 2 --spec-draft-type-k bf16 --spec-draft-type-v bf16`。两边使用本地同源 BF16 制品。
+
+另起一对进程采样每个模式的资源。Darwin RSS 采样峰为普通 389／4445 MiB、K2 406／4839 MiB，physical footprint 寿命峰为普通 5528／866 MiB、K2 6031／1069 MiB。两项口径存在重叠，文件映射和原生分配的记账方式不同。这里记录的是进程账本。
 
 ## WSL2 CUDA 全词表 BF16
 
