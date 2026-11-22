@@ -374,6 +374,31 @@ std::vector<mx::array> prepare_mlx(MlxProgram &program, RegionFunction region,
 struct InvocationState;
 Status evaluate_device_prefix(InvocationState &, mx::Stream,
                              const std::vector<mx::array> &);
+
+Status record_mlx_prefix(std::vector<mx::array> &outputs, mx::Stream stream,
+                         std::vector<mx::Event> &pending,
+                         std::optional<mx::array> *check,
+                         InvocationState *device_prefix, bool checked) {
+  // Consumers receive the actual events. The original Invocation observes
+  // their results and any device verdict before it retires.
+  if (device_prefix)
+    HYLE_RETURN_IF_ERROR(evaluate_device_prefix(*device_prefix, stream, outputs));
+  else
+    mx::async_eval(outputs);
+  for (const auto &output : outputs) {
+    if (output.event().valid()) {
+      HYLE_FATAL_ASSERT(pending.size() < pending.capacity());
+      pending.push_back(output.event());
+    }
+  }
+  if (checked) {
+    HYLE_FATAL_ASSERT(check && !check->has_value());
+    check->emplace(outputs.back());
+    outputs.pop_back();
+  }
+  return Status::Ok();
+}
+
 Status evaluate_mlx(const MlxProgram &program,
                     const std::vector<mx::array> &inputs,
                     std::vector<mx::array> &outputs, mx::Stream stream,
@@ -382,26 +407,8 @@ Status evaluate_mlx(const MlxProgram &program,
                     InvocationState *device_prefix = nullptr) {
   encode_native_input_waits(inputs, stream);
   outputs = program.compiled(inputs);
-  if (pending) {
-    // GPU eval encodes buffers/events before returning. Consumers import the
-    // original events; the same Invocation drains their errors at retirement.
-    if (device_prefix)
-      HYLE_RETURN_IF_ERROR(evaluate_device_prefix(*device_prefix, stream, outputs));
-    else
-      mx::async_eval(outputs);
-    for (const auto &output : outputs) {
-      if (output.event().valid()) {
-        HYLE_FATAL_ASSERT(pending->size() < pending->capacity());
-        pending->push_back(output.event());
-      }
-    }
-    if (program.checks->present) {
-      HYLE_FATAL_ASSERT(check && !check->has_value());
-      check->emplace(outputs.back());
-      outputs.pop_back();
-    }
-    return Status::Ok();
-  }
+  if (pending)
+    return record_mlx_prefix(outputs, stream, *pending, check, device_prefix, program.checks->present);
   // MLX eval waits the original graph's synchronizer event and checks its
   // native error. A second stream synchronize commits an otherwise empty
   // command buffer after that graph and adds another host/device boundary.
@@ -544,6 +551,17 @@ struct InvocationState : Job {
     inputs.reserve(program->inputs.size());
     native_tail.owner = this;
     native_tail.execute = &execute_native_tail;
+    if (program->device_prefix) {
+      mlx_events.reserve(program->outputs.size() + 1);
+      device_prefix_tail = std::make_shared<DevicePrefixTail>(*program->runtime->stream, this);
+    }
+  }
+
+  void publish_device_prefix() noexcept {
+    if (!native_deferred) return;
+    std::lock_guard lock(binding_mutex);
+    HYLE_FATAL_ASSERT(device_prefix_event.valid());
+    native_values_ready = true;
   }
 
   // Source snapshots are taken at native submission, not at cold binding.
@@ -629,14 +647,19 @@ Status evaluate_batch(RuntimeBatchInvocationState& state, mx::Stream stream) {
   const auto& fn=*state.program->compiled.target<RuntimeBatchFunction>();
   const auto a=fn.initial.host(),b=state.layout.host();
   const auto equal=[](auto x,auto y){return x.size()==y.size() && std::equal(x.begin(),x.end(),y.begin());};
+  auto *prefix = state.program->device_prefix ? &state : nullptr;
   if(equal(a.kv_indptr,b.kv_indptr) && equal(a.last_page_lengths,b.last_page_lengths))
-    return evaluate_mlx(*state.program,state.inputs,state.values->arrays,stream);
+    return evaluate_mlx(*state.program, state.inputs, state.values->arrays, stream,
+        prefix ? &state.mlx_events : nullptr, prefix ? &state.device_prefix_check : nullptr, prefix);
   CheckTrace trace;
   HYLE_ASSIGN_OR_RETURN(auto outputs,fn.build(state.layout,state.inputs,stream));
   // This private builder has the same cold-validated, selected-stream topology.
   // Preserve reachable checked statuses if a checked primitive is ever used.
   const bool checked=!trace.checks.empty() && validate_region(outputs,stream,trace);
   state.values->arrays=std::move(outputs);
+  if (prefix)
+    return record_mlx_prefix(state.values->arrays, stream, state.mlx_events,
+                             &state.device_prefix_check, prefix, checked);
   mx::async_eval(state.values->arrays);mx::synchronize(stream);
   for(auto& output:state.values->arrays)output.wait();
   if(!checked)return Status::Ok();
@@ -1183,17 +1206,18 @@ void execute_invocation(Job* job) noexcept {
         evaluate_mlx(*state.program,state.inputs,state.values->arrays,stream);
     HYLE_RETURN_IF_ERROR(evaluate_mlx(*state.program,state.inputs,state.values->arrays,stream,
         &state.mlx_events,&state.device_prefix_check,&state));
-    if(state.native_deferred){
-      std::lock_guard lock(state.binding_mutex);
-      HYLE_FATAL_ASSERT(state.device_prefix_event.valid());
-      state.native_values_ready=true;
-    }
+    state.publish_device_prefix();
     return Status::Ok();
   });
 }
 void execute_batch_invocation(Job* job) noexcept {
   auto& state=*static_cast<RuntimeBatchInvocationState*>(job);
-  execute_with(state,[&](mx::Stream stream){state.encode_dependencies(stream);return evaluate_batch(state,stream);});
+  execute_with(state, [&](mx::Stream stream) -> Status {
+    state.encode_dependencies(stream);
+    HYLE_RETURN_IF_ERROR(evaluate_batch(state, stream));
+    state.publish_device_prefix();
+    return Status::Ok();
+  });
 }
 
 const cd::CompletionVTable completion_vtable{
@@ -1736,11 +1760,6 @@ Program::create_invocation(mem::AllocatorRef allocator) const noexcept {
     }
     auto state = std::make_unique<detail::InvocationState>(state_, std::move(*slot));
     state->execute = detail::execute_invocation;
-    if (state_->device_prefix) {
-      state->mlx_events.reserve(state_->outputs.size()+1);
-      state->device_prefix_tail = std::make_shared<detail::DevicePrefixTail>(
-          *state_->runtime->stream, state.get());
-    }
     if (state_->native) {
       const auto &plan = state_->native->description;
       state->native_values.resize(plan.values.size());
@@ -2129,6 +2148,15 @@ Result<Program> detail::PagedBatchAccess::prepare_runtime_program(std::shared_pt
     HYLE_ASSIGN_OR_RETURN(auto program,ContextAccess::compile(std::move(runtime),
         [initial,build](const std::vector<mx::array>& args,mx::Stream stream){return build(initial,args,stream);},
         inputs,workload));
+    // Short plain BF16 paged reads can hand their original completion to
+    // the next native consumer. Select the tail with the prepared recipe.
+    const auto capacity = initial.origin_schema().capacity();
+    const bool short_query = inputs.size() == 4 && inputs[0].shape.size() == 3 &&
+        inputs[0].shape[0] > 0 && inputs[0].shape[0] <= 8;
+    program.state_->device_prefix = short_query && capacity.storage == BatchStorage::kPaged &&
+        capacity.query_type == DataType::kBFloat16 &&
+        capacity.key_storage == CacheStorage::plain(capacity.query_type).value() &&
+        capacity.value_storage == capacity.key_storage;
     auto& compiled=program.state_->compiled;
     compiled=RuntimeBatchFunction{std::move(initial),std::move(build),causal,window_left,std::move(compiled)};
     return program;
