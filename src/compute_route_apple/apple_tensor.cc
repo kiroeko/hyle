@@ -206,10 +206,10 @@ std::optional<mx::array> lower_short_bfloat_projection(
     return std::nullopt;
   const auto inner = left.shape(1);
   const auto rows = right.shape(1);
-  // These are the two projection geometries for which split reduction and
-  // shared weight reads have been measured on M4. The normal MLX path handles
-  // other shapes and weights with a different layout.
-  if (!((inner == 2048 && rows == 6144) || (inner == 6144 && rows == 2048)))
+  // Select fixed BF16 geometries with measured split-reduction gains.
+  const auto measured = (inner == 2048 && (rows == 2048 || rows == 4096 || rows == 6144)) ||
+      (inner == 6144 && rows == 2048);
+  if (!measured)
     return std::nullopt;
   auto weight = projection_weight_rows(right, stream);
   if (!weight)
