@@ -20,6 +20,7 @@
 #include <mlx/transforms.h>
 
 #include "apple_checks.h"
+#include "apple_bfloat_projection.h"
 #include "apple_carrier.h"
 #include "apple_copy_internal.h"
 #include "apple_dependencies.h"
@@ -302,6 +303,30 @@ Status run_cold(Runtime &runtime,
   while (job->done.load(std::memory_order_acquire) == 0)
     platform::detail::wait_on_address(&job->done, 0);
   return job->terminal;
+}
+
+Result<std::array<mx::array, 2>> prepare_bfloat_projection_on_owner(
+    const std::shared_ptr<Runtime> &runtime, const mx::array &weights) noexcept {
+  if (!runtime) return std::unexpected(Status::InvalidArgument("Apple packing requires a Runtime"));
+  try {
+    std::optional<std::array<mx::array, 2>> prepared;
+    auto job = std::make_shared<ColdJob>([&]() -> Status {
+      const auto stream = *runtime->stream;
+      try {
+        prepared = pack_bfloat_projection(weights, stream);
+        return Status::Ok();
+      } catch (...) {
+        const auto failure = native_exception();
+        try { mx::synchronize(stream); }
+        catch (...) { runtime->poison(native_exception()); }
+        return failure;
+      }
+    });
+    HYLE_RETURN_IF_ERROR(run_cold(*runtime, job));
+    return std::move(*prepared);
+  } catch (...) {
+    return std::unexpected(native_exception());
+  }
 }
 
 struct MlxProgram {

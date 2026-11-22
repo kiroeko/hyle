@@ -1,4 +1,5 @@
 #include "hyle/compute/detail/apple_plan.h"
+#include "../compute_route_apple/apple_bfloat_projection.h"
 #include "../compute_route_apple/apple_carrier.h"
 #include "../compute_route_apple/apple_sequence.h"
 #include "hyle/compute/low_precision.h"
@@ -42,6 +43,7 @@ struct Node {
   bool control_boundary = false;
   bool preserve_outputs = false;
   ca::detail::RegionKind carrier = ca::detail::RegionKind::kMlx;
+  std::shared_ptr<const ca::detail::PreparedBFloatProjection> packed_projection;
 };
 
 struct RowCandidate final {
@@ -417,7 +419,10 @@ Result<std::vector<mx::array>> trace(const Plan &plan,
       prepared.biases = plan.prepared_casts[node.inputs[3]];
     }
     ca::detail::RowCacheAccessFacts row_access;
-    auto fused = prepare_gated_projection(producers, uses, node, values, stream);
+    auto fused = node.packed_projection
+        ? std::optional(ca::detail::lower_packed_bfloat_projection(
+              *node.packed_projection, arguments[1], arguments[0], stream))
+        : prepare_gated_projection(producers, uses, node, values, stream);
     auto outputs =
         fused ? Result<std::vector<mx::array>>(std::vector{std::move(*fused)}) :
         prepared.scales || prepared.biases
@@ -818,6 +823,17 @@ static Result<ca::Program> compile_impl(const std::shared_ptr<ca::detail::Runtim
         descriptions.push_back(plan->descriptions[input]);
       HYLE_ASSIGN_OR_RETURN(node->carrier,
           ca::detail::analyze_native_carrier(node->operation, descriptions));
+      if (boundary && node->carrier == ca::detail::RegionKind::kGgml &&
+          descriptions.size() == 2 && ca::detail::packed_bfloat_projection_eligible(
+              node->operation, descriptions[0], descriptions[1])) {
+        const auto weight = std::ranges::find_if(boundary->constants,
+            [&](const ConstantBinding &entry) { return entry.value.ordinal() == node->inputs[1]; });
+        if (weight != boundary->constants.end() && weight->tensor.description() == descriptions[1]) {
+          HYLE_ASSIGN_OR_RETURN(node->packed_projection, ca::detail::prepare_bfloat_projection(
+              runtime, weight->tensor, weight->owner, weight->lease, boundary->resource_budget));
+          if (node->packed_projection) node->carrier = ca::detail::RegionKind::kMlx;
+        }
+      }
       plan->nodes.push_back(std::move(*node));
     }
     // Retain only constants reachable by the live native nodes or published

@@ -1,4 +1,5 @@
 #include "apple_tensor.h"
+#include "apple_bfloat_projection.h"
 #include "apple_carrier.h"
 #include "hyle/compute/detail/apple_plan.h"
 
@@ -19,6 +20,7 @@
 #include <mlx/fast_primitives.h>
 #include <mlx/ops.h>
 #include <mlx/primitives.h>
+#include <mlx/transforms.h>
 #include <mlx/utils.h>
 
 #include "apple_internal.h"
@@ -1149,4 +1151,151 @@ Result<std::vector<mx::array>> lower_tensor(const Operation &operation,
     return std::unexpected(native_exception());
   }
 }
+bool packed_bfloat_projection_eligible(
+    const Operation &operation, const TensorDesc &activation, const TensorDesc &weights) noexcept {
+  if (!operation.custom_as<model_ops::DenseLinearF32>() ||
+      activation.rank() != 2 || weights.rank() != 2 ||
+      !activation.is_plain() || !weights.is_plain() || !weights.is_dense() ||
+      activation.data_type() != DataType::kBFloat16 || weights.data_type() != DataType::kBFloat16)
+    return false;
+  // The measured fixed shape and short query path. Other dense heads retain
+  // their existing carrier selection.
+  const auto x = activation.dimensions(), w = weights.dimensions();
+  return x[0] > 0 && x[0] <= 4 && x[1] == 2048 && w[0] == 248320 && w[1] == x[1];
+}
+
+std::array<mx::array, 2> pack_bfloat_projection(const mx::array &matrix, mx::Stream stream) {
+  static const auto pack = mx::fast::metal_kernel(
+      "hyle_bfloat_pack_weights", {"matrix"}, {"words", "exponents"},
+      R"METAL(
+    const uint lane = thread_index_in_simdgroup;
+    const uint block = thread_position_in_grid.x / 32;
+    const auto source = reinterpret_cast<const device ushort *>(matrix) + block * 64;
+    const uint e0 = (source[2 * lane] >> 7) & 255u;
+    const uint e1 = (source[2 * lane + 1] >> 7) & 255u;
+    const uint least = simd_min(min(e0 ? e0 : 255u, e1 ? e1 : 255u));
+    const uint highest = simd_max(max(e0, e1));
+    const uint origin = highest ? least : 1u;
+    const bool fits = highest < 255u && highest <= origin + 14u;
+    if (lane == 0) exponents[block] = uchar(fits ? origin : 255u);
+    if (!fits) return;
+    if (lane < 16) {
+      uint value = 0;
+      #pragma unroll
+      for (uint j = 0; j < 4; ++j) {
+        const uint input = source[4 * lane + j];
+        value |= (((input >> 8) & 128u) | (input & 127u)) << (j * 8);
+      }
+      words[block * 24 + lane] = value;
+    }
+    if (lane < 8) {
+      uint value = 0;
+      #pragma unroll
+      for (uint j = 0; j < 8; ++j) {
+        const uint exponent = (source[8 * lane + j] >> 7) & 255u;
+        value |= (exponent ? exponent - origin : 15u) << (j * 4);
+      }
+      words[block * 24 + 16 + lane] = value;
+    }
+  )METAL",
+      "", true);
+  const auto blocks = int(matrix.size() / 64);
+  auto results = pack({matrix}, {{24 * blocks}, {blocks}}, {mx::uint32, mx::uint8},
+                      {32 * blocks, 1, 1}, {128, 1, 1}, {},
+                      std::nullopt, false, stream);
+  mx::eval(results);
+  for (auto &result : results) result.wait();
+  return {std::move(results[0]), std::move(results[1])};
+}
+
+mx::array lower_packed_bfloat_projection(
+    const PreparedBFloatProjection &projection, const mx::array &original,
+    const mx::array &input, mx::Stream stream) {
+  const auto rows = original.shape(0);
+  const auto inner = original.shape(1);
+  static const auto kernel = mx::fast::metal_kernel(
+      "hyle_bfloat_packed_fixed_head", {"matrix", "words", "exponents", "activation"}, {"output"},
+      R"METAL(
+    const uint lane = thread_index_in_simdgroup;
+    const uint group = simdgroup_index_in_threadgroup;
+    const uint row = threadgroup_position_in_grid.x * 2;
+    const uint first = (group * 16 + lane / 2) * 8 + (lane % 2) * 4;
+    float sums[QUERIES][2] = {};
+    for (uint start = first; start < INNER_VECTORS; start += 512) {
+      #pragma unroll
+      for (uint r = 0; r < 2; ++r) {
+        const uint base = (row + r) * INNER_VECTORS + start;
+        float4 w[4];
+        const uint block = base / 16;
+        const uint position = base % 16;
+        const uint origin = uint(exponents[block]);
+        const auto buffer = words + 24 * block;
+        if (origin == 255u) {
+          const auto original = reinterpret_cast<const device bfloat4 *>(matrix) + base;
+          #pragma unroll
+          for (uint i = 0; i < 4; ++i)
+            w[i] = float4(original[i]);
+        } else {
+          #pragma unroll
+          for (uint i = 0; i < 4; ++i) {
+            const uint index = position + i;
+            const uint4 mantissas = (uint4(buffer[index]) >> uint4(0, 8, 16, 24)) & 255u;
+            const auto code_word = buffer[16 + index / 2];
+            const auto shift = (index % 2) * 16;
+            const uint4 codes = (uint4(code_word) >> (shift + uint4(0, 4, 8, 12))) & 15u;
+            const uint4 expanded = select(uint4(origin) + codes, uint4(0), codes == 15u);
+            const auto encoded = ushort4(((mantissas & 128u) << 8) |
+                                        (expanded << 7) | (mantissas & 127u));
+            w[i] = float4(as_type<bfloat4>(encoded));
+          }
+        }
+        #pragma unroll
+        for (uint q = 0; q < QUERIES; ++q) {
+          float partial = 0.0f;
+          #pragma unroll
+          for (uint i = 0; i < 4; ++i) {
+            // MLX makes inputs row-contiguous. The activation can still be
+            // a view whose byte offset is only aligned to one BF16 element.
+            const uint x = 4 * (q * INNER_VECTORS + start + i);
+            const float4 value = float4(activation[x], activation[x + 1],
+                                        activation[x + 2], activation[x + 3]);
+            partial += dot(w[i], value);
+          }
+          sums[q][r] += partial;
+        }
+      }
+    }
+    threadgroup float partial[QUERIES][2][4];
+    #pragma unroll
+    for (uint q = 0; q < QUERIES; ++q) {
+      #pragma unroll
+      for (uint r = 0; r < 2; ++r) {
+        const float sum = simd_sum(sums[q][r]);
+        if (lane == 0)
+          partial[q][r][group] = sum;
+      }
+    }
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+    if (group == 0) {
+      #pragma unroll
+      for (uint q = 0; q < QUERIES; ++q) {
+        #pragma unroll
+        for (uint r = 0; r < 2; ++r) {
+          const float sum = simd_sum(lane < 4 ? partial[q][r][lane] : 0.0f);
+          if (lane == 0)
+            output[q * OUTPUT_ROWS + row + r] = sum;
+        }
+      }
+    }
+  )METAL",
+      "", true, false,
+      mx::CompileOptions(static_cast<int>(mx::MathMode::Fast)));
+  const auto queries = input.shape(0);
+  return kernel({original, projection.packed[0], projection.packed[1], input}, {{queries, rows}}, {mx::float32},
+                {64 * rows, 1, 1}, {128, 1, 1},
+                {{"INNER_VECTORS", inner / 4},
+                 {"QUERIES", queries}, {"OUTPUT_ROWS", rows}},
+                std::nullopt, false, stream)[0];
+}
+
 } // namespace hyle::compute::apple::detail

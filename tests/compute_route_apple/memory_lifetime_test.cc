@@ -1,6 +1,10 @@
 #include "hyle/compute/apple_memory.h"
+#include "hyle/compute/detail/apple_plan.h"
+#include "hyle/compute/detail/storage_owner_access.h"
+#include "../../src/compute_route_apple/apple_bfloat_projection.h"
 
 #include <array>
+#include <cstdint>
 #include <optional>
 #include <utility>
 
@@ -79,6 +83,50 @@ TEST(AppleMemoryLifetime, TypedArrayAndImportedLeaseRetainBackingWithoutWrapper)
   EXPECT_EQ(actual, expected);
   retained = {};
   // Reservation release uses the original budget row, not the dead wrapper.
+  EXPECT_EQ(budget.usage(resource)->live_bytes, 0u);
+  EXPECT_EQ(budget.unattributed_usage().unknown_private_owners, 0u);
+}
+
+TEST(AppleMemoryLifetime, PackedBFloatProjectionSharesOnlyItsOriginalBudgetAndBacking) {
+  auto context = a::Context::create().value();
+  const auto &runtime = a::detail::ContextAccess::runtime(context);
+  auto owner = c::detail::StorageOwnerAccess::adopt_native(
+      runtime, a::MemoryResource::create(context).value()).value();
+  const auto resource = owner.ref();
+  const auto description = c::TensorDesc::dense(c::DataType::kBFloat16,
+      std::array<std::int64_t, 2>{4, 64}).value();
+  std::array<std::uint16_t, 256> values{};
+  values.fill(0x3f80);
+  values[1] = 0x8000; // Preserve the sign of zero.
+  values[2] = 0xbf80;
+  values[64] = 0x0080; // This block cannot use the short exponent range.
+  auto buffer = m::Buffer::create(resource, sizeof(values), 256).value();
+  ASSERT_TRUE(buffer.view().write(std::as_bytes(std::span(values))).ok());
+  auto source = owner.adopt_buffer(std::move(buffer)).value();
+  const auto original = source.tensor(description).value();
+  constexpr auto packed_bytes = 4 * 97;
+  const auto make_budget = [&](std::size_t limit) {
+    const std::array limits{c::ResourceBudgetLimit{resource, limit},
+        c::ResourceBudgetLimit{m::system_resource(), 1 << 20}};
+    return c::ResourceBudget::create({.limits = limits, .allow_unattributed = true}).value();
+  };
+  auto budget = make_budget(packed_bytes);
+  auto first = a::detail::prepare_bfloat_projection(runtime, original, owner, source, budget).value();
+  ASSERT_TRUE(first);
+  auto second = a::detail::prepare_bfloat_projection(runtime, original, owner, source, budget).value();
+  EXPECT_EQ(first, second);
+  EXPECT_EQ(budget.usage(resource)->live_bytes, packed_bytes);
+  const auto *exponents = first->packed[1].data<std::uint8_t>();
+  EXPECT_EQ(exponents[0], 127u);
+  EXPECT_EQ(exponents[1], 255u);
+  EXPECT_EQ(first->packed[0].data<std::uint32_t>()[0] & 0xffffffu, 0x808000u);
+
+  auto smaller = make_budget(packed_bytes - 1);
+  EXPECT_FALSE(a::detail::prepare_bfloat_projection(runtime, original, owner, source, smaller).value());
+  EXPECT_EQ(smaller.usage(resource)->live_bytes, 0u);
+  first.reset();
+  EXPECT_EQ(budget.usage(resource)->live_bytes, packed_bytes);
+  second.reset();
   EXPECT_EQ(budget.usage(resource)->live_bytes, 0u);
   EXPECT_EQ(budget.unattributed_usage().unknown_private_owners, 0u);
 }

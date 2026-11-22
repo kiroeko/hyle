@@ -10,7 +10,9 @@
 #include <cstdint>
 #include <cstring>
 #include <limits>
+#include <mutex>
 #include <utility>
+#include <vector>
 #include <mlx/allocator.h>
 #include <mlx/backend/metal/device.h>
 #include "hyle/mem/std_allocator.h"
@@ -18,6 +20,7 @@
 #include "hyle/core/assert.h"
 
 #include "apple_internal.h"
+#include "apple_bfloat_projection.h"
 #include "apple_copy_internal.h"
 
 namespace hyle::compute::apple {
@@ -29,6 +32,12 @@ struct MemoryState : mem::MemoryResource {
   // One wrapper reference, plus one for each live allocator ownership claim.
   // The original native handle stays an MTLBuffer; no Runtime/Context is held.
   std::atomic<std::size_t> references{1};
+  struct Projection final {
+    std::weak_ptr<Runtime> runtime;
+    std::weak_ptr<const PreparedBFloatProjection> prepared;
+  };
+  std::mutex projection_mutex;
+  std::vector<Projection> projections;
   void retain() noexcept {
     const auto previous = references.fetch_add(1, std::memory_order_relaxed);
     HYLE_FATAL_ASSERT(previous != 0 && previous != SIZE_MAX);
@@ -301,6 +310,63 @@ Result<mx::array> MemoryAccess::borrow_tensor(ConstTensorView tensor) noexcept {
   HYLE_ASSIGN_OR_RETURN(auto bytes, tensor.description().required_bytes());
   return readonly_tensor(tensor, spec, bytes, [](mx::allocator::Buffer) {});
 }
+
+Result<std::shared_ptr<const PreparedBFloatProjection>> prepare_bfloat_projection(
+    const std::shared_ptr<Runtime> &runtime, ConstTensorView weights,
+    const StorageOwner &owner, const ReadLease &source, const ResourceBudget &budget) noexcept {
+  using Prepared = std::shared_ptr<const PreparedBFloatProjection>;
+  const auto storage = weights.storage();
+  if (!runtime || !weights.valid() || !weights.description().is_dense() ||
+      !weights.description().is_plain() || weights.description().data_type() != DataType::kBFloat16 ||
+      !owner || !source || !budget || owner.ref() != storage.resource() ||
+      !budget.allows_unattributed() || !budget.usage(storage.resource()))
+    return Prepared{};
+  auto *memory = dynamic_cast<MemoryState *>(&storage.resource().resource());
+  if (!memory) return Prepared{};
+  HYLE_ASSIGN_OR_RETURN(auto bytes, weights.description().required_bytes());
+  HYLE_ASSIGN_OR_RETURN(auto range, storage.subview(0, bytes));
+  HYLE_ASSIGN_OR_RETURN(auto leased, source.view());
+  if (range.resource() != leased.resource() || range.native_handle() != leased.native_handle() ||
+      range.offset() < leased.offset() || range.offset() - leased.offset() > leased.size() ||
+      bytes > leased.size() - (range.offset() - leased.offset()) ||
+      range.offset() % 8 || bytes == 0 || bytes % 512)
+    return Prepared{};
+  HYLE_ASSIGN_OR_RETURN(auto original, ConstTensorView::create(weights.description(), range));
+  try {
+    // Only cold prepares use this index. The graph's compiled callable keeps
+    // the payload and its admitted storage alive through actual retirement.
+    std::lock_guard lock(memory->projection_mutex);
+    std::erase_if(memory->projections, [](const auto &entry) { return entry.prepared.expired(); });
+    for (const auto &entry : memory->projections) {
+      auto prepared = entry.prepared.lock();
+      if (prepared && entry.runtime.lock() == runtime &&
+          prepared->original.storage().native_handle() == range.native_handle() &&
+          prepared->original.storage().offset() == range.offset() &&
+          prepared->original.description() == original.description() &&
+          compute::detail::ResourceBudgetAccess::same_scope(prepared->bytes, budget))
+        return prepared;
+    }
+    HYLE_ASSIGN_OR_RETURN(auto native, constant_native_range(runtime, range, bytes, false));
+    if (!native) return Prepared{};
+    // The optional companion is a 96-byte payload and a one-byte exponent
+    // origin per 64 original BF16 values. Check quota before any device work.
+    auto charge = budget.reserve(range.resource(), (bytes / 128) * 97, ResourceBudgetCategory::kConstant);
+    if (!charge && charge.error().IsResourceExhausted()) return Prepared{};
+    if (!charge) return std::unexpected(std::move(charge).error());
+    auto metadata = budget.reserve_unattributed(std::nullopt);
+    if (!metadata && metadata.error().IsResourceExhausted()) return Prepared{};
+    if (!metadata) return std::unexpected(std::move(metadata).error());
+    HYLE_ASSIGN_OR_RETURN(auto array, MemoryAccess::borrow_tensor(original));
+    HYLE_ASSIGN_OR_RETURN(auto packed, prepare_bfloat_projection_on_owner(runtime, array));
+    auto entry = std::make_shared<PreparedBFloatProjection>(PreparedBFloatProjection{
+        owner, source, original, std::move(*charge), std::move(*metadata), std::move(packed)});
+    memory->projections.push_back({runtime, entry});
+    return Prepared(std::move(entry));
+  } catch (...) {
+    return std::unexpected(native_exception());
+  }
+}
+
 bool copy_source_resource_matches(mem::MemoryResourceRef nominated,
                                   mem::MemoryResourceRef actual) noexcept {
   if (actual == nominated) return true;
