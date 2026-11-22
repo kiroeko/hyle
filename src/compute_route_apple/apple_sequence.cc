@@ -1,11 +1,14 @@
 #include "apple_sequence.h"
 #include "apple_checks.h"
+#include "../compute_shader_shared/ct_packed.h"
+#include "../compute_shader_shared/nvfp4_f32.h"
 #include "hyle/compute/sequence_ops.h"
 
 #include <algorithm>
 #include <array>
 #include <climits>
 #include <cmath>
+#include <string>
 #include <mlx/fast.h>
 #include <mlx/ops.h>
 
@@ -112,6 +115,72 @@ Result<std::vector<mx::array>> lower_short_gdn(const GatedDeltaNet &operation,
   auto state = mx::reshape(mx::slice(packed, {score_count}, {packed_count}, stream),
                            state_shape, stream);
   return std::vector{std::move(scores), std::move(state)};
+}
+
+std::vector<mlx::core::array> lower_short_conv_gdn_inputs(
+    const mlx::core::array &samples, const mlx::core::array &weights,
+    const mlx::core::array &query_epsilon, const mlx::core::array &key_epsilon,
+    const mlx::core::Shape &query_shape, const mlx::core::Shape &value_shape,
+    std::array<int,3> channel_offsets, mlx::core::Stream stream) {
+  // Fuse convolution, BF16 SiLU and the two BF16 L2 chains for short rows.
+  // Each SIMD group owns one head and uses the original four-value reduction.
+  // The typed casts and exact BF16 multiply boundaries remain explicit.
+  static const std::string math = std::string(R"METAL(
+inline uint hyle_mul_hi(uint a,uint b) { return uint((ulong(a)*ulong(b))>>32); }
+inline uint hyle_clz(uint a) { return clz(a); }
+)METAL")+compute::shader::kNvfp4F32+compute::shader::kCtPacked+R"METAL(
+inline float hyle_round_bf(float x) { return float(bfloat16_t(x)); }
+inline float hyle_bfloat_multiply(float a,float b) {
+  const uint left=as_type<uint>(a), right=as_type<uint>(b);
+  const uint l=left&0x7fffffffu, r=right&0x7fffffffu;
+  if(l>=0x00800000u && l<0x7f800000u && r>=0x00800000u && r<0x7f800000u) {
+    const uint product=as_type<uint>(a*b);
+    const uint magnitude=product&0x7fffffffu;
+    if(magnitude>=0x00800000u && magnitude<0x7f800000u)
+      return as_type<float>(hyle_ct_narrow(product,2)<<16u);
+  }
+  return as_type<float>(hyle_ct_narrow(hyle_f32_mul(left,right),2)<<16u);
+}
+)METAL";
+  static const auto kernel = mx::fast::metal_kernel("hyle_short_causal_conv_gdn_inputs",
+      {"samples","weight","qe","ke"},{"out_q","out_k","out_v"},R"METAL(
+  const uint lane=thread_index_in_simdgroup, region=threadgroup_position_in_grid.y;
+  const uint row=threadgroup_position_in_grid.x, token=row/MAX_HEADS, head=row%MAX_HEADS;
+  const uint heads=region==2?V_HEADS:Q_HEADS;
+  if(head>=heads) return;
+  const uint channels=region==0?Q_START:region==1?K_START:V_START;
+  float x[4], total=0.0f;
+  for(uint i=0;i<4;++i){
+    const uint c=channels+head*128+lane*4+i;
+    float convolution=0.0f;
+    for(uint tap=0;tap<4;++tap)
+      convolution+=float(samples[(token+tap)*samples_strides[1]+c*samples_strides[2]])*
+          weight[c*weight_strides[0]+tap*weight_strides[1]];
+    const float a=hyle_round_bf(convolution);
+    const float s=1.0f/(1.0f+precise::exp(abs(a)));
+    x[i]=hyle_round_bf(a==-INFINITY?0.0f:a*(a<0?s:1.0f-s));
+    if(region!=2) total=hyle_bfloat_multiply(x[i],x[i])+total;
+  }
+  float factor=1.0f;
+  if(region!=2){
+    const float e=region==0?float(qe[0]):float(ke[0]);
+    const float sum=hyle_round_bf(hyle_round_bf(simd_sum(total))+e);
+    factor=hyle_round_bf(precise::rsqrt(sum));
+  }
+  for(uint i=0;i<4;++i){
+    const uint index=(token*heads+head)*128+lane*4+i;
+    if(region==0)out_q[index]=hyle_bfloat_multiply(x[i],factor);
+    else if(region==1)out_k[index]=hyle_bfloat_multiply(x[i],factor);
+    else out_v[index]=x[i];
+  }
+)METAL",math,false,false,mx::CompileOptions{});
+  const int head_slots = std::max(query_shape[2], value_shape[2]);
+  return kernel({samples, weights, query_epsilon, key_epsilon},
+      {query_shape, query_shape, value_shape}, {mx::float32, mx::float32, mx::float32},
+      {head_slots * query_shape[1] * 32, 3, 1}, {32, 1, 1},
+      {{"MAX_HEADS", head_slots}, {"Q_HEADS", query_shape[2]}, {"V_HEADS", value_shape[2]},
+       {"Q_START", channel_offsets[0]}, {"K_START", channel_offsets[1]},
+       {"V_START", channel_offsets[2]}}, std::nullopt, false, stream);
 }
 
 Status qualify_packed_conv(const Operation &operation,

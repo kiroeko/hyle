@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 #include "tensor_test_support.h"
 #include "hyle/compute/sequence_ops.h"
+#include "apple_sequence.h"
+#include "apple_static_fp8.h"
 
 namespace {
 using namespace apple_tensor_test;
@@ -411,6 +413,97 @@ TEST(AppleSequence, PackedConvolutionRejectsWholeInvalidOffsetDomainAndRecovers)
       if (!result) EXPECT_TRUE(result.error().IsInvalidArgument())<<result.error().message();
     } else {
       ASSERT_TRUE(result)<<result.error().message(); fixture.expect(result->get()->arrays(),offsets);
+    }
+  }
+}
+
+hyle::Result<mx::array> reference_l2(const mx::array &rows, const mx::array &epsilon,
+    int tokens, mx::Stream stream) {
+  HYLE_ASSIGN_OR_RETURN(auto description, c::TensorDesc::dense(c::DataType::kBFloat16,
+      std::array<std::int64_t,4>{1, tokens, 1, 128}));
+  const auto multiply = c::Operation{c::Binary{c::BinaryKind::kMultiply}};
+  HYLE_ASSIGN_OR_RETURN(auto square, a::detail::lower_exact_binary(multiply,
+      std::array{description, description}, std::array{rows, rows}, stream));
+  auto sum = mx::astype(mx::sum(mx::astype(square.front(), mx::float32, stream), -1, true, stream), mx::bfloat16, stream);
+  auto denominator = mx::astype(mx::add(mx::astype(sum, mx::float32, stream),
+      mx::astype(epsilon, mx::float32, stream), stream), mx::bfloat16, stream);
+  auto inverse = mx::astype(mx::rsqrt(mx::astype(denominator, mx::float32, stream), stream), mx::bfloat16, stream);
+  HYLE_ASSIGN_OR_RETURN(auto scale, c::TensorDesc::dense(c::DataType::kBFloat16,
+      std::array<std::int64_t,4>{1, tokens, 1, 1}));
+  HYLE_ASSIGN_OR_RETURN(auto output, a::detail::lower_exact_binary(multiply,
+      std::array{description,scale}, std::array{rows,inverse}, stream));
+  return mx::astype(output.front(), mx::float32, stream);
+}
+
+TEST(AppleSequence, ShortGdnPreludePreservesBFloatBoundaries) {
+  constexpr int channels = 4 * 128;
+  const auto created = a::Context::create();
+  ASSERT_TRUE(created) << created.error().message();
+  for (const int tokens : {1,2,3,4}) {
+    auto prepared = created->compile([tokens](const std::vector<mx::array> &input, mx::Stream stream)
+        -> hyle::Result<std::vector<mx::array>> {
+      const auto &samples = input[0], &weights = input[1], &epsilon = input[2];
+      const auto query_shape = mx::Shape{1,tokens,1,128};
+      const auto value_shape = mx::Shape{1,tokens,2,128};
+      auto fused = a::detail::lower_short_conv_gdn_inputs(samples, weights, epsilon,
+          epsilon, query_shape, value_shape, {0,128,256}, stream);
+      auto convolution = mx::conv1d(mx::astype(samples, mx::float32, stream),
+          mx::expand_dims(weights,-1,stream), 1,0,1,channels,stream);
+      auto x = mx::astype(mx::astype(convolution, mx::bfloat16, stream), mx::float32, stream);
+      auto silu = mx::astype(mx::where(mx::equal(x, mx::array(-INFINITY), stream),
+          mx::array(0.0F), mx::multiply(x,mx::sigmoid(x,stream),stream),stream), mx::bfloat16,stream);
+      auto q = mx::reshape(mx::slice(silu,{0,0,0},{1,tokens,128},stream), query_shape,stream);
+      auto k = mx::reshape(mx::slice(silu,{0,0,128},{1,tokens,256},stream), query_shape,stream);
+      auto v = mx::reshape(mx::slice(silu,{0,0,256},{1,tokens,channels},stream), value_shape,stream);
+      HYLE_ASSIGN_OR_RETURN(auto q_reference, reference_l2(q,epsilon,tokens,stream));
+      HYLE_ASSIGN_OR_RETURN(auto k_reference, reference_l2(k,epsilon,tokens,stream));
+      fused.push_back(std::move(q_reference));
+      fused.push_back(std::move(k_reference));
+      fused.push_back(mx::astype(v, mx::float32,stream));
+      for (auto &value : fused) value = mx::contiguous(value, false, stream);
+      return fused;
+    }, std::array{a::InputSpec{{1,tokens+3,channels},mx::bfloat16},
+                   a::InputSpec{{channels,4},mx::float32}, a::InputSpec{{1},mx::bfloat16}});
+    ASSERT_TRUE(prepared) << prepared.error().message();
+    std::vector<std::uint16_t> samples((tokens+3)*channels);
+    std::vector<float> weights(channels*4);
+    for (std::size_t i = 0; i < samples.size(); ++i)
+      samples[i] = static_cast<std::uint16_t>(0x3d80+(i*13)%513) | ((i%2) ? 0x8000 : 0);
+    constexpr std::array edges{0,0x8000,1,0x8001,0x80,0x8080,0x7fc0,0x7f80,0xff80};
+    for (std::size_t edge = 0; edge < edges.size(); ++edge) {
+      for (int row = 0; row < tokens+3; ++row) {
+        const auto offset = row*channels + edge;
+        const auto value = static_cast<std::uint16_t>(edges[edge]);
+        samples[offset+256] = value;
+        if (edge < 6) {
+          samples[offset] = value;
+          samples[offset+128] = value;
+        }
+      }
+    }
+    for (std::size_t i = 0; i < weights.size(); ++i)
+      weights[i] = 0.125F * static_cast<float>(1+(i*7)%9);
+    const std::array<std::uint16_t, 1> epsilon_bits{0x3586};
+    auto native_samples = ready(mx::view(mx::array(samples.data(),
+        {1, tokens+3, channels}, mx::uint16), mx::bfloat16, stream()));
+    auto epsilon = ready(mx::view(mx::array(epsilon_bits.data(), {1}, mx::uint16),
+        mx::bfloat16, stream()));
+    auto slot = prepared->create_invocation().value();
+    const auto bound = slot.bind(std::array{native_samples, mx::array(weights.data(), {channels,4}, mx::float32), epsilon});
+    ASSERT_TRUE(bound.ok()) << bound.message() << " at width " << tokens;
+    auto completion = slot.submit().value();
+    auto submission = completion.wait();
+    ASSERT_TRUE(submission) << submission.error().message();
+    const auto values = submission->get()->arrays();
+    ASSERT_EQ(values.size(),6U);
+    for (int port=0; port<3; ++port) {
+      ASSERT_EQ(values[port].shape(),values[port+3].shape());
+      const auto *fused = values[port].data<float>(), *original = values[port+3].data<float>();
+      for (std::size_t i=0;i<values[port].size();++i) {
+        if (std::isnan(original[i])) EXPECT_TRUE(std::isnan(fused[i])) << tokens << " " << port << " " << i;
+        else EXPECT_EQ(std::bit_cast<std::uint32_t>(fused[i]), std::bit_cast<std::uint32_t>(original[i]))
+            << tokens << " " << port << " " << i;
+      }
     }
   }
 }

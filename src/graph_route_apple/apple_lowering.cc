@@ -1,5 +1,6 @@
 #include "hyle/compute/detail/apple_plan.h"
 #include "../compute_route_apple/apple_carrier.h"
+#include "../compute_route_apple/apple_sequence.h"
 #include "hyle/compute/low_precision.h"
 #include "hyle/compute/model_ops.h"
 #include "hyle/graph/apple.h"
@@ -206,6 +207,137 @@ Status prepare_constant_casts(const std::shared_ptr<ca::detail::Runtime> &runtim
   return Status::Ok();
 }
 
+struct BFloatL2 final {
+  std::size_t source, epsilon;
+};
+
+std::optional<BFloatL2> find_bfloat_l2(const Plan &plan,
+    std::span<const Node *const> producers, std::size_t port) noexcept {
+  using namespace compute;
+  const auto from = [&](std::size_t id) { return producers[id]; };
+  const auto bf16 = [&](std::size_t id) { return plan.descriptions[id].data_type() == DataType::kBFloat16; };
+  const auto binary = [](const Node *node, BinaryKind kind) {
+    const auto *op = node ? node->operation.get_if<Binary>() : nullptr;
+    return op && op->kind == kind && node->inputs.size() == 2;
+  };
+  const auto *cast = from(port);
+  const auto *conversion = cast ? cast->operation.get_if<Cast>() : nullptr;
+  if (!conversion || conversion->output_type != DataType::kFloat32 || cast->inputs.size() != 1 || !bf16(cast->inputs[0]))
+    return {};
+  const auto *normalize = from(cast->inputs[0]);
+  if (!binary(normalize, BinaryKind::kMultiply))
+    return {};
+  const auto source = normalize->inputs[0], scale = normalize->inputs[1];
+  const auto &desc = plan.descriptions[source];
+  if (!desc.is_plain() || !bf16(source) || !bf16(scale) || desc.rank() != 4 ||
+      desc.dimensions()[0] != 1 || desc.dimensions()[1]<1 || desc.dimensions()[1]>4 ||
+      desc.dimensions()[2]<1 || desc.dimensions()[2]>32 || desc.dimensions()[3] != 128)
+    return {};
+  const auto *root = from(scale);
+  const auto *rsqrt = root ? root->operation.get_if<Unary>() : nullptr;
+  if (!rsqrt || rsqrt->kind != UnaryKind::kRsqrt || root->inputs.size() != 1 || !bf16(root->inputs[0])) return {};
+  const auto *add = from(root->inputs[0]);
+  if (!binary(add, BinaryKind::kAdd))
+    return {};
+  const auto sum_id = add->inputs[0], epsilon = add->inputs[1];
+  const auto count = plan.descriptions[epsilon].element_count();
+  if (!bf16(sum_id) || !bf16(epsilon) || !count || *count != 1) return {};
+  const auto *reduce = from(sum_id);
+  const auto *sum = reduce ? reduce->operation.get_if<Reduce>() : nullptr;
+  if (!sum || sum->kind != ReductionKind::kSum || !sum->keep_dimensions ||
+      sum->accumulation_type != DataType::kFloat32 || sum->axes.is_all() || sum->axes.values().size() != 1 ||
+      (sum->axes.values()[0] != -1 && sum->axes.values()[0] != 3) || reduce->inputs.size() != 1 ||
+      !bf16(reduce->inputs[0])) return {};
+  const auto *square = from(reduce->inputs[0]);
+  if (!binary(square, BinaryKind::kMultiply) || square->inputs[0] != source || square->inputs[1] != source)
+    return {};
+  return BFloatL2{source, epsilon};
+}
+
+struct ConvChannels final {
+  std::size_t activation;
+  std::int64_t start, size;
+};
+
+std::optional<ConvChannels> find_conv_channels(std::span<const Node *const> producers,
+    std::size_t id) noexcept {
+  const auto peel_copy = [&](std::size_t value) {
+    const auto *node = producers[value];
+    return node && node->operation.get_if<compute::Copy>() && node->inputs.size() == 1 ? node->inputs[0] : value;
+  };
+  const auto *reshape = producers[peel_copy(id)];
+  const auto *view = reshape?reshape->operation.get_if<compute::View>():nullptr;
+  if (!view || view->kind() != compute::ViewKind::kReshape || reshape->inputs.size() != 1) return {};
+  const auto *slice = producers[peel_copy(reshape->inputs[0])];
+  view = slice?slice->operation.get_if<compute::View>():nullptr;
+  if (!view || view->kind() != compute::ViewKind::kSlice || (view->axis() != 2 && view->axis() != -1) ||
+      view->step() != 1 || slice->inputs.size() != 1) return {};
+  return ConvChannels{slice->inputs[0], view->start(), view->count()};
+}
+
+void prepare_conv_gdn_inputs(const Plan &plan, std::span<const Node *const> producers, const Node &node,
+    BFloatL2 q, BFloatL2 k, const std::vector<std::optional<mx::array>> &values,
+    std::vector<mx::array> &arguments, mx::Stream stream) {
+  using namespace compute;
+  const auto *v_cast = producers[node.inputs[2]];
+  const auto *vc = v_cast?v_cast->operation.get_if<Cast>():nullptr;
+  if (!vc || vc->output_type != DataType::kFloat32 || v_cast->inputs.size() != 1) return;
+  const auto q_channel = find_conv_channels(producers, q.source);
+  const auto k_channel = find_conv_channels(producers, k.source);
+  const auto v_channel = find_conv_channels(producers, v_cast->inputs[0]);
+  if (!q_channel || !k_channel || !v_channel ||
+      q_channel->activation != k_channel->activation || q_channel->activation != v_channel->activation)
+    return;
+  const auto *activation = producers[q_channel->activation];
+  const auto *silu = activation?activation->operation.get_if<Unary>():nullptr;
+  if (!silu || silu->kind != UnaryKind::kSilu || activation->inputs.size() != 1 ||
+      plan.descriptions[q_channel->activation].data_type() != DataType::kBFloat16)
+    return;
+  const auto *activation_cast = producers[activation->inputs[0]];
+  const auto *ac = activation_cast?activation_cast->operation.get_if<Cast>():nullptr;
+  if (!ac || ac->output_type != DataType::kBFloat16 || activation_cast->inputs.size() != 1) return;
+  const auto *conv = producers[activation_cast->inputs[0]];
+  if (!conv || !conv->operation.custom_as<model_ops::CausalConv1d>() || conv->inputs.size() != 2) return;
+  const auto *input_cast = producers[conv->inputs[0]];
+  const auto *ic = input_cast?input_cast->operation.get_if<Cast>():nullptr;
+  if (!ic || ic->output_type != DataType::kFloat32 || input_cast->inputs.size() != 1 ||
+      !values[input_cast->inputs[0]] || !values[conv->inputs[1]]) return;
+  const auto &input = *values[input_cast->inputs[0]], &weights = *values[conv->inputs[1]];
+  const auto &keys = arguments[0].shape(), &val = arguments[2].shape();
+  if (keys.size() != 4 || val.size() != 4 || val[0] != 1 || val[1] != keys[1] || val[3] != 128 ||
+      val[2] <= 0 || val[2]>32 || input.ndim() != 3 || input.dtype() != mx::bfloat16 ||
+      input.shape(0) != 1 || input.shape(1) != keys[1]+3 || weights.dtype() != mx::float32 ||
+      weights.ndim() != 2 || weights.shape(1) != 4 || weights.shape(0) != input.shape(2))
+    return;
+  const auto valid = [&](const ConvChannels &slice, std::int64_t count) {
+    return slice.start >= 0 && slice.size == count &&
+           slice.start <= input.shape(2) - count;
+  };
+  if (!valid(*q_channel, keys[2]*128) || !valid(*k_channel, keys[2]*128) || !valid(*v_channel, val[2]*128))
+    return;
+  const std::array starts{static_cast<int>(q_channel->start), static_cast<int>(k_channel->start),
+      static_cast<int>(v_channel->start)};
+  auto lowered = ca::detail::lower_short_conv_gdn_inputs(input, weights,
+      *values[q.epsilon], *values[k.epsilon], keys, val, starts, stream);
+  for (std::size_t i = 0; i < 3; ++i) arguments[i] = std::move(lowered[i]);
+}
+
+void prepare_gdn_inputs(const Plan &plan, std::span<const Node *const> producers,
+    const Node &node, const std::vector<std::optional<mx::array>> &values,
+    std::vector<mx::array> &arguments, mx::Stream stream) {
+  if (producers.empty() || !node.operation.get_if<compute::GatedDeltaNet>() || arguments.size() != 6)
+    return;
+  const auto q = find_bfloat_l2(plan, producers, node.inputs[0]);
+  const auto k = find_bfloat_l2(plan, producers, node.inputs[1]);
+  if (!q || !k || !values[q->source] || !values[k->source] || !values[q->epsilon] || !values[k->epsilon])
+    return;
+  const auto &raw_q = *values[q->source], &raw_k = *values[k->source];
+  if (raw_q.shape() != raw_k.shape() || raw_q.shape() != arguments[0].shape() ||
+      raw_k.shape() != arguments[1].shape() || stream.device != mx::Device::gpu)
+    return;
+  prepare_conv_gdn_inputs(plan, producers, node, *q, *k, values, arguments, stream);
+}
+
 Result<std::vector<mx::array>> trace(const Plan &plan,
                                      std::span<const Node> nodes,
                                      std::span<const std::size_t> input_ids,
@@ -219,6 +351,14 @@ Result<std::vector<mx::array>> trace(const Plan &plan,
     values[input_ids[i]] = inputs[i];
   for (std::size_t i = 0; i < plan.constants.size(); ++i)
     values[plan.constants[i]] = plan.values[i];
+  std::vector<const Node *> producers;
+  if (std::ranges::any_of(nodes, [](const Node &node) {
+        return node.operation.get_if<compute::GatedDeltaNet>() != nullptr;
+      })) {
+    producers.resize(plan.descriptions.size());
+    for (const auto &producer : nodes)
+      for (auto id : producer.outputs) producers[id] = &producer;
+  }
   std::vector<mx::array> arguments;
   std::vector<compute::TensorDesc> descriptions;
   for (const auto &node : nodes) {
@@ -233,6 +373,7 @@ Result<std::vector<mx::array>> trace(const Plan &plan,
       arguments.push_back(*values[index]);
       descriptions.push_back(plan.descriptions[index]);
     }
+    prepare_gdn_inputs(plan, producers, node, values, arguments, stream);
     ca::detail::PreparedMlxAffineMetadata prepared;
     const auto affine = node.operation.custom_as<compute::model_ops::MlxQuantized>();
     if (affine && affine->format == compute::model_ops::MlxWeightFormat::kAffine &&
