@@ -697,8 +697,12 @@ Result<compute::Completion> submit(void *, void *invocation,
       for (std::size_t port = 1; port < slot.artifact.count; ++port) if (!slot.written[port-1].valid())
         for (const auto &page : cd::PagedArenaAccess::pages(slot.frames[port-1])) HYLE_RETURN_IF_ERROR(reads.add(page));
       HYLE_RETURN_IF_ERROR(reads.admit(uses));
-      auto result = an::InvocationAccess::submit_ordered(slot.controller->native, std::move(uses),
-          &before_written_read, &slot, dependencies);
+      const bool static_pair = !slot.artifact.recipe.device_lengths() &&
+          slot.written[0].valid() && slot.written[1].valid();
+      auto result = static_pair ? an::InvocationAccess::submit_written_pages(slot.controller->native,
+          std::move(uses), &before_written_read, &slot, dependencies)
+          : an::InvocationAccess::submit_ordered(slot.controller->native, std::move(uses),
+              &before_written_read, &slot, dependencies);
       if (!result) { slot.controller->failed = true; slot.controller->prepared = false; slot.controller->bound = false; }
       return result;
     }

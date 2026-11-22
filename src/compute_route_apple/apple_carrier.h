@@ -134,6 +134,10 @@ struct InvocationAccess final {
   submit_ordered(Invocation &, LeaseUseBatch,
       Status (*preflight)(const void *) noexcept, const void *source,
       std::span<const compute::detail::CompletionDependency>) noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API static Result<OwnedResult<Results>>
+  submit_written_pages(Invocation &, LeaseUseBatch,
+      Status (*preflight)(const void *) noexcept, const void *source,
+      std::span<const compute::detail::CompletionDependency>) noexcept;
   // Readonly, successfully completed output only; close does not revoke it.
   HYLE_COMPUTE_ROUTE_APPLE_API static Result<mlx::core::array>
   output(const Invocation &, std::size_t output_port) noexcept;

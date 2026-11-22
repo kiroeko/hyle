@@ -28,6 +28,7 @@ public:
       std::span<const compute::detail::CompletionDependency>,
       InvocationState *consumer = nullptr, CopyRecording *copy_consumer = nullptr) noexcept;
   Status device_checks(DeviceCheckInputs &) noexcept;
+  bool contains_copy(const CopyRecording &, std::uint64_t) const noexcept;
   Status resolve() noexcept; // Original FIFO owner only.
   // Raw copies on this same Runtime already import their blit memory fence.
   // Keep the original producer/error owners without duplicating that wait.

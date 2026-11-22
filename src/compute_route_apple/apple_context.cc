@@ -464,6 +464,7 @@ struct InvocationState;
 void retain(InvocationState *) noexcept;
 void release(InvocationState *) noexcept;
 void execute_native_tail(Job *) noexcept;
+
 void native_prefix_completed(void *) noexcept;
 Status observe_native_prefix(InvocationState &) noexcept;
 Status observe_native_inputs(InvocationState &) noexcept;
@@ -504,6 +505,7 @@ struct InvocationState : Job {
   // Its existing source/suffix retirement owner keeps the payload alive.
   Status (*source_preflight)(const void *) noexcept = nullptr;
   const void *pending_source = nullptr;
+  bool static_written_page = false;
   std::vector<mx::array> inputs;
   std::vector<PreparedInput> prepared_inputs;
   NativeDependencies dependencies;
@@ -1010,6 +1012,12 @@ void NativeDependencies::encode(mx::Stream stream, const mx::Event *ordered) {
     if (!ordered || !same_native_event(event, *ordered)) event.wait(stream);
   encoded_ = true;
 }
+bool NativeDependencies::contains_copy(const CopyRecording &copy, std::uint64_t epoch) const noexcept {
+  return std::ranges::any_of(sources_, [&](const auto &source) {
+    return source.copy.get() == &copy && source.epoch == epoch;
+  });
+}
+
 Status NativeDependencies::observe() noexcept {
   Status status;
   for (const auto &dependency : sources_) {
@@ -1201,6 +1209,7 @@ void execute_with(InvocationState& state, Evaluate evaluate) noexcept {
       runtime.poison(terminal);
     }
   }
+  if (state.static_written_page) terminal.Update(finish_static_page_loan(runtime));
   if (state.native_deferred) {
     state.native_terminal.Update(terminal);
     return; // The accepted original prefix callback owns this worker reference.
@@ -1282,9 +1291,20 @@ void execute_invocation(Job* job) noexcept {
     return Status::Ok();
   });
 }
+bool is_static_page_followup(const Job &job, const CopyRecording &key, std::uint64_t key_epoch,
+                             const CopyRecording &value, std::uint64_t value_epoch) noexcept {
+  if (job.execute != &execute_batch_invocation) return false;
+  const auto &state = static_cast<const RuntimeBatchInvocationState &>(job);
+  return state.source_preflight && state.pending_source && state.static_written_page &&
+      state.program->device_prefix && state.dependencies.contains_copy(key, key_epoch) &&
+      state.dependencies.contains_copy(value, value_epoch);
+}
+
 void execute_batch_invocation(Job* job) noexcept {
   auto& state=*static_cast<RuntimeBatchInvocationState*>(job);
   execute_with(state, [&](mx::Stream stream) -> Status {
+    if (state.static_written_page)
+      HYLE_RETURN_IF_ERROR(verify_static_page_loan(*state.program->runtime, state.dependencies.events()));
     state.encode_dependencies(stream);
     HYLE_RETURN_IF_ERROR(evaluate_batch(state, stream));
     state.publish_device_prefix();
@@ -2313,6 +2333,19 @@ Result<OwnedResult<Results>> Invocation::submit_guarded(LeaseUseBatch uses,
 Result<OwnedResult<Results>> Invocation::submit_guarded(LeaseUseBatch uses,
     Status (*preflight)(const void *) noexcept, const void *source,
     std::span<const cd::CompletionDependency> dependencies) noexcept {
+  return submit_guarded(std::move(uses), preflight, source, dependencies, false);
+}
+
+Result<OwnedResult<Results>> detail::InvocationAccess::submit_written_pages(
+    Invocation &invocation, LeaseUseBatch uses,
+    Status (*preflight)(const void *) noexcept, const void *source,
+    std::span<const cd::CompletionDependency> dependencies) noexcept {
+  return invocation.submit_guarded(std::move(uses), preflight, source, dependencies, true);
+}
+
+Result<OwnedResult<Results>> Invocation::submit_guarded(LeaseUseBatch uses,
+    Status (*preflight)(const void *) noexcept, const void *source,
+    std::span<const cd::CompletionDependency> dependencies, bool static_written_page) noexcept {
   HYLE_TRACE_ZONE_NAMED("hyle.apple.submit");
   if (!state_)
     return std::unexpected(
@@ -2358,6 +2391,7 @@ Result<OwnedResult<Results>> Invocation::submit_guarded(LeaseUseBatch uses,
   const auto previous_epoch = state_->submitted_epoch.fetch_add(1, std::memory_order_release);
   state_->source_preflight = preflight;
   state_->pending_source = source;
+  state_->static_written_page = static_written_page;
   detail::retain(state_); // worker reference exists before queue admission
   const Status admitted = state_->program->runtime->enqueue(*state_);
   if (!admitted.ok()) {

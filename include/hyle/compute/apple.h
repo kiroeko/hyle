@@ -247,6 +247,9 @@ private:
       LeaseUseBatch uses, Status (*preflight)(const void *) noexcept,
       const void *source,
       std::span<const compute::detail::CompletionDependency> dependencies) noexcept;
+  Result<OwnedResult<Results>> submit_guarded(LeaseUseBatch,
+      Status (*preflight)(const void *) noexcept, const void *source,
+      std::span<const compute::detail::CompletionDependency>, bool static_written_page) noexcept;
   HYLE_COMPUTE_ROUTE_APPLE_API Status wait_native() noexcept;
   explicit Invocation(detail::InvocationState *state) noexcept
       : state_(state) {}

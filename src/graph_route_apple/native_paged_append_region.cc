@@ -269,7 +269,7 @@ Status bind(void *prepared, void *invocation, std::span<const RegionValue> input
       slot.copies[index] = {slot.ranges[index].destination, slot.ranges[index].prefix};
     HYLE_RETURN_IF_ERROR(an::bind_result_copy_recording(*slot.recording, slot.copies));
     HYLE_RETURN_IF_ERROR(an::bind_native_copy_source(*slot.recording, slot.source, artifact.rows));
-    HYLE_RETURN_IF_ERROR(an::set_copy_preflight(*slot.recording, &preflight, &slot));
+    HYLE_RETURN_IF_ERROR(an::set_static_append_preflight(*slot.recording, &preflight, &slot));
   } else {
     const auto &input = inputs[0];
     if (!input.tensor.valid() || input.tensor.description() != artifact.rows)
@@ -306,7 +306,7 @@ Status before_read(void *, void *invocation) noexcept {
   // Device-controlled readers import the original event and inspect this
   // writer's GPU verdict before touching a page. Public retirement still
   // observes the full original copy/source outcome.
-  return slot.artifact.device_lengths?Status::Ok():an::observe_copy_recording_on_owner(*slot.recording);
+  return slot.artifact.device_lengths?Status::Ok():an::require_static_append_for_page(*slot.recording);
 }
 Status qualify_reader(void *prepared, void *, cd::CompletionEndpoint endpoint) noexcept {
   const auto &artifact = *static_cast<const Artifact *>(prepared);

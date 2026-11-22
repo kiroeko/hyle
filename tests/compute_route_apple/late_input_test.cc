@@ -392,6 +392,161 @@ TEST(AppleLateInput, PagedPrefixCanPublishAViewOfItsPendingSource) {
   ASSERT_TRUE(context.close().ok());
 }
 
+struct OriginalStaticPageWriter {
+  ad::CopyRecording *recording = nullptr;
+  std::array<c::detail::CopyBackendRange, 1> ranges;
+
+  static hyle::Status resolve(void *opaque) noexcept {
+    auto &writer = *static_cast<OriginalStaticPageWriter *>(opaque);
+    return ad::resolve_result_copy_recording(*writer.recording, writer.ranges,
+        [](void *source, std::size_t) noexcept {
+          return ad::native_copy_source(*static_cast<ad::CopyRecording *>(source));
+        }, writer.recording);
+  }
+};
+
+struct OriginalStaticPageRead {
+  ad::CopyRecording &key;
+  ad::CopyRecording &value;
+  bool reject;
+
+  static hyle::Status prepare(const void *opaque) noexcept {
+    const auto &input = *static_cast<const OriginalStaticPageRead *>(opaque);
+    HYLE_RETURN_IF_ERROR(ad::require_static_append_for_page(input.key));
+    HYLE_RETURN_IF_ERROR(ad::require_static_append_for_page(input.value));
+    return input.reject ? hyle::Status::FailedPrecondition("static page reader rejected after both writers")
+                        : hyle::Status::Ok();
+  }
+};
+
+enum class StaticPageResult { kSuccess, kRejectReader, kCancelWriter };
+
+void exercise_static_page_pair(StaticPageResult result) {
+  auto context = a::Context::create().value();
+  auto runtime = ad::ContextAccess::runtime(context);
+  auto memory = a::MemoryResource::create(context).value();
+  constexpr auto type = c::DataType::kBFloat16;
+  const auto storage = c::CacheStorage::plain(type).value();
+  const c::BatchCapacity capacity{.storage = c::BatchStorage::kPaged,
+      .query_type = type, .output_type = type, .key_storage = storage, .value_storage = storage,
+      .max_requests = 1, .max_query_rows = 1, .max_kv_rows = 16, .max_pages = 1,
+      .max_page_refs = 1, .query_heads = 1, .kv_heads = 1, .qk_head_dim = 64,
+      .value_head_dim = 64, .page_size = 16};
+  auto schema = c::BatchSchema::create(capacity).value();
+  const std::array<std::int32_t, 2> indptr{0, 1};
+  const std::array<std::int32_t, 1> refs{0}, tail{1};
+  auto layout = schema.version({indptr, indptr, refs, tail}).value();
+  const auto description = c::TensorDesc::dense(type, std::array<std::int64_t, 3>{1, 1, 64}).value();
+  const a::InputSpec shape{{1, 1, 64}, mx::bfloat16, description};
+  const std::array src_specs{shape};
+  auto projection = ad::ContextAccess::compile_device_prefix(runtime,
+      [](const auto &inputs, mx::Stream stream) {
+        return std::vector{mx::square(inputs[0], stream), mx::negative(inputs[0], stream)};
+      }, src_specs).value();
+  auto original = projection.create_invocation().value();
+  const std::array read_specs{shape, shape, shape, a::InputSpec{{}, mx::int32}};
+  auto page = ad::PagedBatchAccess::prepare_runtime_program(context, layout, read_specs,
+      [](const c::BatchLayoutVersion &, const std::vector<mx::array> &input, mx::Stream stream) {
+        return std::vector{mx::add(input[1], input[2], stream)};
+      }, {}).value();
+  auto reader = page.create_invocation().value();
+  ASSERT_TRUE(ad::InvocationAccess::reserve_dependencies(reader, 2).ok());
+
+  const auto bytes = description.required_bytes().value();
+  std::array buffers{hyle::mem::Buffer::create(memory.ref(), bytes).value(),
+                     hyle::mem::Buffer::create(memory.ref(), bytes).value()};
+  std::array writes{ad::prepare_copy_recording(context, 1).value(),
+                    ad::prepare_copy_recording(context, 1).value()};
+  ASSERT_TRUE(ad::reserve_copy_dependencies(*writes[1], 1).ok());
+  std::array<OriginalStaticPageWriter, 2> preflights;
+  for (std::size_t i = 0; i < writes.size(); ++i) {
+    auto &recording = *writes[i];
+    auto &preflight = preflights[i];
+    preflight.recording = &recording;
+    preflight.ranges[0].destination = buffers[i].view();
+    ASSERT_TRUE(ad::bind_result_copy_recording(recording, preflight.ranges).ok());
+    ASSERT_TRUE(ad::bind_native_copy_source(recording, ad::InvocationAccess::source(original, i).value(),
+                                          description).ok());
+    ASSERT_TRUE(ad::set_static_append_preflight(recording, &OriginalStaticPageWriter::resolve, &preflight).ok());
+  }
+  std::array<float, 64> values;
+  for (std::size_t i = 0; i < values.size(); ++i) values[i] = static_cast<float>(1 + i % 4);
+  const mx::array q(values.begin(), {1, 1, 64}, mx::bfloat16);
+  const auto borrow = [&](std::size_t index) {
+    return ad::MemoryAccess::borrow_tensor(c::ConstTensorView::create(description, buffers[index].view()).value()).value();
+  };
+  const std::array projection_input{q};
+  const std::array page_inputs{q, borrow(0), borrow(1), mx::array(std::int32_t{0})};
+  OriginalStaticPageRead preflight{*writes[0], *writes[1], result == StaticPageResult::kRejectReader};
+  ASSERT_TRUE(original.bind(projection_input).ok());
+  ASSERT_TRUE(reader.bind(page_inputs).ok());
+
+  // Static writers validate the original projection before recording. Hold
+  // their commands and the page reader only after those rows are available.
+  auto projected = original.submit().value();
+  const auto producer_status = projected.completion().wait();
+  ASSERT_TRUE(producer_status.ok()) << producer_status.message();
+  GpuEventGate gate(runtime);
+  ASSERT_TRUE(gate.enqueue().ok());
+  FifoGate queued;
+  ASSERT_TRUE(queued.enqueue(runtime).ok());
+  ASSERT_TRUE(queued.wait_entered_for(std::chrono::seconds(5)));
+  auto key = ad::submit_copy_recording(*writes[0]).value();
+  const std::array before_value{c::detail::CompletionAccess::dependency(key)};
+  auto value = ad::submit_copy_recording(*writes[1], before_value).value();
+  const std::array before_read{before_value.front(), c::detail::CompletionAccess::dependency(value)};
+  auto finished = ad::InvocationAccess::submit_written_pages(reader, {}, &OriginalStaticPageRead::prepare,
+                                                            &preflight, before_read).value();
+  if (result == StaticPageResult::kCancelWriter) ASSERT_TRUE(value.request_cancel().ok());
+  FifoGate after_reader;
+  hyle::Status witnessed;
+  if (result == StaticPageResult::kSuccess) witnessed = after_reader.enqueue(runtime);
+  queued.open_and_join();
+  bool encoded = result != StaticPageResult::kSuccess;
+  if (result == StaticPageResult::kSuccess && witnessed.ok()) {
+    encoded = after_reader.wait_entered_for(std::chrono::seconds(2));
+    if (encoded) {
+      EXPECT_EQ(key.poll().value(), c::CompletionPoll::kPending);
+      EXPECT_EQ(value.poll().value(), c::CompletionPoll::kPending);
+      EXPECT_EQ(finished.completion().poll().value(), c::CompletionPoll::kPending);
+    }
+  }
+  gate.open();
+  after_reader.open_and_join();
+  EXPECT_TRUE(witnessed.ok());
+  EXPECT_TRUE(encoded);
+
+  const auto key_status = key.wait();
+  const auto writer_status = value.wait();
+  const auto reader_status = finished.completion().wait();
+  EXPECT_TRUE(key_status.ok()) << key_status.message();
+  if (result == StaticPageResult::kCancelWriter) {
+    EXPECT_TRUE(writer_status.IsCancelled());
+    EXPECT_TRUE(reader_status.IsCancelled());
+  } else if (result == StaticPageResult::kRejectReader) {
+    EXPECT_TRUE(writer_status.ok());
+    EXPECT_TRUE(reader_status.IsFailedPrecondition());
+  } else {
+    ASSERT_TRUE(writer_status.ok());
+    ASSERT_TRUE(reader_status.ok()) << reader_status.message();
+    const auto output = ad::InvocationAccess::output(reader, 0).value();
+    for (std::size_t i = 0; i < values.size(); ++i)
+      EXPECT_FLOAT_EQ(static_cast<float>(output.data<mx::bfloat16_t>()[i]), values[i] * values[i] - values[i]);
+  }
+  if (result != StaticPageResult::kSuccess) EXPECT_FALSE(ad::InvocationAccess::output(reader, 0));
+  ASSERT_TRUE(context.close().ok());
+}
+
+TEST(AppleLateInput, WrittenPageReadsBothStaticCopies) {
+  exercise_static_page_pair(StaticPageResult::kSuccess);
+}
+TEST(AppleLateInput, RejectedWrittenPageReaderStillRetiresBothStaticCopies) {
+  exercise_static_page_pair(StaticPageResult::kRejectReader);
+}
+TEST(AppleLateInput, CancelledStaticCopyCannotPublishWrittenPage) {
+  exercise_static_page_pair(StaticPageResult::kCancelWriter);
+}
+
 // Hold only the callback which publishes the original prefix's completion.
 // Its actual GPU event can signal first, as it does during ordinary MLX eval.
 class PrefixCallbackGate final : public std::enable_shared_from_this<PrefixCallbackGate> {

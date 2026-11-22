@@ -130,6 +130,13 @@ HYLE_COMPUTE_ROUTE_APPLE_API Result<CopySpan> native_copy_source(CopyRecording &
 // The supplied metadata must be retained through this Job's actual retirement.
 using CopyPreflight = Status (*)(void *) noexcept;
 HYLE_COMPUTE_ROUTE_APPLE_API Status set_copy_preflight(CopyRecording &, CopyPreflight, void *) noexcept;
+// Resolves the original pinned source and admitted static arena ranges only.
+HYLE_COMPUTE_ROUTE_APPLE_API Status set_static_append_preflight(CopyRecording &, CopyPreflight, void *) noexcept;
+HYLE_COMPUTE_ROUTE_APPLE_API Status require_static_append_for_page(CopyRecording &) noexcept;
+bool is_static_page_followup(const Job &, const CopyRecording &, std::uint64_t,
+                             const CopyRecording &, std::uint64_t) noexcept;
+Status verify_static_page_loan(Runtime &, std::span<mlx::core::Event>) noexcept;
+Status finish_static_page_loan(Runtime &) noexcept;
 HYLE_COMPUTE_ROUTE_APPLE_API Result<CompletionPoll> poll_copy_recording(const CopyRecording &) noexcept;
 Status wait_copy_recording(const CopyRecording &) noexcept;
 Status qualify_recording_dependency(const std::shared_ptr<Runtime> &, compute::detail::CompletionDependency) noexcept;
