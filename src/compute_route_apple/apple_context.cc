@@ -40,6 +40,11 @@
 #include "hyle/platform/thread.h"
 #include "hyle/platform/wait.h"
 
+namespace mlx::core::metal {
+MLX_API bool hyle_store_output_fences(Stream, const void *const *, size_t, const Event *, size_t,
+    NS::SharedPtr<MTL::Fence> *, size_t, size_t *) noexcept;
+}
+
 namespace hyle::compute::apple {
 namespace mx = mlx::core;
 namespace cd = compute::detail;
@@ -404,8 +409,9 @@ Status evaluate_mlx(const MlxProgram &program,
                     std::vector<mx::array> &outputs, mx::Stream stream,
                     std::vector<mx::Event> *pending = nullptr,
                     std::optional<mx::array> *check = nullptr,
-                    InvocationState *device_prefix = nullptr) {
-  encode_native_input_waits(inputs, stream);
+                    InvocationState *device_prefix = nullptr,
+                    const mx::Event *ordered_input = nullptr) {
+  encode_native_input_waits(inputs, stream, ordered_input);
   outputs = program.compiled(inputs);
   if (pending)
     return record_mlx_prefix(outputs, stream, *pending, check, device_prefix, program.checks->present);
@@ -536,6 +542,13 @@ struct InvocationState : Job {
   bool native_values_ready = false; // Published under binding_mutex.
   std::uint64_t native_retired_epoch = 0;
   Status native_terminal;
+  struct OrderedPageInput {
+    mx::Event event;
+    std::array<const void *, 8> buffers{};
+    std::size_t count = 0;
+  };
+  std::optional<OrderedPageInput> ordered_page;
+  std::optional<OrderedPageInput> ordered_page_input(mx::Stream) const;
   Status observe_inputs() noexcept;
   void encode_dependencies(mx::Stream stream) { dependencies.encode(stream); }
   // Caller holds this producer's binding_mutex. Returning the last real
@@ -991,9 +1004,10 @@ void NativeDependencies::clear() noexcept {
   sources_.clear(); events_.clear(); native_events_.clear(); waits_.clear();
   encoded_ = native_encoded_ = false;
 }
-void NativeDependencies::encode(mx::Stream stream) {
+void NativeDependencies::encode(mx::Stream stream, const mx::Event *ordered) {
   if (encoded_) return;
-  for (auto &event : events_) event.wait(stream);
+  for (auto &event : events_)
+    if (!ordered || !same_native_event(event, *ordered)) event.wait(stream);
   encoded_ = true;
 }
 Status NativeDependencies::observe() noexcept {
@@ -1072,6 +1086,7 @@ void retire_invocation(InvocationState &state, Status terminal) noexcept {
     terminal = Status::Cancelled("Apple submission cancelled after native drain");
   state.block_arguments.clear(); state.block_outputs.clear(); state.output_blocks.clear();
   if (state.source_bindings) state.inputs.clear();
+  state.ordered_page.reset();
   state.release_source_pins();
   finish(state, std::move(terminal));
   release(&state);
@@ -1098,6 +1113,15 @@ Status arm_device_prefix(InvocationState &state, mx::Stream stream) {
 void DevicePrefixTail::eval_gpu(const std::vector<mx::array> &inputs,
                                 std::vector<mx::array> &outputs) {
   HYLE_FATAL_ASSERT(!inputs.empty() && outputs.size() == 1);
+  if (auto &ordered = owner_->ordered_page; ordered) {
+    // A view may publish a page allocation without a kernel reading it. A
+    // later native consumer can rely on this tail even outside MLX's fence map.
+    const auto buffers = std::span(ordered->buffers).first(ordered->count);
+    if (std::ranges::any_of(inputs, [&](const auto &input) {
+          return std::ranges::find(buffers, input.buffer().ptr()) != buffers.end();
+        }))
+      ordered->event.wait(stream());
+  }
   outputs[0].copy_shared_buffer(inputs[0]);
   const auto status = arm_device_prefix(*owner_, stream());
   if (!status.ok()) throw RegionFailure{status};
@@ -1198,14 +1222,62 @@ void execute_with(InvocationState& state, Evaluate evaluate) noexcept {
   retire_invocation(state, std::move(terminal));
 }
 
+std::optional<InvocationState::OrderedPageInput> InvocationState::ordered_page_input(mx::Stream stream) const {
+  if (!source_bindings || inputs.size() != prepared_inputs.size()) return {};
+  const InvocationState *page = nullptr;
+  for (const auto &input : prepared_inputs) {
+    const auto *source = input.binding.source.state_;
+    if (!input.pinned || !source || source->execute != &execute_batch_invocation) continue;
+    if (page && source != page) return {};
+    if (source->program->runtime != program->runtime || !source->program->device_prefix ||
+        source->submitted_epoch.load(std::memory_order_acquire) != input.expected_epoch ||
+        !source->native_deferred || source->native_retired || !source->native_terminal.ok() ||
+        !source->device_prefix_command || !source->device_prefix_event.valid() || source->device_prefix_check)
+      return {};
+    page = source;
+  }
+  if (!page || page->device_prefix_event.is_signaled()) return {};
+  const auto &event = page->device_prefix_event;
+  auto &encoder = mx::metal::get_command_encoder(stream);
+  const auto *command = encoder.get_command_buffer();
+  if (!command || command->commandQueue() != page->device_prefix_command->commandQueue()) return {};
+  OrderedPageInput ordered{event};
+  for (std::size_t i = 0; i < inputs.size(); ++i) {
+    const auto &input = inputs[i];
+    if (prepared_inputs[i].binding.source.state_ != page) {
+      if (same_native_event(input.event(), event)) return {};
+      continue;
+    }
+    if (ordered.count == ordered.buffers.size() || !same_native_event(input.event(), event) ||
+        (input.dtype() != mx::bfloat16 && input.dtype() != mx::float32 && input.dtype() != mx::float16))
+      return {};
+    const auto storage = MemoryAccess::submitted_storage_info(input);
+    if (!storage) return {};
+    if (!storage->buffer) return {};
+    ordered.buffers[ordered.count++] = storage->buffer;
+  }
+  std::array<NS::SharedPtr<MTL::Fence>, 8> fences;
+  std::size_t used = 0;
+  if (!ordered.count || !mx::metal::hyle_store_output_fences(stream, ordered.buffers.data(),
+      ordered.count, &event, 1, fences.data(), fences.size(), &used) || !used) return {};
+  // The original MLX input bindings will import these actual output fences.
+  // The vendor lookup retained the original event for error observation.
+  return ordered;
+}
+
 void execute_invocation(Job* job) noexcept {
   auto& state=*static_cast<InvocationState*>(job);
   execute_with(state,[&](mx::Stream stream)->Status{
-    if (!state.program->native) state.encode_dependencies(stream);
-    if(!state.program->device_prefix)return state.program->native ? execute_plan(state,stream) :
-        evaluate_mlx(*state.program,state.inputs,state.values->arrays,stream);
-    HYLE_RETURN_IF_ERROR(evaluate_mlx(*state.program,state.inputs,state.values->arrays,stream,
-        &state.mlx_events,&state.device_prefix_check,&state));
+    if (state.program->native) return execute_plan(state, stream);
+    if (state.program->device_prefix)
+      state.ordered_page = state.ordered_page_input(stream);
+    const auto *ordered = state.ordered_page ? &state.ordered_page->event : nullptr;
+    state.dependencies.encode(stream, ordered);
+    if (!state.program->device_prefix)
+      return evaluate_mlx(*state.program, state.inputs, state.values->arrays, stream,
+                          nullptr, nullptr, nullptr, ordered);
+    HYLE_RETURN_IF_ERROR(evaluate_mlx(*state.program, state.inputs, state.values->arrays, stream,
+        &state.mlx_events, &state.device_prefix_check, &state, ordered));
     state.publish_device_prefix();
     return Status::Ok();
   });

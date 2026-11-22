@@ -23,6 +23,7 @@
 #include "../../src/compute_route_apple/apple_copy_internal.h"
 #include "../../src/compute_route_apple/apple_runtime_internal.h"
 #include "hyle/mem/quota_allocator.h"
+#include "hyle/compute/detail/apple_batch_access.h"
 #include "hyle/compute/detail/apple_plan.h"
 #include "hyle/compute/detail/completion_access.h"
 #include "hyle/compute/model_ops.h"
@@ -325,6 +326,70 @@ TEST(AppleLateInput, DevicePrefixPendingViewKeepsItsOriginalSourceAndActualTail)
     EXPECT_FLOAT_EQ(view_output.data<float>()[i], expected[i]);
   ASSERT_TRUE(context.close().ok());
   { std::lock_guard lock(runtime->queue_mutex); EXPECT_EQ(runtime->native_tails, 0u); }
+}
+
+TEST(AppleLateInput, PagedPrefixCanPublishAViewOfItsPendingSource) {
+  auto context = a::Context::create().value();
+  auto runtime = ad::ContextAccess::runtime(context);
+  const auto type = c::DataType::kBFloat16;
+  const auto storage = c::CacheStorage::plain(type).value();
+  const c::BatchCapacity capacity{.storage = c::BatchStorage::kPaged,
+      .query_type = type, .output_type = type, .key_storage = storage, .value_storage = storage,
+      .max_requests = 1, .max_query_rows = 1, .max_kv_rows = 16, .max_pages = 1,
+      .max_page_refs = 1, .query_heads = 1, .kv_heads = 1, .qk_head_dim = 64,
+      .value_head_dim = 64, .page_size = 16};
+  auto schema = c::BatchSchema::create(capacity).value();
+  const std::array<std::int32_t, 2> indptr{0, 1};
+  const std::array<std::int32_t, 1> refs{0}, tail{1};
+  auto layout = schema.version({indptr, indptr, refs, tail}).value();
+  const a::InputSpec shape{{1, 1, 64}, mx::bfloat16};
+  const std::array paged_specs{shape, shape, shape, a::InputSpec{{}, mx::int32}};
+  auto paged = ad::PagedBatchAccess::prepare_runtime_program(context, layout, paged_specs,
+      [](const c::BatchLayoutVersion &, const std::vector<mx::array> &inputs, mx::Stream stream) {
+        return std::vector{mx::square(inputs.front(), stream)};
+      }, {}).value();
+  const std::array view_specs{shape};
+  auto view = ad::ContextAccess::compile_device_prefix(runtime,
+      [](const auto &inputs, mx::Stream stream) {
+        return std::vector{mx::reshape(inputs.front(), {64}, stream)};
+      }, view_specs).value();
+  auto producer = paged.create_invocation().value();
+  auto consumer = view.create_invocation().value();
+  const auto values = [] {
+    std::array<float, 64> numbers;
+    for (std::size_t i = 0; i < numbers.size(); ++i) numbers[i] = static_cast<float>(1 + i % 4);
+    return numbers;
+  }();
+  const mx::array query(values.begin(), {1, 1, 64}, mx::bfloat16);
+  const std::array ports{query, query, query, mx::array(std::int32_t{0})};
+  ASSERT_TRUE(producer.bind(ports).ok());
+  std::array<ad::InputBinding, 1> late;
+  late[0].source = ad::InvocationAccess::source(producer, 0).value();
+  ASSERT_TRUE(ad::InvocationAccess::prepare_inputs(consumer, late).ok());
+
+  GpuEventGate gpu(runtime);
+  ASSERT_TRUE(gpu.enqueue().ok());
+  auto produced = producer.submit().value();
+  auto consumed = consumer.submit().value();
+  FifoGate owner;
+  const auto admitted = owner.enqueue(runtime);
+  const bool published = admitted.ok() && owner.wait_entered_for(std::chrono::seconds(2));
+  const auto pending = consumed.completion().poll();
+  gpu.open();
+  owner.open_and_join();
+  ASSERT_TRUE(admitted.ok());
+  ASSERT_TRUE(published);
+  ASSERT_TRUE(pending);
+  EXPECT_EQ(*pending, c::CompletionPoll::kPending);
+  ASSERT_TRUE(consumed.completion().wait().ok());
+  ASSERT_TRUE(produced.completion().wait().ok());
+  const auto source = ad::InvocationAccess::output(producer, 0).value();
+  const auto result = ad::InvocationAccess::output(consumer, 0).value();
+  EXPECT_EQ(result.data_shared_ptr(), source.data_shared_ptr());
+  ASSERT_EQ(result.dtype(), mx::bfloat16);
+  for (std::size_t i = 0; i < values.size(); ++i)
+    EXPECT_FLOAT_EQ(static_cast<float>(result.data<mx::bfloat16_t>()[i]), values[i] * values[i]);
+  ASSERT_TRUE(context.close().ok());
 }
 
 // Hold only the callback which publishes the original prefix's completion.

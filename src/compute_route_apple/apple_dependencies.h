@@ -33,7 +33,7 @@ public:
   // Keep the original producer/error owners without duplicating that wait.
   Status resolve_copy() noexcept;
   Status observe() noexcept;
-  void encode(mlx::core::Stream);
+  void encode(mlx::core::Stream, const mlx::core::Event *ordered = nullptr);
   void clear() noexcept; // Only after actual retirement or failed admission.
   bool empty() const noexcept { return sources_.empty(); }
   auto waits() const noexcept {

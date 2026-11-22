@@ -6,17 +6,23 @@
 
 namespace hyle::compute::apple::detail {
 
+inline bool same_native_event(const mlx::core::Event &left, const mlx::core::Event &right) {
+  namespace mx = mlx::core;
+  return left.valid() && right.valid() && left.value() == right.value() &&
+      left.cast<mx::metal::EventImpl>().mtl_event() == right.cast<mx::metal::EventImpl>().mtl_event();
+}
+
 // Ready public inputs were checked at bind. Pending raw ports carry the
 // original native producer's event. Its MLX allocation stream is not ggml's
 // queue: explicitly encode this bridge instead of MLX's same-stream shortcut.
 inline void encode_native_input_waits(std::span<const mlx::core::array> inputs,
-                                      mlx::core::Stream stream) {
+                                      mlx::core::Stream stream, const mlx::core::Event *ordered = nullptr) {
   namespace mx = mlx::core;
   const void *last = nullptr;
   std::uint64_t last_value = 0;
   for (const auto &input : inputs) {
     auto &event = input.event();
-    if (!event.valid() || input.is_available()) continue;
+    if (!event.valid() || input.is_available() || (ordered && same_native_event(event, *ordered))) continue;
     const auto *native = event.cast<mx::metal::EventImpl>().mtl_event();
     if (native == last && event.value() == last_value) continue;
     event.wait(stream);
