@@ -1264,6 +1264,25 @@
           "after": "    out.copy_shared_buffer(\n        in, strides, in.flags(), in.data_size() * ibytes / obytes);\n  } else if (repeated_byte) {\n    auto word = array({4}, uint8, nullptr, {});\n    copy_gpu(in, word, CopyType::Scalar, stream());\n    auto flags = out.flags();\n    flags.contiguous = true;\n    flags.row_contiguous = flags.col_contiguous = out.size() == 1;\n    out.copy_shared_buffer(word, Strides(out.ndim(), 0), flags, 1);\n  } else {\n    auto tmp = array(in.shape(), in.dtype(), nullptr, {});"
         }
       ]
+    },
+    {
+      "path": "mlx/backend/metal/device.cpp",
+      "before_sha256": "008b67e599f5508ab670a91f2ea80372162a8767b5226fbbeb9f3d23c85cdb7c",
+      "after_sha256": "712b325d018066a29c1cfc09e1da4e574481ae135b4cc0979c96a6efcf920f05",
+      "edits": [
+        {
+          "before": "#include <cstdlib>",
+          "after": "#include <algorithm>\n#include <atomic>\n#include <cstdlib>"
+        },
+        {
+          "before": "CommandEncoder::CommandEncoder(",
+          "after": "using HyleStoreFenceLookup = bool (*)(CommandEncoder&, const void *const *, size_t,\n    const Event *, size_t, NS::SharedPtr<MTL::Fence> *, size_t, size_t *) noexcept;\nstatic std::atomic<HyleStoreFenceLookup> hyle_store_fence_lookup{nullptr};\n\nMLX_API bool hyle_store_output_fences(Stream stream, const void *const *resources, size_t resource_count,\n    const Event *events, size_t event_count, NS::SharedPtr<MTL::Fence> *owners,\n    size_t capacity, size_t *used) noexcept {\n  const auto lookup = hyle_store_fence_lookup.load(std::memory_order_acquire);\n  try {\n    return lookup && lookup(get_command_encoder(stream), resources, resource_count,\n                            events, event_count, owners, capacity, used);\n  } catch (...) {\n    return false;\n  }\n}\n\nCommandEncoder::CommandEncoder("
+        },
+        {
+          "before": "    : device_(d), residency_sets_(residency_sets) {\n",
+          "after": "    : device_(d), residency_sets_(residency_sets) {\n  // Borrow the original fence map. The pinned vendor type and layout are\n  // identical on both sides of this private bridge.\n  hyle_store_fence_lookup.store(+[](CommandEncoder &encoder,\n      const void *const *resources, size_t resource_count, const Event *events, size_t event_count,\n      NS::SharedPtr<MTL::Fence> *owners, size_t capacity, size_t *used) noexcept {\n    try {\n      std::lock_guard lock(encoder.outputs_mtx_);\n      size_t count = 0;\n      for (size_t i = 0; i < resource_count; ++i) {\n        const auto found = encoder.prev_ce_outputs_.find(resources[i]);\n        if (found == encoder.prev_ce_outputs_.end()) return false;\n        const auto &fence = found->second;\n        const auto end = owners + count;\n        if (std::find(owners, end, fence) != end) continue;\n        if (count == capacity) return false;\n        owners[count++] = fence;\n      }\n      if (!count) return false;\n      // Preserve the same MLX terminal-error observation on the actual\n      // consumer command, including failures represented by an Event.\n      encoder.wait_events_.insert(encoder.wait_events_.end(), events, events + event_count);\n      *used = count;\n      return true;\n    } catch (...) {\n      return false;\n    }\n  }, std::memory_order_release);\n\n"
+        }
+      ]
     }
   ]
 }

@@ -8,6 +8,7 @@
 #include <mutex>
 #include <vector>
 #include <mlx/backend/metal/device.h>
+#include <mlx/backend/metal/event.h>
 
 #include "apple_internal.h"
 #include "apple_dependencies.h"
@@ -17,7 +18,14 @@
 #include "apple_device_append_metal.h"
 #include "apple_deferred_copy_metal.h"
 
+namespace mlx::core::metal {
+MLX_API bool hyle_store_output_fences(Stream, const void *const *, size_t, const Event *, size_t,
+    NS::SharedPtr<MTL::Fence> *, size_t, size_t *) noexcept;
+}
+
 namespace hyle::compute::apple::detail {
+bool is_store_producer_frontier(const InputSource &, const std::shared_ptr<Runtime> &,
+    std::uint64_t, const void *, const NativeStorage &, std::span<const mlx::core::Event>) noexcept;
 namespace cd = compute::detail;
 struct CopyFence final {
   id<MTLFence> native = nil;
@@ -452,6 +460,42 @@ private:
     return true;
   }
 
+  using ProducerFences = std::array<NS::SharedPtr<MTL::Fence>, 8>;
+  std::size_t prepare_producer_fences(MTL::CommandBuffer *command, ProducerFences &fences) const noexcept {
+    if (!command || !guard_buffer_) return 0;
+    const auto &guard = first_->deferred_copy->words[0];
+    const auto queue = command->commandQueue();
+    const mlx::core::Event *frontier = nullptr;
+    const MTL::SharedEvent *physical = nullptr;
+    for (auto *job : members()) {
+      const auto waits = job->dependencies.events();
+      if (waits.empty()) continue;
+      if (!frontier) {
+        if (!is_store_producer_frontier(job->host_source, job->runtime, job->expected_epoch, queue, guard, waits))
+          return 0;
+        frontier = &waits.front();
+        physical = frontier->cast<mlx::core::metal::EventImpl>().mtl_event();
+      }
+      if (std::ranges::any_of(waits, [&](const auto &event) {
+            return event.value() != frontier->value() ||
+                event.template cast<mlx::core::metal::EventImpl>().mtl_event() != physical;
+          })) return 0;
+    }
+    if (!frontier) return 0;
+    std::array<const void *, 1 + span_capacity> resources{guard_buffer_};
+    std::size_t count = 1;
+    for (const auto &copy : std::span(copies_).first(span_count_)) {
+      const auto end = resources.begin() + count;
+      if (std::find(resources.begin(), end, copy.source) == end)
+        resources[count++] = copy.source;
+    }
+    std::size_t used = 0;
+    if (!mlx::core::metal::hyle_store_output_fences(*runtime_.stream, resources.data(), count,
+          frontier, 1, fences.data(), fences.size(), &used))
+      return 0;
+    return used;
+  }
+
   bool record() noexcept {
     std::size_t reserved = 0;
     for (; reserved < count_; ++reserved) {
@@ -464,7 +508,11 @@ private:
       try {
         auto &stream = *runtime_.stream;
         auto &encoder = mlx::core::metal::get_command_encoder(stream);
-        for (auto *job : members()) job->dependencies.encode(stream);
+        ProducerFences fences;
+        encoder.end_encoding();
+        const auto fence_count = prepare_producer_fences(encoder.get_command_buffer(), fences);
+        if (!fence_count)
+          for (auto *job : members()) job->dependencies.encode(stream);
         encoder.end_encoding();
         const auto native = NS::RetainPtr(encoder.get_command_buffer());
         id<MTLCommandBuffer> command = (__bridge id<MTLCommandBuffer>)native.get();
@@ -472,13 +520,17 @@ private:
         const auto copies = std::span(copies_).first(span_count_);
         auto &original = *first_->deferred_copy;
         if (original.arguments.length < copies.size() * 4 * sizeof(std::uint64_t) ||
-            !original.encode(command, frontier.checked_copy, frontier.native, frontier.encoded, copies).ok()) {
+            !original.encode(command, frontier.checked_copy, frontier.native, frontier.encoded, copies,
+                             std::span(fences).first(fence_count)).ok()) {
           for (std::size_t i = 0; i < reserved; ++i) runtime_.release_native_tail();
           return false;
         }
         const auto originals = jobs_;
         const auto count = count_;
         [command addCompletedHandler:^(id<MTLCommandBuffer>) {
+          // Retain the actual producer fences even when the original command
+          // buffer does not retain its resource references.
+          (void)fences;
           auto &runtime = *originals[0]->runtime;
           {
             std::lock_guard lock(runtime.queue_mutex);

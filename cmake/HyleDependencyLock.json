@@ -1126,10 +1126,10 @@
         "url": "https://codeload.github.com/ml-explore/mlx/tar.gz/1f8e74e3f12f31365464a6867c6579f0e9b29d85",
         "sha256": "cb988a5bdc38c798918d042b9b1c6edda3ccc5f23a2155138d3aa5c1b2acc301"
       },
-      "version": "hyle-apple-native-patches-v7",
+      "version": "hyle-apple-native-patches-v8",
       "vendored": {
         "path": "third_party/mlx_cast",
-        "tree_sha256": "4fbeeba0f2a94d88fb610f27e2966da7741564ba93c2fdd8134edf8b5fa816b3"
+        "tree_sha256": "3dbc1f6dacb905c20d13bfc38e88f734ac1ce19caed8f907ad44d192761aabb7"
       },
       "license": {
         "expression": "MIT AND Apache-2.0",

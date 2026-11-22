@@ -81,7 +81,8 @@ struct DeferredCopyState final {
   }
   DeviceCheckInputs inputs(std::span<DeviceCheckVisit> visits) noexcept {return {words,owners,check_count,visits};}
   Status encode(id<MTLCommandBuffer> command,id<MTLComputePipelineState> pipeline,
-      id<MTLFence> fence,bool previous,std::span<const CopyCommand> copies) noexcept {
+      id<MTLFence> fence,bool previous,std::span<const CopyCommand> copies,
+      std::span<const NS::SharedPtr<MTL::Fence>> producers = {}) noexcept {
     auto *descriptions=static_cast<std::uint64_t *>(arguments.contents);
     auto *addresses=static_cast<std::uint64_t *>(checks.contents);
     for(std::size_t i=0;i<check_count;++i){
@@ -114,6 +115,7 @@ struct DeferredCopyState final {
     id<MTLComputeCommandEncoder> encoder=[command computeCommandEncoder];
     if(encoder==nil)return Status::ResourceExhausted("Apple deferred copy encoder allocation failed");
     if(previous)[encoder waitForFence:fence];
+    for (const auto &producer : producers) [encoder waitForFence:(__bridge id<MTLFence>)producer.get()];
     [encoder setComputePipelineState:pipeline];
     [encoder setBuffer:arguments offset:0 atIndex:0];[encoder setBuffer:checks offset:0 atIndex:1];
     const auto count=static_cast<std::uint32_t>(check_count);

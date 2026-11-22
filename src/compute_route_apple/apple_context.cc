@@ -1386,6 +1386,32 @@ Status subscribe_completion(cd::CompletionDependency source,
   if (ready) deliver_notification(notification);
   return Status::Ok();
 }
+bool is_store_producer_frontier(const InputSource &input, const std::shared_ptr<Runtime> &runtime,
+                               std::uint64_t epoch, const void *command_queue,
+                               const NativeStorage &guard,
+                               std::span<const mx::Event> waits) noexcept {
+  auto source = InvocationAccess::source_dependency(input, runtime);
+  if (!source || !source->pending() || source->vtable != &completion_vtable)
+    return false;
+  auto &producer = *static_cast<InvocationState *>(source->state);
+  if (!producer.program->device_prefix || producer.program->native ||
+      producer.submitted_epoch.load(std::memory_order_acquire) != epoch ||
+      !producer.native_deferred || producer.native_retired || !producer.native_terminal.ok() ||
+      !producer.device_prefix_command || producer.device_prefix_command->commandQueue() != command_queue ||
+      !producer.device_prefix_check || !producer.device_prefix_event.valid())
+    return false;
+  const auto check = MemoryAccess::submitted_storage_info(*producer.device_prefix_check);
+  if (!check || check->buffer != guard.buffer || check->offset_bytes != guard.offset_bytes ||
+      check->view_bytes != guard.view_bytes)
+    return false;
+  const auto &event = producer.device_prefix_event;
+  return std::ranges::all_of(waits, [&](const auto &wait) {
+    return wait.value() == event.value() &&
+        wait.template cast<mx::metal::EventImpl>().mtl_event() ==
+            event.cast<mx::metal::EventImpl>().mtl_event();
+  });
+}
+
 Status qualify_copy_dependency(const std::shared_ptr<Runtime> &runtime, cd::CompletionDependency source) noexcept {
   if (!source.terminal_hint) return Status::FailedPrecondition("Apple copy producer is empty");
   if (!source.terminal_hint->ok()) return *source.terminal_hint;
