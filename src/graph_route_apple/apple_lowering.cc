@@ -6,6 +6,7 @@
 #include "hyle/compute/low_precision.h"
 #include "hyle/compute/workload_semantics.h"
 #include "hyle/compute/model_ops.h"
+#include "hyle/compute/sequence_ops.h"
 #include "hyle/graph/apple.h"
 #include "apple_lowering_internal.h"
 #include "native_region.h"
@@ -23,6 +24,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <exception>
+#include <limits>
 #include <memory>
 #include <new>
 #include <optional>
@@ -345,7 +347,7 @@ std::optional<BFloatL2> find_bfloat_l2(const Plan &plan,
   const auto source = normalize->inputs[0], scale = normalize->inputs[1];
   const auto &desc = plan.descriptions[source];
   if (!desc.is_plain() || !bf16(source) || !bf16(scale) || desc.rank() != 4 ||
-      desc.dimensions()[0] != 1 || desc.dimensions()[1]<1 || desc.dimensions()[1]>4 ||
+      desc.dimensions()[0] != 1 || desc.dimensions()[1] < 1 ||
       desc.dimensions()[2]<1 || desc.dimensions()[2]>32 || desc.dimensions()[3] != 128)
     return {};
   const auto *root = from(scale);
@@ -391,7 +393,7 @@ std::optional<ConvChannels> find_conv_channels(std::span<const Node *const> prod
 }
 
 void prepare_conv_gdn_inputs(const Plan &plan, std::span<const Node *const> producers, const Node &node,
-    BFloatL2 q, BFloatL2 k, const std::vector<std::optional<mx::array>> &values,
+    BFloatL2 q, BFloatL2 k, bool packed, const std::vector<std::optional<mx::array>> &values,
     std::vector<mx::array> &arguments, mx::Stream stream) {
   using namespace compute;
   const auto *v_cast = producers[node.inputs[2]];
@@ -404,6 +406,11 @@ void prepare_conv_gdn_inputs(const Plan &plan, std::span<const Node *const> prod
       q_channel->activation != k_channel->activation || q_channel->activation != v_channel->activation)
     return;
   const auto *activation = producers[q_channel->activation];
+  const auto *view = activation ? activation->operation.get_if<View>() : nullptr;
+  if (view && view->kind() == ViewKind::kReshape && activation->inputs.size() == 1 &&
+      std::ranges::equal(plan.descriptions[activation->inputs[0]].dimensions(),
+                         plan.descriptions[q_channel->activation].dimensions()))
+    activation = producers[activation->inputs[0]];
   const auto *silu = activation?activation->operation.get_if<Unary>():nullptr;
   if (!silu || silu->kind != UnaryKind::kSilu || activation->inputs.size() != 1 ||
       plan.descriptions[q_channel->activation].data_type() != DataType::kBFloat16)
@@ -418,9 +425,12 @@ void prepare_conv_gdn_inputs(const Plan &plan, std::span<const Node *const> prod
   if (!ic || ic->output_type != DataType::kFloat32 || input_cast->inputs.size() != 1 ||
       !values[input_cast->inputs[0]] || !values[conv->inputs[1]]) return;
   const auto &input = *values[input_cast->inputs[0]], &weights = *values[conv->inputs[1]];
-  const auto &keys = arguments[0].shape(), &val = arguments[2].shape();
-  if (keys.size() != 4 || val.size() != 4 || val[0] != 1 || val[1] != keys[1] || val[3] != 128 ||
-      val[2] <= 0 || val[2]>32 || input.ndim() != 3 || input.dtype() != mx::bfloat16 ||
+  const auto &keys = values[q.source]->shape();
+  auto val = arguments[2].shape();
+  if (packed) val.insert(val.begin(), 1);
+  if (val.size() != 4 || val[0] != 1 || val[1] != keys[1] || val[3] != 128 ||
+      val[2] <= 0 || val[2] > 32 || keys[1] > std::numeric_limits<int>::max() / (32 * std::max(keys[2], val[2])) ||
+      input.ndim() != 3 || input.dtype() != mx::bfloat16 ||
       input.shape(0) != 1 || input.shape(1) != keys[1]+3 || weights.dtype() != mx::float32 ||
       weights.ndim() != 2 || weights.shape(1) != 4 || weights.shape(0) != input.shape(2))
     return;
@@ -432,25 +442,46 @@ void prepare_conv_gdn_inputs(const Plan &plan, std::span<const Node *const> prod
     return;
   const std::array starts{static_cast<int>(q_channel->start), static_cast<int>(k_channel->start),
       static_cast<int>(v_channel->start)};
-  auto lowered = ca::detail::lower_short_conv_gdn_inputs(input, weights,
+  auto lowered = ca::detail::lower_bfloat_conv_gdn_inputs(input, weights,
       *values[q.epsilon], *values[k.epsilon], keys, val, starts, stream);
   for (std::size_t i = 0; i < 3; ++i) arguments[i] = std::move(lowered[i]);
+  if (packed) {
+    // The packed recurrence receives the same physical rows without the
+    // singleton batch dimension. Its offsets still bound the active prefix.
+    for (std::size_t i = 0; i < 3; ++i)
+      arguments[i] = mx::reshape(arguments[i],
+          {arguments[i].shape(1), arguments[i].shape(2), arguments[i].shape(3)}, stream);
+  }
 }
 
 void prepare_gdn_inputs(const Plan &plan, std::span<const Node *const> producers,
     const Node &node, const std::vector<std::optional<mx::array>> &values,
     std::vector<mx::array> &arguments, mx::Stream stream) {
-  if (producers.empty() || !node.operation.get_if<compute::GatedDeltaNet>() || arguments.size() != 6)
+  using namespace compute;
+  const bool short_dense = node.operation.get_if<GatedDeltaNet>() && arguments.size() == 6;
+  const bool packed = node.operation.custom_as<sequence_ops::PackedGatedDeltaNet>() && arguments.size() == 7;
+  if (producers.empty() || stream.device != mx::Device::gpu || (!short_dense && !packed))
     return;
-  const auto q = find_bfloat_l2(plan, producers, node.inputs[0]);
-  const auto k = find_bfloat_l2(plan, producers, node.inputs[1]);
+  const auto l2 = [&](std::size_t port) -> std::optional<BFloatL2> {
+    if (packed) {
+      const auto *reshape = producers[port];
+      const auto *view = reshape ? reshape->operation.get_if<View>() : nullptr;
+      if (!view || view->kind() != ViewKind::kReshape || reshape->inputs.size() != 1) return {};
+      port = reshape->inputs[0];
+    }
+    return find_bfloat_l2(plan, producers, port);
+  };
+  const auto q = l2(node.inputs[0]);
+  const auto k = l2(node.inputs[1]);
   if (!q || !k || !values[q->source] || !values[k->source] || !values[q->epsilon] || !values[k->epsilon])
     return;
   const auto &raw_q = *values[q->source], &raw_k = *values[k->source];
-  if (raw_q.shape() != raw_k.shape() || raw_q.shape() != arguments[0].shape() ||
-      raw_k.shape() != arguments[1].shape() || stream.device != mx::Device::gpu)
+  const auto query_shape = std::span(raw_q.shape()).subspan(packed ? 1 : 0);
+  if (raw_q.shape() != raw_k.shape() || (short_dense && raw_q.shape(1) > 4) ||
+      !std::ranges::equal(query_shape, arguments[0].shape()) ||
+      !std::ranges::equal(query_shape, arguments[1].shape()))
     return;
-  prepare_conv_gdn_inputs(plan, producers, node, *q, *k, values, arguments, stream);
+  prepare_conv_gdn_inputs(plan, producers, node, *q, *k, packed, values, arguments, stream);
 }
 
 std::optional<mx::array> prepare_gated_projection(

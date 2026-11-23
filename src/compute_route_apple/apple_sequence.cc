@@ -117,7 +117,7 @@ Result<std::vector<mx::array>> lower_short_gdn(const GatedDeltaNet &operation,
   return std::vector{std::move(scores), std::move(state)};
 }
 
-std::vector<mlx::core::array> lower_short_conv_gdn_inputs(
+std::vector<mlx::core::array> lower_bfloat_conv_gdn_inputs(
     const mlx::core::array &samples, const mlx::core::array &weights,
     const mlx::core::array &query_epsilon, const mlx::core::array &key_epsilon,
     const mlx::core::Shape &query_shape, const mlx::core::Shape &value_shape,

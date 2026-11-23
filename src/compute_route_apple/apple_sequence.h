@@ -9,7 +9,7 @@ bool qualifies_short_gdn(const Operation &operation,
     std::span<const TensorDesc> inputs) noexcept;
 Result<std::vector<mlx::core::array>> lower_short_gdn(const GatedDeltaNet &operation,
     std::span<const mlx::core::array> inputs, mlx::core::Stream stream);
-HYLE_COMPUTE_ROUTE_APPLE_API std::vector<mlx::core::array> lower_short_conv_gdn_inputs(
+HYLE_COMPUTE_ROUTE_APPLE_API std::vector<mlx::core::array> lower_bfloat_conv_gdn_inputs(
     const mlx::core::array &samples, const mlx::core::array &weights,
     const mlx::core::array &query_epsilon, const mlx::core::array &key_epsilon,
     const mlx::core::Shape &query_shape, const mlx::core::Shape &value_shape,
