@@ -384,5 +384,5 @@ worker 会核对实际载入的 DLL 位于 `--official-bin` 指定目录。
 不代表通用质量、长上下文或 MTP 资格；护栏与实际结果见下方性能资料。
 
 普通与 MTP 分开对照，报告 prefill、decode、内存／显存以及真实多轮综合速度，加载时间另列。
-最新正式窗口、计数边界和已知热点统一保留在[decode 性能资料](../developer/performance/decode.md)，
+最新正式窗口、计数边界和已知热点统一保留在[性能总表](../developer/performance/decode.md#性能总表)，
 不以模型改名、组件测试通过或减少 kernel 数量推定端到端提速。

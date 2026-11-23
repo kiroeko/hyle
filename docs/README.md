@@ -10,7 +10,7 @@
 | 当前在哪、下一步做什么 | [推理看板](developer/inference-progress.md) | 整体粗估、当前任务、负责人、依赖与结项条件 |
 | 要把引擎做成什么 | [核心期许](architecture/inference-principles.md) → [工程范围](implementation/inference-roadmap.md) | 长期取舍与本阶段完整范围 |
 | 各层为什么这样分工 | [引擎概览](architecture/engine-overview.md) → [整体架构](architecture/inference-design.md) | 一次推理的路径、职责、状态和资源合同 |
-| 当前性能怎样 | [decode结果](developer/performance/decode.md) | 默认配置的实际速度、差距、内存边界及测法 |
+| 当前性能怎样 | [性能总表](developer/performance/decode.md#性能总表) | 各路线相对 llama.cpp 的速度、首轮成本和 MTP 结果 |
 
 ## 重要程度与作用范围
 

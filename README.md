@@ -16,21 +16,9 @@ Compute、Graph、内存、调度、I/O 等基础库；推理内核也不同于�
 通用装配的 R1–R4 职责与执行合同已冻结；已接入共享权重的多执行方案、服务会话与冷期制品复用，见[通用引擎设计](docs/architecture/engine-design.md)。
 冻结确定职责与执行合同，不冻结具体 kernel 或性能实现；现有多模型、多平台和量化组件的验证范围按实际结果说明。
 
-## 与llama.cpp相比
+## 与 llama.cpp 相比
 
-Qwen3.5-2B、RTX 4070、C32768、默认 Release。2026-11-08，Hyle 公共 token 工作进程 `206e59182` 与官方 CUDA 版 llama.cpp **b12063** 同窗交错，每臂 3 个独立进程。八轮短提示，表中排除首轮；综合速度包含后七轮 prefill 与 decode。
-
-| 格式／模式 | decode tok/s Hyle／llama.cpp | 综合 tok/s Hyle／llama.cpp |
-|---|---:|---:|
-| BF16／普通 | 102.88／98.59 | 100.94／94.54 |
-| Q8_0／普通 | 175.62／160.56 | 169.97／150.84 |
-| Q4_K_M／普通 | 249.96／225.01 | 236.88／207.04 |
-| BF16／默认 MTP | 160.88／116.82 | 154.68／110.01 |
-| Q8_0／默认 MTP | 233.54／180.66 | 222.00／166.53 |
-| Q4_K_M／默认 MTP | 321.58／244.25 | 298.32／218.58 |
-
-Hyle 默认 BF16 为 K3，量化格式为子集头 K1；上游显式 K1，本窗口未扫描上游其他深度。Hyle 使用 token 管道的交付时间，上游使用 HTTP 服务的内部计时，两者端点并不完全相同。完整进程、A/A、首轮和其他负载见下页；结果不代表其他设备或模型。
-**[查看完整性能对比：逐轮结果、长prompt、启动、显存与复现方法 →](docs/developer/performance/decode.md)**
+[性能总表](docs/developer/performance/decode.md#性能总表)按平台、后端和格式列出普通 Prefill、Decode，以及全词表和子词表 MTP 的综合速度差距。表中分列含首轮、剔除首轮及子词表长上下文多轮结果。同页可查完整进程、版本与复现方法。
 
 | 想做什么 | 从这里开始 |
 |---|---|
@@ -74,12 +62,9 @@ python engine/models/qwen35/prepare.py --model LOCAL_MODEL --output .scratch/qwe
 将 `<build-dir>` 换成构建脚本打印的目录，Windows 使用 `hyle.exe`。
 MTP、采样、后端及会话配置继续看[推理引擎指南](docs/user/inference.md)。
 
-## 性能与进度
+## 开发进度
 
-完整结果见首页上方的[性能摘要及详细对照](docs/developer/performance/decode.md)；
-当前任务由[看板](docs/developer/inference-progress.md)维护。
-结果限于记录的模型、平台、配置及参考版本，不能从组件通过推定整模型性能。
-基础库对照见[模块性能](docs/developer/performance/modules.md)。
+当前任务由[看板](docs/developer/inference-progress.md)维护。基础库对照见[模块性能](docs/developer/performance/modules.md)。
 
 ## 平台与工具链
 

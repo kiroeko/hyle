@@ -1,6 +1,6 @@
 # 性能测量与慢项调查
 
-当前Qwen CUDA普通／MTP的prefill、decode、启动与完整进程数据见[推理性能表](decode.md)，
+普通与 MTP 的多平台对照和完整进程数据见[性能总表](decode.md#性能总表)。
 基础模块与外部库的实测对照见[模块性能数据](modules.md)。
 本页维护各模块共用的测量和归因方法；任务与顺序只在[推理看板](../inference-progress.md)维护。
 

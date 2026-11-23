@@ -1,31 +1,49 @@
 # 推理性能
 
-连续接力可让相邻步骤重叠。逐步 `seconds` 用于诊断该步骤的延迟，直接相加会重复计算重叠区间；decode 吞吐使用实际首末输出的墙时间隔，完整进程吞吐使用启动到正常关闭的墙时。
+## 性能总表
 
-更新 2026-11-23。刷新 macOS 原生 Metal 的首字和完整进程对照。
+Qwen3.5-2B，容量 32768，单会话贪心。每行对应一个平台、后端和格式。每格为同窗配对的 `100 × (Hyle 吞吐 ÷ llama.cpp 吞吐 − 1)` 的中位数，正数表示 Hyle 更快。每臂三个独立进程。表中 K 为双方的草稿上限，普通模式关闭 MTP。
 
-## macOS Metal 全词表 BF16
+| 平台／后端／格式 | 普通<br>Prefill | 普通<br>Decode | 全词表 MTP<br>含首轮 | 全词表 MTP<br>剔除首轮 | 子词表 MTP<br>含首轮 | 子词表 MTP<br>剔除首轮 | 子词表 MTP<br>长上下文多轮 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| [macOS Metal · M4 · BF16 · K2](#macos-metal-bf16) | +4.4% | +3.9% | +6.8% | +13.1% | +15.9% | +24.4% | — |
+| [Windows CUDA · RTX 4070 · BF16 GGUF · K1](#八轮对话同头比较k) | +69.5% | +2.1% | +11.4% | +9.7% | — | — | — |
+| [Windows CUDA · RTX 4070 · Q8_0 · K1](#八轮对话同头比较k) | +59.5% | +10.2% | +17.2% | +15.8% | — | — | — |
+| [Windows CUDA · RTX 4070 · Q4_K_M · K1](#八轮对话同头比较k) | +67.8% | +8.3% | +8.7% | +6.8% | — | — | — |
+| [WSL2 CUDA · RTX 4070 · BF16 · K1](#wsl2-cuda-全词表-bf16) | +89.9% | +7.1% | −2.9% | +17.1% | — | — | — |
+| [Windows Vulkan · RTX 4070 · BF16 · K3](#windows-vulkan-全词表-bf16-k3) | — | — | +663.6% | +753.2% | — | — | — |
+| [WSL2 Vulkan · RTX 4070 · BF16 · K3](#wsl2-vulkan-全词表-bf16) | +7.9% | −8.7% | −27.5% | −15.1% | — | — | — |
+| [macOS Vulkan · M4 · BF16 · K3](#macos-vulkan-全词表-bf16) | −15.3% | −44.3% | −36.0% | −31.5% | — | — | — |
 
-MacBook Air Mac16,12（M4，16 GiB），Qwen3.5-2B，同源原始 BF16 权重、完整 248320 行目标和草稿头、BF16 KV。容量 32768，单会话贪心。Hyle 为 `bfe48782a` 的 Release worker，参考为 llama.cpp `23b0202a1` 的本机 Metal 构建。双方的词嵌入、目标和草稿投影及验证均在 Metal 执行。参考在此前固定负载的 K1／K2／K3 深度筛查中以 K2 的热态综合最快。
+- 普通 Prefill 和 Decode 统计后七轮。Prefill 用新增输入 token 总数除以预填总时长，Hyle 计到首 token，llama.cpp 用服务端 prompt eval。Decode 按每轮首 token 之后的生成步数计。MTP 各格均为输出 token 数除以 prefill 与 decode 的合计时间。短对话含首轮统计八轮，剔除首轮统计第二至第八轮。加载、ready 与退出计入分项的完整进程指标。
+- 子词表用中、英、匈三语草稿词表，目标仍用全词表。对照为同窗同 K 的 llama.cpp 全词表。长上下文格统计同一会话持续累积时的完整多轮综合，含首轮，并在分项记录轮数、输入和峰值上下文。`—` 表示缺少本口径的正式同窗数据。
+- 各行使用链接所列的测量窗口。Windows CUDA 为 `0b86c7d42` 的同头窗口，Hyle 使用 BF16 KV，参考使用 F16 KV。Windows Vulkan 的 K3 数字对应官方 `b12063`。WSL2 Vulkan 的参考使用 CPU 词嵌入和输出投影。版本、完整进程、CPU 和其他负载见下方分项。
 
-普通和 K2 各做三组同窗交错对照。每组运行发布版 Hyle、两次冻结基线 `234dc4073` 和一次 llama.cpp，均为独立进程。每进程八个短提示，每轮输出 64 个 token。下表按 Hyle／llama.cpp 列进程中位数。
+连续接力可让相邻步骤重叠。逐步 `seconds` 用于诊断，吞吐按实际计时区间计算。完整进程覆盖启动到退出。
 
-| 模式 | 首轮 prefill（秒） | 后七轮 prefill 合计（秒） | 后七轮 decode（tok/s） | 后七轮 prefill＋decode（tok/s） | 完整进程（tok/s） |
+## macOS Metal BF16
+
+MacBook Air Mac16,12（M4，16 GiB），Qwen3.5-2B，同源原始 BF16 权重和 BF16 KV。两边在 Metal 执行词嵌入、模型计算和输出投影。每臂三个独立进程，八轮共 595 个输入和 512 个输出，容量 32768。普通对照使用 Hyle `0eccdf55e`，K2 对照使用 `10bcfc27d`，各自在同窗比较 llama.cpp `23b0202a1`。K2 的目标始终为完整 248320 行，子词表为 114688 行原始 BF16 草稿权重，使用 `zh,en,hu` 选行。
+
+| 短对话模式 | 后七轮 Prefill（tok/s） | 后七轮 Decode（tok/s） | 含首轮综合（tok/s） | 剔除首轮综合（tok/s） | 完整进程（tok/s） |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| 普通 | 0.630／0.193 | 1.591／1.387 | 27.26／26.25 | 25.21／24.63 | 23.14／21.25 |
-| K2 | 1.000／0.213 | 1.604／1.467 | 34.96／31.25 | 31.51／28.76 | 27.77／23.98 |
+| Hyle 普通 | 511.01 | 27.19 | 24.34 | 26.15 | 22.33 |
+| llama.cpp 普通 | 487.38 | 26.16 | 25.07 | 25.14 | 23.06 |
+| Hyle 全词表 K2 | 482.55 | 34.49 | 30.22 | 32.57 | 27.93 |
+| llama.cpp 全词表 K2 | 464.48 | 30.60 | 28.78 | 29.06 | 24.14 |
+| Hyle 子词表 K2 | 415.76 | 37.42 | 32.89 | 34.70 | 31.74 |
 
-六组配对的热态综合均为 Hyle 领先。普通和 K2 的配对中位数分别为 +2.36% 和 +9.56%，完整进程分别为 +8.88% 和 +15.70%。每种模式的 Hyle 发布版和两个基线臂逐项复现全部 512 个输出 ID，每个 Hyle K2 进程实际完成 237 次三行验证。Hyle 的 prefill 计 worker 客户端从发起请求到收到首 token 的时间，参考使用服务端的 prompt eval。两侧的 decode 均以每轮 `输出数 − 1` 除以首 token 后的生成时间。llama.cpp 的 `predicted_n` 含首 token，`predicted_per_second` 已采用这个生成步数。完整进程从启动计至退出，包含首轮准备。
+绝对速度为进程中位数。Hyle 两种 K2 逐项复现相同的 512 个输出 ID。对子词表相对 Hyle 全词表的三组比较，含首轮和剔除首轮的配对中位数分别为 +8.8% 和 +8.7%，各有一组变慢。普通模式的完整进程范围重叠。原始逐轮记录位于 `.scratch/mac-metal-delivery-20261122/` 的 `metal-narrow-prefill-short.txt` 和 `metal-closeout-vocab-window.txt`。
 
-符合条件的内置 MLX 图前缀在冷期完成固定形状追踪，样例输出计算由真实输入执行取代。与冻结 Hyle 同窗对照，普通和 K2 的首字中位数从 2.583／4.957 秒降到 0.630／1.000 秒，完整进程配对中位数提高 7.26%／20.52%。K2 有一组 Hyle 基线／发布版首字为 14.014／8.556 秒，包含在结果中。发布检查覆盖原生首次执行失败及取消、普通和 K1／K2／K3 的续轮与复用、固定种子随机采样、CLI 和三种文本 API。
+Hyle worker 选择 `--backend apple --capacity 32768 --max-sessions 1 --active-sequences 1`。普通用 `--draft-count 0`，K2 用 `--draft-count 2`。参考使用 `--device MTL0 -ngl 99 -fa on -np 1 -c 32768 --port 2048 --metrics --override-tensor '^token_embd\.weight$=MTL0'`，目标 KV 用 `--cache-type-k bf16 --cache-type-v bf16`。普通用 `--spec-type none`。K2 用 `--spec-type draft-mtp --spec-draft-n-max 2 --spec-draft-type-k bf16 --spec-draft-type-v bf16`。
 
-Hyle worker 选择 `--backend apple --capacity 32768 --max-sessions 1 --active-sequences 1`。普通省略草稿数，K2 使用 `--draft-count 2`。参考使用 `--device MTL0 -ngl 99 -fa on -np 1 -c 32768 --port 2048 --metrics --override-tensor '^token_embd\.weight$=MTL0'`，目标 KV 用 `--cache-type-k bf16 --cache-type-v bf16`。普通用 `--spec-type none`。K2 用 `--spec-type draft-mtp --spec-draft-n-max 2 --spec-draft-type-k bf16 --spec-draft-type-v bf16`。两边使用本地同源 BF16 制品。
-
-可选子词表单独测量。在 `234dc4073` 的同窗对照中，Hyle K2 使用同一来源绑定的 114687 行草稿词表，按原 ID 读取打包的 BF16 权重，热 decode 由行副本路径的 37.66 提升到 39.75 tok/s。两条路径都使用完整目标词表并复现相同的 512 个输出 ID。
+较早的冷期开销对照中，`bfe48782a` 相对冻结的 `234dc4073` 将内置 MLX 图前缀追踪移到冷期，普通和 K2 的首字中位数从 2.583／4.957 秒降到 0.630／1.000 秒，完整进程配对中位数提高 7.26%／20.52%。K2 有一组首字为 14.014／8.556 秒，计入结果。发布检查覆盖原生首次执行失败及取消、普通和 K1／K2／K3 的续轮与复用、固定种子随机采样、CLI 和三种文本 API。
 
 同机另做全词表 K2 长续轮对照。每个进程先做一轮短请求，再追加 16384 个输入 token。这两轮各输出 16 个 token，后续两轮各输出 128 个。`4438b96f7`、`c189c7846` 和同一 llama.cpp 交错运行，每臂三个独立进程。512 行 BF16 prefill 在 GPU 上收集活跃 KV 页，收集缓冲区每请求合计最多 64 MiB。三行长上下文验证共读 KV。单请求 prefill 的 GDN 递归按块在工作组内共享 Q/K，F32 状态按实际序列长度续接。
 
 16K 请求到首 token 从 24.49 秒降到 22.84 秒，配对中位数减少 6.61%。llama.cpp 的 prompt eval 为 24.73 秒。后两轮 decode 为 34.49／29.00 tok/s。首轮之后的 prefill＋decode 为 8.71／7.91 tok/s，完整进程为 8.53／7.69 tok/s。Hyle 各进程完成 124 次三行验证。同一实现的三个进程输出一致。跨实现前 253 个 ID 一致，首次分叉在同前缀 BF16 teacher 的前两名，logit 差 0.023。
+
+子词表的 4K 多轮结果是每臂一个独立进程的筛查，见 `.scratch/mac-metal-delivery-20261122/metal-vocabulary-compare-long.txt`。
 
 4K 续轮增加残差相加与 RMSNorm 融合，保留残差的 BF16 舍入及后续跳连。普通与 K2 分别和 `4438b96f7`、同一 llama.cpp 做三组交错对照。普通首 token 从 5.06 降到 4.98 秒，热态 prefill＋decode 为 6.94／6.88 tok/s，完整进程为 6.71／6.74 tok/s。K2 首 token 从 5.01 降到 4.92 秒，热态综合为 7.38／6.71 tok/s，完整进程为 6.97／6.49 tok/s。参考的 4K prompt eval 分别为 5.01 秒和 5.41 秒。Hyle 改动前后每种模式的 64 个输出 ID 一致。一个普通候选进程的首轮耗时 5.37 秒，计入完整进程对照。
 
