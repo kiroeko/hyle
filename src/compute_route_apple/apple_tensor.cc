@@ -46,10 +46,9 @@ bool fixed_bfloat_head(std::int64_t rows, std::int64_t width) noexcept {
 
 bool supports_indexed_bfloat_projection(
     std::int64_t original_rows, std::int64_t width, std::int64_t selected_rows) noexcept {
-  // Use the full bank already eligible for lossless preparation. Dispatch
-  // pairs of selected rows and keep other geometries on their current route.
+  // Use the full bank already eligible for lossless preparation.
   return fixed_bfloat_head(original_rows, width) &&
-      selected_rows > 0 && selected_rows < original_rows && selected_rows % 2 == 0;
+      selected_rows > 0 && selected_rows < original_rows;
 }
 
 } // namespace hyle::compute::apple
@@ -1244,8 +1243,8 @@ std::array<mx::array, 2> pack_bfloat_projection(const mx::array &matrix, mx::Str
 
 namespace {
 
-auto make_projection_kernel(bool bfloat_output, bool indexed, bool packed) {
-  // Preserve the existing dense shader text and device-library key.
+auto make_projection_kernel(bool bfloat_output, bool indexed, bool packed, bool tail = false) {
+  // Preserve the existing shader text and device-library keys for complete pairs.
   std::string source = R"METAL(
     const uint lane = thread_index_in_simdgroup;
     const uint group = simdgroup_index_in_threadgroup;
@@ -1256,7 +1255,10 @@ auto make_projection_kernel(bool bfloat_output, bool indexed, bool packed) {
       #pragma unroll
       for (uint r = 0; r < 2; ++r) {
         const uint base = )METAL";
-  source += indexed ? "uint(ids[row + r])" : "(row + r)";
+  if (tail)
+    source += "uint(ids[min(row + r, uint(OUTPUT_ROWS - 1))])";
+  else
+    source += indexed ? "uint(ids[row + r])" : "(row + r)";
   source += R"METAL( * INNER_VECTORS + start;
         float4 w[4];)METAL";
   if (packed) source += R"METAL(
@@ -1319,7 +1321,9 @@ auto make_projection_kernel(bool bfloat_output, bool indexed, bool packed) {
         #pragma unroll
         for (uint r = 0; r < 2; ++r) {
           const float sum = simd_sum(lane < 4 ? partial[q][r][lane] : 0.0f);
-          if (lane == 0)
+          if (lane == 0)METAL";
+  if (tail) source += " && row + r < uint(OUTPUT_ROWS)";
+  source += R"METAL()
             output[q * OUTPUT_ROWS + row + r] = )METAL";
   source += bfloat_output ? "static_cast<RESULT_TYPE>(sum)" : "sum";
   source += R"METAL(;
@@ -1331,8 +1335,9 @@ auto make_projection_kernel(bool bfloat_output, bool indexed, bool packed) {
   if (packed) arguments.insert(arguments.end(), {"words", "exponents"});
   arguments.emplace_back("activation");
   if (indexed) arguments.emplace_back("ids");
-  const auto *name = indexed ? (packed ? "hyle_bfloat_indexed_head" : "hyle_bfloat_indexed_raw_head")
-                            : "hyle_bfloat_packed_fixed_head";
+  std::string name = indexed ? (packed ? "hyle_bfloat_indexed_head" : "hyle_bfloat_indexed_raw_head")
+                             : "hyle_bfloat_packed_fixed_head";
+  if (tail) name += "_tail";
   return mx::fast::metal_kernel(name, arguments, {"output"}, source, "", true, false,
       mx::CompileOptions(static_cast<int>(mx::MathMode::Fast)));
 }
@@ -1361,14 +1366,19 @@ mx::array lower_indexed_bfloat_projection(
     const mx::array &activation, const mx::array &indices, mx::Stream stream) {
   static const auto packed = make_projection_kernel(false, true, true);
   static const auto raw = make_projection_kernel(false, true, false);
+  static const auto packed_tail = make_projection_kernel(false, true, true, true);
+  static const auto raw_tail = make_projection_kernel(false, true, false, true);
   const auto rows = indices.shape(1);
+  const auto tail = rows % 2;
   const std::vector<std::pair<std::string, mx::fast::TemplateArg>> parameters{
       {"INNER_VECTORS", original.shape(2) / 4}, {"QUERIES", 1}, {"OUTPUT_ROWS", rows}};
-  const auto &kernel = projection ? packed : raw;
+  const auto &kernel = tail ? (projection ? packed_tail : raw_tail) : (projection ? packed : raw);
   std::vector arguments{original};
   if (projection) arguments.insert(arguments.end(), projection->packed.begin(), projection->packed.end());
   arguments.insert(arguments.end(), {activation, indices});
-  return kernel(arguments, {{1, rows, 1}}, {mx::float32}, {64 * rows, 1, 1}, {128, 1, 1},
+  // Every reduction uses a full threadgroup. Pad the launch for an odd tail
+  // while the shader clamps the last read and publishes only valid rows.
+  return kernel(arguments, {{1, rows, 1}}, {mx::float32}, {64 * (rows + tail), 1, 1}, {128, 1, 1},
                 parameters, std::nullopt, false, stream)[0];
 }
 

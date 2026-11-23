@@ -134,26 +134,30 @@ TEST(AppleMemoryLifetime, PackedBFloatProjectionSharesOnlyItsOriginalBudgetAndBa
   activation.fill(1.F);
   constexpr auto fraction = 1.F / 512.F;
   activation[0] += fraction;
-  const std::array inputs{mx::array(weights.data(), {4, 1, 64}, mx::bfloat16),
-      mx::array(activation.data(), {1, 1, 64}), mx::array({3, 1, 0, 2}, {1, 4}, mx::int32)};
+  const auto bank = mx::array(weights.data(), {4, 1, 64}, mx::bfloat16);
+  const auto query = mx::array(activation.data(), {1, 1, 64});
+  const std::array<std::int32_t, 4> rows{3, 1, 0, 2};
   const std::array expected{66.F + 3.F * fraction, 63.F, 61.F + fraction, 65.F + 2.F * fraction};
-  for (const auto &companion : {first, decltype(first){}}) {
-    auto program = context.compile([companion](const auto &args, mx::Stream stream)
-        -> hyle::Result<std::vector<mx::array>> {
-      return std::vector{a::detail::lower_indexed_bfloat_projection(
-          companion.get(), args[0], args[1], args[2], stream)};
-    }, inputs);
-    ASSERT_TRUE(program) << program.error().message();
-    auto invocation = program->create_invocation().value();
-    ASSERT_TRUE(invocation.bind(inputs).ok());
-    auto completion = invocation.submit().value();
-    auto result = completion.wait();
-    ASSERT_TRUE(result) << result.error().message();
-    const auto &scores = result->get()->arrays().front();
-    ASSERT_EQ(scores.shape(), (mx::Shape{1, 4, 1}));
-    ASSERT_EQ(scores.dtype(), mx::float32);
-    for (std::size_t i = 0; i < expected.size(); ++i)
-      EXPECT_FLOAT_EQ(scores.data<float>()[i], expected[i]);
+  for (const auto count : {1, 3, 4}) {
+    const std::array inputs{bank, query, mx::array(rows.data(), {1, count}, mx::int32)};
+    for (const auto &companion : {first, decltype(first){}}) {
+      auto program = context.compile([companion](const auto &args, mx::Stream stream)
+          -> hyle::Result<std::vector<mx::array>> {
+        return std::vector{a::detail::lower_indexed_bfloat_projection(
+            companion.get(), args[0], args[1], args[2], stream)};
+      }, inputs);
+      ASSERT_TRUE(program) << program.error().message();
+      auto invocation = program->create_invocation().value();
+      ASSERT_TRUE(invocation.bind(inputs).ok());
+      auto completion = invocation.submit().value();
+      auto result = completion.wait();
+      ASSERT_TRUE(result) << result.error().message();
+      const auto &scores = result->get()->arrays().front();
+      ASSERT_EQ(scores.shape(), (mx::Shape{1, count, 1}));
+      ASSERT_EQ(scores.dtype(), mx::float32);
+      for (int i = 0; i < count; ++i)
+        EXPECT_FLOAT_EQ(scores.data<float>()[i], expected[i]);
+    }
   }
 
   auto smaller = make_budget(packed_bytes - 1);
