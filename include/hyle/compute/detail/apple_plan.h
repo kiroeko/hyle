@@ -58,6 +58,13 @@ struct ContextAccess final {
   compile_device_prefix(std::shared_ptr<Runtime>, RegionFunction,
       std::span<const InputSpec>, const WorkloadContext& = {},
       std::span<const std::size_t> descriptor_inputs = {}) noexcept;
+  // A closed Graph region with built-in lowering has an exact typed recipe.
+  // Trace it cold and evaluate only real bindings. Native pipeline failures
+  // are reported by the original Invocation completion on first use.
+  HYLE_COMPUTE_ROUTE_APPLE_API static Result<Program>
+  trace_device_prefix(std::shared_ptr<Runtime>, RegionFunction,
+      std::span<const InputSpec>, const WorkloadContext&,
+      std::span<const std::size_t> descriptor_inputs) noexcept;
 };
 
 // One cold admission predicate for typed model-native MLX custom lowering.

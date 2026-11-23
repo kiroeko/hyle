@@ -352,12 +352,15 @@ struct RuntimeBatchFunction {
   }
 };
 
+enum class MlxExampleOutput { kEvaluate, kTraceOnly };
+
 // Compile each maximal MLX region once. Native region boundaries preserve its
 // private fusion and do not expose its internal node/value table to replay.
 std::vector<mx::array> prepare_mlx(MlxProgram &program, RegionFunction region,
                                   std::span<const InputSpec> inputs,
                                   mx::Stream stream,
-                                  std::span<const std::size_t> descriptor_inputs = {}) {
+                                  std::span<const std::size_t> descriptor_inputs = {},
+                                  MlxExampleOutput example_output = MlxExampleOutput::kEvaluate) {
   program.compiled = mx::compile(
       [fn = std::move(region), checks = program.checks,
        stream](const std::vector<mx::array> &arguments) {
@@ -392,10 +395,12 @@ std::vector<mx::array> prepare_mlx(MlxProgram &program, RegionFunction region,
   for (auto &input : isolated)
     input.wait();
   auto outputs = program.compiled(isolated);
-  mx::async_eval(outputs);
-  mx::synchronize(stream);
-  for (auto &output : outputs)
-    output.wait();
+  if (example_output == MlxExampleOutput::kEvaluate) {
+    mx::async_eval(outputs);
+    mx::synchronize(stream);
+    for (auto &output : outputs)
+      output.wait();
+  }
   if (program.checks->present)
     outputs.pop_back(); // Isolated warmup data does not decide user validity.
   return outputs;
@@ -1623,10 +1628,12 @@ Context::compile(RegionFunction region,
   return detail::ContextAccess::compile(state_, std::move(region), inputs, workload);
 }
 
-Result<Program> detail::ContextAccess::compile(std::shared_ptr<Runtime> runtime,
-                 RegionFunction region, std::span<const InputSpec> inputs,
-                 const WorkloadContext &workload,
-                 std::span<const std::size_t> descriptor_inputs) noexcept {
+namespace detail {
+
+static Result<std::shared_ptr<ProgramState>> compile_region_state(
+    std::shared_ptr<Runtime> runtime, RegionFunction region,
+    std::span<const InputSpec> inputs, const WorkloadContext &workload,
+    std::span<const std::size_t> descriptor_inputs, MlxExampleOutput example_output) noexcept {
   HYLE_TRACE_ZONE_NAMED("hyle.apple.prepare");
   if (!runtime || !region)
     return std::unexpected(
@@ -1637,15 +1644,15 @@ Result<Program> detail::ContextAccess::compile(std::shared_ptr<Runtime> runtime,
     if (port >= inputs.size() || inputs[port].dtype != mx::uint8)
       return std::unexpected(Status::InvalidArgument("Apple descriptor-only warmup port differs"));
   try {
-    auto program = std::make_shared<detail::ProgramState>();
+    auto program = std::make_shared<ProgramState>();
     program->runtime = runtime;
     program->workload = workload;
     program->inputs.assign(inputs.begin(), inputs.end());
-    auto prepare = std::make_shared<detail::ColdJob>([&]() -> Status {
+    auto prepare = std::make_shared<ColdJob>([&]() -> Status {
       const auto stream = *runtime->stream;
       try {
-        auto outputs = detail::prepare_mlx(*program, std::move(region),
-                                           program->inputs, stream, descriptor_inputs);
+        auto outputs = prepare_mlx(*program, std::move(region), program->inputs,
+                                   stream, descriptor_inputs, example_output);
         program->outputs.reserve(outputs.size());
         for (const auto &output : outputs)
           program->outputs.push_back({output.shape(), output.dtype()});
@@ -1660,13 +1667,24 @@ Result<Program> detail::ContextAccess::compile(std::shared_ptr<Runtime> runtime,
         return failure;
       }
     });
-    const Status status = detail::run_cold(*runtime, prepare);
+    const Status status = run_cold(*runtime, prepare);
     if (!status.ok())
       return std::unexpected(status);
-    return Program(std::move(program));
+    return program;
   } catch (...) {
     return std::unexpected(native_exception());
   }
+}
+
+} // namespace detail
+
+Result<Program> detail::ContextAccess::compile(std::shared_ptr<Runtime> runtime,
+    RegionFunction region, std::span<const InputSpec> inputs,
+    const WorkloadContext &workload, std::span<const std::size_t> descriptor_inputs) noexcept {
+  HYLE_ASSIGN_OR_RETURN(auto program, compile_region_state(
+      std::move(runtime), std::move(region), inputs, workload, descriptor_inputs,
+      MlxExampleOutput::kEvaluate));
+  return Program(std::move(program));
 }
 
 WorkloadContext Program::workload() const noexcept {
@@ -1679,6 +1697,16 @@ Result<Program> detail::ContextAccess::compile_device_prefix(std::shared_ptr<Run
   HYLE_ASSIGN_OR_RETURN(auto program,compile(std::move(runtime),std::move(region),inputs,workload,descriptor_inputs));
   program.state_->device_prefix=true;
   return program;
+}
+
+Result<Program> detail::ContextAccess::trace_device_prefix(std::shared_ptr<Runtime> runtime,
+    RegionFunction region, std::span<const InputSpec> inputs,
+    const WorkloadContext &workload, std::span<const std::size_t> descriptor_inputs) noexcept {
+  HYLE_ASSIGN_OR_RETURN(auto program, compile_region_state(
+      std::move(runtime), std::move(region), inputs, workload, descriptor_inputs,
+      MlxExampleOutput::kTraceOnly));
+  program->device_prefix = true;
+  return Program(std::move(program));
 }
 
 Result<Program> detail::ContextAccess::compile(const Context &context,

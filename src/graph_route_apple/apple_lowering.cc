@@ -1083,7 +1083,9 @@ static Result<ca::Program> compile_impl(const std::shared_ptr<ca::detail::Runtim
         HYLE_ASSIGN_OR_RETURN(auto output, graph.output_id(i));
         internal_producer = std::ranges::find(boundary->outputs, output) == boundary->outputs.end();
       }
-      if (device_prefix || internal_producer)
+      if ((device_prefix || internal_producer) && !plan->custom)
+        return ca::detail::ContextAccess::trace_device_prefix(runtime, region, specs, options.workload, descriptor_inputs);
+      if (device_prefix)
         return ca::detail::ContextAccess::compile_device_prefix(runtime, region, specs, options.workload, descriptor_inputs);
       return ca::detail::ContextAccess::compile(runtime, region, specs, options.workload, descriptor_inputs);
     }();

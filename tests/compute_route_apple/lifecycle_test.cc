@@ -15,12 +15,14 @@
 #include <vector>
 
 #include <gtest/gtest.h>
+#include <mlx/fast.h>
 #include <mlx/ops.h>
 #include <mlx/primitives.h>
 
 #include "apple_completion_internal.h"
 #include "../../src/compute/completion_internal.h"
 #include "hyle/compute/detail/apple_batch_access.h"
+#include "hyle/compute/detail/apple_plan.h"
 #include "hyle/mem/quota_allocator.h"
 #include "hyle/mem/stats.h"
 
@@ -78,6 +80,7 @@ public:
   }
   void intercept() {
     std::unique_lock lock(mutex_);
+    ++evaluations_;
     if (!armed_)
       return;
     armed_ = false;
@@ -97,10 +100,15 @@ public:
     released_ = true;
     condition_.notify_all();
   }
+  unsigned evaluations() {
+    std::lock_guard lock(mutex_);
+    return evaluations_;
+  }
 
 private:
   std::mutex mutex_;
   std::condition_variable condition_;
+  unsigned evaluations_ = 0;
   bool armed_ = false, entered_ = false, released_ = false, fail_ = false;
 };
 
@@ -128,18 +136,19 @@ private:
   std::shared_ptr<NativeBoundary> boundary_;
 };
 
-hyle::Result<a::Program>
-prepare(const a::Context &context,
-        const std::shared_ptr<NativeBoundary> &boundary) {
+a::RegionFunction checkpoint_region(const std::shared_ptr<NativeBoundary> &boundary) {
+  return [boundary](const auto &inputs, mx::Stream stream) {
+    auto prefix = mx::square(inputs[0], stream);
+    return std::vector{mx::array(
+        prefix.shape(), prefix.dtype(),
+        std::make_shared<Checkpoint>(stream, boundary), {prefix})};
+  };
+}
+
+hyle::Result<a::Program> prepare(const a::Context &context,
+    const std::shared_ptr<NativeBoundary> &boundary) {
   const std::array specs{a::InputSpec{{4}, mx::float32}};
-  return context.compile(
-      [boundary](const auto &inputs, mx::Stream stream) {
-        auto prefix = mx::square(inputs[0], stream);
-        return std::vector{mx::array(
-            prefix.shape(), prefix.dtype(),
-            std::make_shared<Checkpoint>(stream, boundary), {prefix})};
-      },
-      specs);
+  return context.compile(checkpoint_region(boundary), specs);
 }
 
 struct DrainLeaseBoundary final {
@@ -551,6 +560,75 @@ TEST(AppleLifetime, LateNativeFailureDrainsAndFailsAlreadyQueuedWork) {
   ASSERT_TRUE(later);
   ASSERT_TRUE(later->bind(inputs).ok());
   EXPECT_FALSE(later->submit());
+  EXPECT_FALSE(context->close().ok());
+}
+
+TEST(AppleLifetime, FirstTracedDevicePrefixCancellationRetiresOriginalWork) {
+  auto boundary = std::make_shared<NativeBoundary>();
+  auto context = a::Context::create();
+  ASSERT_TRUE(context);
+  ReleaseBoundary release{boundary};
+  const std::array specs{a::InputSpec{{4}, mx::float32}};
+  auto program = a::detail::ContextAccess::trace_device_prefix(
+      a::detail::ContextAccess::runtime(*context), checkpoint_region(boundary), specs, {}, {});
+  ASSERT_TRUE(program) << program.error().message();
+  EXPECT_EQ(boundary->evaluations(), 0u);
+  auto invocation = program->create_invocation();
+  ASSERT_TRUE(invocation);
+  const std::array inputs{mx::array({1.f, 2.f, 3.f, 4.f})};
+  ASSERT_TRUE(invocation->bind(inputs).ok());
+  boundary->arm();
+  auto work = invocation->submit();
+  ASSERT_TRUE(work);
+  ASSERT_TRUE(boundary->entered());
+  EXPECT_TRUE(work->request_cancel().ok());
+  auto pending = work->poll();
+  ASSERT_TRUE(pending);
+  EXPECT_EQ(*pending, c::CompletionPoll::kPending);
+  EXPECT_FALSE(invocation->bind(inputs).ok());
+  boundary->release();
+  auto cancelled = work->wait();
+  ASSERT_FALSE(cancelled);
+  EXPECT_TRUE(cancelled.error().IsCancelled());
+  auto another = program->create_invocation();
+  ASSERT_TRUE(another);
+  ASSERT_TRUE(another->bind(inputs).ok());
+  auto retried = another->submit();
+  ASSERT_TRUE(retried);
+  auto output = retried->wait();
+  ASSERT_TRUE(output) << output.error().message();
+  EXPECT_FLOAT_EQ(output->get()->arrays()[0].data<float>()[3], 16.f);
+  EXPECT_TRUE(context->close().ok());
+}
+
+TEST(AppleLifetime, FirstTracedDevicePrefixReportsPipelineFailureAtCompletion) {
+  auto context = a::Context::create();
+  ASSERT_TRUE(context);
+  const auto kernel = mx::fast::metal_kernel(
+      "hyle_invalid_device_prefix", {"x"}, {"y"},
+      "y[thread_position_in_grid.x] = x[thread_position_in_grid.x] + hyle_missing_value;");
+  const a::RegionFunction region = [kernel](const auto &inputs, mx::Stream stream) {
+    const auto prefix = mx::square(inputs[0], stream);
+    return kernel({prefix}, {prefix.shape()}, {prefix.dtype()}, {4, 1, 1}, {4, 1, 1},
+                  {}, std::nullopt, false, stream);
+  };
+  const std::array specs{a::InputSpec{{4}, mx::float32}};
+  auto warm = context->compile(region, specs);
+  ASSERT_FALSE(warm);
+  EXPECT_NE(warm.error().message().find("hyle_missing_value"), std::string_view::npos);
+  auto program = a::detail::ContextAccess::trace_device_prefix(
+      a::detail::ContextAccess::runtime(*context), region, specs, {}, {});
+  ASSERT_TRUE(program) << program.error().message();
+  auto invocation = program->create_invocation();
+  ASSERT_TRUE(invocation);
+  const std::array inputs{mx::array({1.f, 2.f, 3.f, 4.f})};
+  ASSERT_TRUE(invocation->bind(inputs).ok());
+  auto work = invocation->submit();
+  ASSERT_TRUE(work);
+  auto failed = work->wait();
+  ASSERT_FALSE(failed);
+  EXPECT_NE(failed.error().message().find("hyle_missing_value"), std::string_view::npos);
+  EXPECT_FALSE(invocation->submit());
   EXPECT_FALSE(context->close().ok());
 }
 
