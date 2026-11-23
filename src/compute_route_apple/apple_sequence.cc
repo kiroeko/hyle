@@ -9,6 +9,7 @@
 #include <climits>
 #include <cmath>
 #include <string>
+#include <tuple>
 #include <mlx/fast.h>
 #include <mlx/ops.h>
 
@@ -388,17 +389,109 @@ Result<std::vector<mx::array>> lower_packed_gdn(const Operation &operation,
       }
     }
   )METAL", "", true, false, mx::CompileOptions{});
+  static const auto cooperative = mx::fast::metal_kernel("hyle_packed_gdn_cooperative",
+      {"q", "k", "v", "g", "beta", "initial", "offsets", "status", "scale"},
+      {"y", "states"}, R"METAL(
+    // The offset check is uniform across the workgroup.
+    if (status[0]) return;
+    constexpr uint vectors = 32;
+    constexpr uint slots = vectors / LANES;
+    const uint thread_index = thread_position_in_threadgroup.x;
+    const uint simd_lane = thread_index_in_simdgroup;
+    const uint row_lane = simd_lane % LANES;
+    const uint channel = (threadgroup_position_in_grid.x * 128 + thread_index) / LANES;
+    const uint head = threadgroup_position_in_grid.y;
+    const uint length = uint(offsets[1]);
+    const uint state = (head * DV + channel) * vectors;
+    const auto *queries = reinterpret_cast<const device packed_float4 *>(q);
+    const auto *keys = reinterpret_cast<const device packed_float4 *>(k);
+    const auto *previous = reinterpret_cast<const device packed_uint4 *>(initial);
+    auto *next = reinterpret_cast<device packed_uint4 *>(states);
+    float4 carry[slots];
+    #pragma unroll
+    for (uint i = 0; i < slots; ++i)
+      carry[i] = as_type<float4>(uint4(previous[state + row_lane + i * LANES]));
+
+    // A workgroup shares the head's key and query rows across its value rows.
+    threadgroup float4 prefetched_keys[TILE][vectors];
+    threadgroup float4 prefetched_queries[TILE][vectors];
+    for (uint begin = 0; begin < length; begin += TILE) {
+      const uint count = min(uint(TILE), length - begin);
+      for (uint index = thread_index; index < count * vectors; index += 128) {
+        const uint token = begin + index / vectors;
+        const uint vector_index = (token * HK + head % HK) * vectors + index % vectors;
+        prefetched_keys[index / vectors][index % vectors] = float4(keys[vector_index]);
+        prefetched_queries[index / vectors][index % vectors] = float4(queries[vector_index]);
+      }
+      threadgroup_barrier(mem_flags::mem_threadgroup);
+      for (uint i = 0; i < count; ++i) {
+        const uint token = begin + i;
+        const uint value_index = (token * HV + head) * DV + channel;
+        const float decay = exp(g[token * HV + head]);
+        float4 key[slots];
+        float prediction = 0.0f;
+        #pragma unroll
+        for (uint j = 0; j < slots; ++j) {
+          const uint index = row_lane + j * LANES;
+          key[j] = prefetched_keys[i][index];
+          carry[j] *= decay;
+          prediction = fma(carry[j].x, key[j].x, prediction);
+          prediction = fma(carry[j].y, key[j].y, prediction);
+          prediction = fma(carry[j].z, key[j].z, prediction);
+          prediction = fma(carry[j].w, key[j].w, prediction);
+        }
+        #pragma unroll
+        for (uint stride = LANES / 2; stride > 0; stride /= 2)
+          prediction += simd_shuffle_down(prediction, stride);
+        prediction = simd_shuffle(prediction, simd_lane - row_lane);
+        float delta = beta[token * HV + head] * (v[value_index] - prediction);
+        float attended = 0.0f;
+        #pragma unroll
+        for (uint j = 0; j < slots; ++j) {
+          const uint index = row_lane + j * LANES;
+          float4 query = prefetched_queries[i][index];
+          carry[j] = fma(float4(delta), key[j], carry[j]);
+          attended = fma(carry[j].x, query.x, attended);
+          attended = fma(carry[j].y, query.y, attended);
+          attended = fma(carry[j].z, query.z, attended);
+          attended = fma(carry[j].w, query.w, attended);
+        }
+        #pragma unroll
+        for (uint stride = LANES / 2; stride > 0; stride /= 2)
+          attended += simd_shuffle_down(attended, stride);
+        if (row_lane == 0) y[value_index] = OutType(attended * scale);
+      }
+      threadgroup_barrier(mem_flags::mem_threadgroup);
+    }
+    if (row_lane == 0)
+      for (uint row = length; row < ROWS; ++row)
+        y[(row * HV + head) * DV + channel] = OutType(0);
+    #pragma unroll
+    for (uint i = 0; i < slots; ++i)
+      next[state + row_lane + i * LANES] = packed_uint4(as_type<uint4>(carry[i]));
+  )METAL", "", true, false, mx::CompileOptions{});
+  constexpr int lanes = 8, tile = 12, threads = 128;
+  const bool use_cooperative = !prefixes && snapshots == 1 && batches == 1 && gates == 1 &&
+      dk == 128 && dv % (threads / lanes) == 0 && rows >= tile &&
+      inputs[0].dtype() == mx::float32 && inputs[1].dtype() == mx::float32;
   const float factor = (prefixes ? prefixes->output_scale : descriptor->output_scale)
       .value_or(1.F / std::sqrt(float(dk)));
   std::vector args(inputs.begin(), inputs.end());
   args[5] = mx::view(args[5], mx::uint32, stream);
   args.push_back(status);
   args.push_back(mx::array(factor));
-  auto outputs = kernel(args, {inputs[2].shape(), state_shape}, {inputs[2].dtype(), mx::uint32},
-      {((hv*dv + 63)/64)*64, batches, 1}, {64,1,1},
-      {{"OutType", inputs[2].dtype()}, {"ROWS", rows}, {"HK", hk}, {"HV", hv}, {"DK", dk}, {"DV", dv},
-       {"BATCHES", batches}, {"GATES", gates}, {"SNAPSHOTS", snapshots}, {"PREFIXES", int(bool(prefixes))}},
-      std::nullopt, false, stream);
+  std::vector<std::pair<std::string, mx::fast::TemplateArg>> parameters{
+      {"OutType", inputs[2].dtype()}, {"ROWS", rows}, {"HK", hk}, {"HV", hv}, {"DK", dk}, {"DV", dv},
+      {"BATCHES", batches}, {"GATES", gates}, {"SNAPSHOTS", snapshots}, {"PREFIXES", int(bool(prefixes))}};
+  if (use_cooperative) {
+    parameters.emplace_back("LANES", lanes);
+    parameters.emplace_back("TILE", tile);
+  }
+  auto outputs = (use_cooperative ? cooperative : kernel)(args,
+      {inputs[2].shape(), state_shape}, {inputs[2].dtype(), mx::uint32},
+      use_cooperative ? std::tuple{dv * lanes, hv, 1} : std::tuple{((hv*dv + 63)/64)*64, batches, 1},
+      use_cooperative ? std::tuple{threads, 1, 1} : std::tuple{64, 1, 1},
+      parameters, std::nullopt, false, stream);
   outputs[1] = mx::view(outputs[1], mx::float32, stream);
   for (auto &output : outputs) {
     HYLE_ASSIGN_OR_RETURN(auto checked, with_device_status(std::move(output), status, stream));
