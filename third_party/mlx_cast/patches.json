@@ -85,9 +85,13 @@
         {
           "before": "MLX_API array hyle_ragged_attention(\n    const array& q, const array& k, const array& v, float scale, bool causal,\n    Stream stream, bool q8 = false, int window_left = -1);",
           "after": "MLX_API array hyle_ragged_attention(\n    const array& q, const array& k, const array& v, float scale, bool causal,\n    Stream stream, bool q8 = false, int window_left = -1);\n// Uniform compact E4 MLA: the caller supplies one root and its V prefix.\nMLX_API array hyle_ragged_attention(\n    const array& q, const array& k, const array& v, float scale, bool causal,\n    Stream stream, int window_left, float key_scale, float value_scale);"
+        },
+        {
+          "before": "MLX_API array scaled_dot_product_attention(",
+          "after": "MLX_API bool hyle_can_align_causal_prefill(const array& q, Stream stream);\n\n// The caller supplies exactly one rounded KV tile of tail storage, zeroed\n// past the logical row count. Positions and masking use the logical rows.\nMLX_API array hyle_padded_causal_prefill(\n    const array& q, const array& k, const array& v, int rows, float scale, Stream stream);\n\nMLX_API array scaled_dot_product_attention("
         }
       ],
-      "after_sha256": "ec63fc1f0d8e10b07f58d6e67677b16595178622f36f78a7b531e67ca443fb48"
+      "after_sha256": "73758da2935e07343fd8771fb5da256694283f995b4aa94f73cff0a77075f99d"
     },
     {
       "path": "mlx/fast_primitives.h",
@@ -634,9 +638,21 @@
         {
           "before": "(has_mask ? *mask : q), bv, half_query);",
           "after": "(has_mask ? *mask : q), bv, half_query, bf16_query);"
+        },
+        {
+          "before": "#include \"mlx/fast_primitives.h\"",
+          "after": "#include \"mlx/fast.h\"\n#include \"mlx/fast_primitives.h\""
+        },
+        {
+          "before": "  auto make_kernel = [&]() {\n    const bool align_Q = (qL % bq) == 0;\n    const bool align_K = (kL % bk) == 0;",
+          "after": "  // Dense buffers passed to hyle_padded_causal_prefill have a zero tail.\n  // Keep kL logical for both the causal offset and the last visible tile.\n  const bool zero_padded_kv = page && !hyle_paged && kL < k.shape(2);\n  auto make_kernel = [&]() {\n    const bool align_Q = (qL % bq) == 0;\n    const bool align_K = (kL % bk) == 0 || (zero_padded_kv && (k.shape(2) % bk) == 0);"
+        },
+        {
+          "before": "bool ScaledDotProductAttentionVJP::use_fallback(const array& q, Stream s) {",
+          "after": "bool hyle_can_align_causal_prefill(const array& q, Stream stream) {\n  return stream.device == Device::gpu && q.ndim() == 4 && q.shape(0) == 1 &&\n      q.shape(1) > 0 && q.shape(2) == 512 && q.shape(3) == 256 &&\n      q.dtype() == bfloat16 && !metal::is_nax_available();\n}\n\narray hyle_padded_causal_prefill(\n    const array& q, const array& k, const array& v, int rows, float scale, Stream stream) {\n  constexpr int key_tile = 16;\n  if (!hyle_can_align_causal_prefill(q, stream) || k.ndim() != 4 || v.shape() != k.shape() ||\n      k.shape(0) != 1 || k.shape(1) <= 0 || q.shape(1) % k.shape(1) != 0 ||\n      k.shape(3) != q.shape(3) || k.dtype() != q.dtype() || v.dtype() != q.dtype() ||\n      rows < q.shape(2) || k.shape(2) % key_tile != 0 ||\n      k.shape(2) <= rows || k.shape(2) - rows >= key_tile) {\n    throw std::invalid_argument(\"HYLE padded causal prefill domain\");\n  }\n  // The original primitive carries logical rows through tracing and replay.\n  return array(q.shape(), bfloat16,\n      std::make_shared<HylePagedAttention>(stream, rows, -1, scale, true,\n          false, -1, false),\n      {q, k, v});\n}\n\nbool ScaledDotProductAttentionVJP::use_fallback(const array& q, Stream s) {"
         }
       ],
-      "after_sha256": "4141a7a5150c0f39d1eecb290ec95c263322b24308b6abd0ea80bb933642ceb4"
+      "after_sha256": "c7ba402139aea54aa45aeceeae2393356353a81974dfc6c3d63a11fccbb5e145"
     },
     {
       "path": "mlx/backend/metal/kernels/sdpa_vector.h",

@@ -218,6 +218,87 @@ TEST(AppleCache, MainDepthsAndLongPrefill) {
   }
   for(bool paged:{false,true}) {boxed_case<F16>(paged,true,256,256,true,-1,true);boxed_case<BF16>(paged,true,256,256,true,-1,true);}
 }
+TEST(AppleCache, BFloatPrefillKeepsLogicalLengthAtPartialPage) {
+  constexpr int rows = 512, history = 525, page_size = 16, depth = 256;
+  constexpr int page_count = (history + page_size - 1) / page_size;
+  constexpr int query_heads = 2;
+  constexpr auto type = c::DataType::kBFloat16;
+  const auto storage = c::CacheStorage::plain(type).value();
+  const c::BatchCapacity capacity{
+      .storage=c::BatchStorage::kPaged,.query_type=type,.output_type=type,
+      .key_storage=storage,.value_storage=storage,.max_requests=1,
+      .max_query_rows=rows,.max_kv_rows=history,.max_pages=page_count,.max_page_refs=page_count,
+      .query_heads=query_heads,.kv_heads=1,.qk_head_dim=depth,.value_head_dim=depth,.page_size=page_size};
+  auto schema = c::BatchSchema::create(capacity).value();
+  std::array<std::int32_t,page_count> pages;
+  for (int i=0;i<page_count;++i) pages[i]=page_count-i-1;
+  const std::array<std::int32_t,2> query_ptr{0,rows}, page_ptr{0,page_count};
+  const std::array<std::int32_t,1> tail{history % page_size};
+  auto layout = schema.version({query_ptr,page_ptr,pages,tail}).value();
+  auto context = n::Context::create().value();
+  auto memory = n::MemoryResource::create(context).value();
+  auto staging = n::MemoryResource::create(context).value();
+  constexpr auto cache_bytes = page_count*page_size*depth*sizeof(BF16) + 64;
+  auto keys = c::PagedArena::create(schema,c::BatchCacheRole::kKey,memory.ref(),{.max_backing_bytes=cache_bytes}).value();
+  auto values = c::PagedArena::create(schema,c::BatchCacheRole::kValue,memory.ref(),{.max_backing_bytes=cache_bytes}).value();
+  std::array<c::ReadLease,page_count> key_reads, value_reads;
+  std::array<BF16,page_size*depth> key_page, value_page;
+  const auto zero = half_test::encode<BF16>(0.F);
+  const auto eight = half_test::encode<BF16>(8.F);
+  const auto poison = half_test::encode<BF16>(std::numeric_limits<float>::quiet_NaN());
+  for (int i=0;i<page_count;++i) {
+    const auto page=pages[i];
+    for (int r=0;r<page_size;++r) {
+      const int position=i*page_size+r;
+      std::fill_n(key_page.begin()+r*depth,depth,position<history?zero:poison);
+      const auto value=position<history-page_size?zero:position<history?eight:poison;
+      std::fill_n(value_page.begin()+r*depth,depth,value);
+    }
+    auto key_writer=keys.acquire(page).value();
+    auto value_writer=values.acquire(page).value();
+    ASSERT_TRUE(key_writer.lease().view()->write(std::as_bytes(std::span(key_page))).ok());
+    ASSERT_TRUE(value_writer.lease().view()->write(std::as_bytes(std::span(value_page))).ok());
+    const int initialized=std::min(page_size,history-i*page_size);
+    key_reads[page]=key_writer.publish(initialized).value();
+    value_reads[page]=value_writer.publish(initialized).value();
+  }
+  auto key_frame=keys.read(layout,key_reads).value();
+  auto value_frame=values.read(layout,value_reads).value();
+  std::vector<BF16> output(rows*query_heads*depth,zero);
+  const auto bytes=std::as_writable_bytes(std::span(output));
+  auto pool=c::LeasePool::create(memory.ref(),bytes.size()+64).value();
+  auto writer=pool.allocate(bytes.size(),64).value();
+  ASSERT_TRUE(writer.view()->write(bytes).ok());
+  auto query=writer.publish().value();
+
+  auto recipe=c::NativePagedBatchProgram::prepare(schema,{.max_host_metadata_bytes=8192,.scale=0.0625F}).value();
+  auto slot=n::PagedBatchInvocation::create(context,recipe,memory,staging,{.max_metadata_backing_bytes=16384}).value();
+  const auto prepared=slot.prepare_batch(layout);
+  ASSERT_TRUE(prepared.ok()) << prepared.message();
+  const auto bound=slot.bind(query,key_frame,value_frame);
+  ASSERT_TRUE(bound.ok()) << bound.message();
+  auto work=slot.submit();
+  ASSERT_TRUE(work) << work.error().message();
+  auto result=work->wait();
+  ASSERT_TRUE(result) << result.error().message();
+  auto description=c::batch_output_description(capacity,rows).value();
+  auto out=memory.import_readonly((*result)->arrays().front(),description).value();
+  ASSERT_TRUE(out.view()->read(bytes).ok());
+  float max_error=0.F;
+  for (int row=0;row<rows;++row) {
+    const int visible=history-rows+row+1;
+    const float expected=8.F*std::max(0,visible-(history-page_size))/float(visible);
+    for (int i=0;i<query_heads*depth;++i) {
+      const float actual=half_test::decode(output[row*query_heads*depth+i]);
+      ASSERT_TRUE(std::isfinite(actual)) << row;
+      max_error=std::max(max_error,std::abs(actual-expected));
+    }
+  }
+  EXPECT_LT(max_error,0.001F);
+  out.reset();
+  *result={};
+  EXPECT_TRUE(context.close().ok());
+}
 TEST(AppleCache, Q8DecodeAndTwoPassKeepFiniteCancellation) {
   boxed_case<F16>(false,true,64,64,true,-1,false,true);
   boxed_case<F16>(false,true,64,64,true,-1,true,true);

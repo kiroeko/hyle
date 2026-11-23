@@ -68,6 +68,37 @@ mlx::core::array dense_prefill_cache(const mlx::core::array& cache, const mlx::c
   return mx::transpose(mx::slice(rows, {0, 0, 0, 0}, {1, history, heads, width}, stream),
       {0, 2, 1, 3}, stream);
 }
+
+std::vector<mlx::core::array> aligned_prefill_cache(
+    const mlx::core::array& keys, const mlx::core::array& values, const mlx::core::array& page_ids,
+    int history, int heads, mlx::core::Stream stream) {
+  namespace mx = mlx::core;
+  constexpr int page_size = 16, width = 256, vectors = width / 4;
+  // Materialize only one owned pair. Never read beyond the published rows of
+  // the last page, including when the physical page belongs to a shared cache.
+  static const auto gather = mx::fast::metal_kernel("hyle_aligned_prefill_cache",
+      {"keys", "values", "pages", "shape"}, {"key_cache", "value_cache"}, R"METAL(
+    const uint column = thread_position_in_grid.x;
+    const uint row = thread_position_in_grid.y;
+    const uint head = thread_position_in_grid.z;
+    const ulong target = (ulong(head) * shape[1] + row) * VECTORS + column;
+    ushort4 key(0), value(0);
+    if (row < uint(shape[0])) {
+      const ulong physical_row = ulong(pages[row / 16]) * 16 + row % 16;
+      const ulong source = (physical_row * HEADS + head) * VECTORS + column;
+      key = reinterpret_cast<device const ushort4*>(keys)[source];
+      value = reinterpret_cast<device const ushort4*>(values)[source];
+    }
+    reinterpret_cast<device ushort4*>(key_cache)[target] = key;
+    reinterpret_cast<device ushort4*>(value_cache)[target] = value;
+    )METAL");
+  const int storage_rows = int(page_ids.size()) * page_size;
+  const std::array<std::int32_t,2> shape{history,storage_rows};
+  const mx::Shape output{1,heads,storage_rows,width};
+  return gather({keys,values,page_ids,mx::array(shape.data(),{2},mx::int32)},
+      {output,output}, {mx::bfloat16,mx::bfloat16}, {vectors,storage_rows,heads},
+      {vectors,2,1}, {{"VECTORS",vectors},{"HEADS",heads}}, std::nullopt, false, stream);
+}
 }
 Result<Program> detail::PagedBatchAccess::prepare_program(const Context& context,
     const NativePagedBatchProgram& recipe, BatchLayoutVersion layout,
@@ -151,10 +182,16 @@ Result<Program> detail::PagedBatchAccess::prepare_paged_graph(std::shared_ptr<Ru
         if (plain_bf16 && nq >= 128 && nq <= 512 && dense_cache_bytes <= 64u * 1024 * 1024) {
           namespace mx = mlx::core;
           const auto pages = mx::slice(inputs[3], {host.kv_indptr[r]}, {host.kv_indptr[r+1]}, stream);
-          auto key = dense_prefill_cache(inputs[1], pages, int(nk), int(c.kv_heads), 256, stream);
-          auto value = dense_prefill_cache(inputs[2], pages, int(nk), int(c.kv_heads), 256, stream);
-          auto result = mx::fast::scaled_dot_product_attention(q, key, value, recipe.scale(),
-              "causal", std::nullopt, std::nullopt, true, stream);
+          const auto result = [&] {
+            if (nk % c.page_size != 0 && mx::fast::hyle_can_align_causal_prefill(q, stream)) {
+              const auto reached = aligned_prefill_cache(inputs[1], inputs[2], pages, int(nk), int(c.kv_heads), stream);
+              return mx::fast::hyle_padded_causal_prefill(q, reached[0], reached[1], int(nk), recipe.scale(), stream);
+            }
+            auto key = dense_prefill_cache(inputs[1], pages, int(nk), int(c.kv_heads), 256, stream);
+            auto value = dense_prefill_cache(inputs[2], pages, int(nk), int(c.kv_heads), 256, stream);
+            return mx::fast::scaled_dot_product_attention(q, key, value, recipe.scale(),
+                "causal", std::nullopt, std::nullopt, true, stream);
+          }();
           parts.push_back(mx::reshape(mx::transpose(result, {0,2,1,3}, stream),
               {nq, int(c.query_heads), 256}, stream));
           continue;
