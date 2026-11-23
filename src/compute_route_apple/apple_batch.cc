@@ -9,6 +9,8 @@
 
 #include <array>
 #include <algorithm>
+#include <bit>
+#include <cstdint>
 #include <new>
 #include <optional>
 #include <cmath>
@@ -57,6 +59,71 @@ Status detail::PagedBatchAccess::validate_paged(
 namespace {
 int cache_width(CacheStorage storage,std::uint32_t depth) noexcept {
   return int(storage==CacheStorage::q8_0().value()?depth/32*34:depth);
+}
+
+mlx::core::array grouped_decode_attention(
+    const mlx::core::array& query, const mlx::core::array& keys, const mlx::core::array& values,
+    const mlx::core::array& pages, int history, int first_page, float scale, mlx::core::Stream stream) {
+  namespace mx = mlx::core;
+  constexpr int heads = 8, kv_heads = 2, width = 256, lanes = 32;
+  constexpr int partitions = detail::paged_vector_partitions;
+  // Keep the native vector traversal and sum order for each query head.
+  // The four heads in each group consume the same K/V values.
+  static const auto partial = mx::fast::metal_kernel("hyle_four_head_vector_partials",
+      {"query", "keys", "values", "pages", "config"}, {"numerator", "stats"}, R"METAL(
+    constexpr uint group = 4, width = 256;
+    const uint partition = threadgroup_position_in_grid.x;
+    const uint kv_head = threadgroup_position_in_grid.y;
+    const uint first_head = kv_head * group;
+    const uint lane = thread_index_in_simdgroup;
+    const uint channel = lane * 8;
+    const int length = config[0];
+    const float scale = as_type<float>(config[2]);
+    float q[group][8], accum[group][8] = {};
+    float largest[group], sums[group] = {};
+    for (uint head = 0; head < group; ++head) {
+      largest[head] = -FLT_MAX;
+      for (uint d = 0; d < 8; ++d)
+        q[head][d] = scale * float(query[(first_head + head) * width + channel + d]);
+    }
+    for (int token = int(partition); token < length; token += PARTITIONS) {
+      const uint physical = uint(pages[config[1] + token / 16]) * 16 + token % 16;
+      const ulong base = (ulong(physical) * KV_HEADS + kv_head) * width + channel;
+      float score[group] = {}, value[8];
+      for (uint d = 0; d < 8; ++d) {
+        const float key = float(keys[base + d]);
+        value[d] = float(values[base + d]);
+        for (uint head = 0; head < group; ++head) score[head] += q[head][d] * key;
+      }
+      for (uint head = 0; head < group; ++head) {
+        const float logit = simd_sum(score[head]);
+        const float next = max(largest[head], logit);
+        const float previous = fast::exp(largest[head] - next);
+        const float weight = fast::exp(logit - next);
+        largest[head] = next;
+        sums[head] = sums[head] * previous + weight;
+        for (uint d = 0; d < 8; ++d)
+          accum[head][d] = accum[head][d] * previous + weight * value[d];
+      }
+    }
+    for (uint head = 0; head < group; ++head) {
+      const uint slice = (first_head + head) * PARTITIONS + partition;
+      for (uint d = 0; d < 8; ++d) numerator[slice * width + channel + d] = accum[head][d];
+      if (lane == 0) {
+        stats[slice * 2] = largest[head];
+        stats[slice * 2 + 1] = sums[head];
+      }
+    }
+    )METAL");
+  static const auto merge = mx::fast::metal_kernel("hyle_four_head_vector_merge",
+      {"numerator", "stats"}, {"output"}, detail::paged_vector_merge_source);
+  const std::array<std::int32_t, 3> config{history, first_page, std::bit_cast<std::int32_t>(scale)};
+  const auto parts = partial({query, keys, values, pages, mx::array(config.data(), {3}, mx::int32)},
+      {{heads,partitions,width},{heads,partitions,2}}, {mx::float32,mx::float32},
+      {partitions * lanes,kv_heads,1}, {lanes,1,1}, {{"PARTITIONS",partitions},{"KV_HEADS",kv_heads}},
+      std::nullopt, false, stream);
+  return merge(parts, {{1,heads,width}}, {mx::bfloat16}, {heads * lanes,lanes,1}, {lanes,lanes,1},
+      {{"PARTITIONS",partitions}}, std::nullopt, false, stream).front();
 }
 
 mlx::core::array dense_prefill_cache(const mlx::core::array& cache, const mlx::core::array& page_ids,
@@ -147,8 +214,10 @@ Result<Program> detail::PagedBatchAccess::prepare_paged_graph(std::shared_ptr<Ru
         c.key_storage == CacheStorage::plain(c.query_type).value() && c.value_storage == c.key_storage;
     const auto& architecture = runtime->environment.architecture;
     // This GPU class uses 64 partitions for the native paged GQA vector path.
-    const bool shared_three = plain_bf16 && architecture.ends_with('g') && c.query_heads > c.kv_heads;
-    return prepare_runtime_program(runtime,layout,std::span(specs).first(mla?3:4),[recipe,query_rows,plain_bf16,shared_three](const BatchLayoutVersion& layout,
+    const bool share_paged_kv = plain_bf16 && architecture.ends_with('g');
+    const bool shared_three = share_paged_kv && c.query_heads > c.kv_heads;
+    const bool grouped_decode = share_paged_kv && c.query_heads == 8 && c.kv_heads == 2;
+    return prepare_runtime_program(runtime,layout,std::span(specs).first(mla?3:4),[recipe,query_rows,plain_bf16,shared_three,grouped_decode](const BatchLayoutVersion& layout,
         const std::vector<mlx::core::array>& inputs,mlx::core::Stream stream)->Result<std::vector<mlx::core::array>>{
       const bool mla=recipe.schema().mla_layout()!=MlaCacheLayout::kNone;
       if(inputs.size()!=(mla?3u:4u))return std::unexpected(Status::InvalidArgument("Apple paged native port count"));
@@ -169,6 +238,11 @@ Result<Program> detail::PagedBatchAccess::prepare_paged_graph(std::shared_ptr<Ru
         const auto nk=std::uint64_t(refs-1)*16+std::uint32_t(host.last_page_lengths[r]);
         HYLE_ASSIGN_OR_RETURN(auto slice,View::slice(0,host.query_indptr[r],nq));
         HYLE_ASSIGN_OR_RETURN(auto sliced,lower(Operation(slice),std::span(&inputs[0],1),stream));
+        if (grouped_decode && nq == 1 && nk >= 8192 && nk <= 32768) {
+          parts.push_back(grouped_decode_attention(sliced[0], inputs[1], inputs[2], inputs[3],
+              int(nk), host.kv_indptr[r], recipe.scale(), stream));
+          continue;
+        }
         if (shared_three && nq == 3 && nk >= 4096 && nk <= 32768) {
           parts.push_back(detail::paged_three_row_attention(sliced[0], inputs[1], inputs[2], inputs[3],
               int(nk), host.kv_indptr[r], recipe.scale(), int(c.query_heads), int(c.kv_heads), stream));

@@ -8,7 +8,7 @@
 
 namespace hyle::compute::apple::detail {
 
-inline constexpr int three_row_partitions = 64;
+inline constexpr int paged_vector_partitions = 64;
 
 // Match the pinned native vector path's 64 interleaved partitions and
 // reduction order. A SIMD group shares each K/V load across the three rows.
@@ -58,7 +58,7 @@ inline constexpr auto three_row_partials_source = R"METAL(
   }
 )METAL";
 
-inline constexpr auto three_row_merge_source = R"METAL(
+inline constexpr auto paged_vector_merge_source = R"METAL(
   const uint row = threadgroup_position_in_grid.x;
   const uint simd = simdgroup_index_in_threadgroup;
   const uint lane = thread_index_in_simdgroup;
@@ -98,11 +98,11 @@ inline mlx::core::array paged_three_row_attention(
     const mlx::core::array& pages, int history, int first_page, float scale,
     int heads, int kv_heads, mlx::core::Stream stream) {
   namespace mx = mlx::core;
-  constexpr int rows = 3, width = 256, lanes = 32, partitions = three_row_partitions;
+  constexpr int rows = 3, width = 256, lanes = 32, partitions = paged_vector_partitions;
   static const auto partial = mx::fast::metal_kernel("hyle_three_row_vector_partials",
       {"q", "keys", "values", "pages", "config"}, {"numerator", "stats"}, three_row_partials_source);
   static const auto merge = mx::fast::metal_kernel("hyle_three_row_vector_merge",
-      {"numerator", "stats"}, {"output"}, three_row_merge_source);
+      {"numerator", "stats"}, {"output"}, paged_vector_merge_source);
   const std::array<std::int32_t, 3> config{history, first_page, std::bit_cast<std::int32_t>(scale)};
   auto parts = partial({q, k, v, pages, mx::array(config.data(), {3}, mx::int32)},
       {{rows * heads, partitions, width}, {rows * heads, partitions, 2}}, {mx::float32, mx::float32},
