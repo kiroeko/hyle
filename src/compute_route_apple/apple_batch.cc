@@ -2,6 +2,7 @@
 #include "hyle/compute/detail/batch_provider.h"
 #include "hyle/compute/detail/apple_batch_access.h"
 #include "hyle/compute/detail/apple_plan.h"
+#include "apple_paged_three_rows.h"
 #include "apple_runtime_internal.h"
 #include "mlx/fast.h"
 #include "mlx/ops.h"
@@ -57,6 +58,16 @@ namespace {
 int cache_width(CacheStorage storage,std::uint32_t depth) noexcept {
   return int(storage==CacheStorage::q8_0().value()?depth/32*34:depth);
 }
+
+mlx::core::array dense_prefill_cache(const mlx::core::array& cache, const mlx::core::array& page_ids,
+    int history, int heads, int width, mlx::core::Stream stream) {
+  namespace mx = mlx::core;
+  const auto physical = mx::reshape(cache, {-1, 16, heads, width}, stream);
+  const auto ordered = mx::take(physical, page_ids, 0, stream);
+  const auto rows = mx::reshape(ordered, {1, -1, heads, width}, stream);
+  return mx::transpose(mx::slice(rows, {0, 0, 0, 0}, {1, history, heads, width}, stream),
+      {0, 2, 1, 3}, stream);
+}
 }
 Result<Program> detail::PagedBatchAccess::prepare_program(const Context& context,
     const NativePagedBatchProgram& recipe, BatchLayoutVersion layout,
@@ -100,7 +111,13 @@ Result<Program> detail::PagedBatchAccess::prepare_paged_graph(std::shared_ptr<Ru
         return std::vector{mlx::core::reshape(sliced[0],{0,heads,depth},stream)};
       },workload,recipe.causal(),recipe.window_left());
     }
-    return prepare_runtime_program(runtime,layout,std::span(specs).first(mla?3:4),[recipe,query_rows](const BatchLayoutVersion& layout,
+    const bool plain_bf16 = !mla && recipe.causal() && recipe.window_left() < 0 &&
+        c.qk_head_dim == 256 && c.value_head_dim == 256 && c.query_type == DataType::kBFloat16 &&
+        c.key_storage == CacheStorage::plain(c.query_type).value() && c.value_storage == c.key_storage;
+    const auto& architecture = runtime->environment.architecture;
+    // This GPU class uses 64 partitions for the native paged GQA vector path.
+    const bool shared_three = plain_bf16 && architecture.ends_with('g') && c.query_heads > c.kv_heads;
+    return prepare_runtime_program(runtime,layout,std::span(specs).first(mla?3:4),[recipe,query_rows,plain_bf16,shared_three](const BatchLayoutVersion& layout,
         const std::vector<mlx::core::array>& inputs,mlx::core::Stream stream)->Result<std::vector<mlx::core::array>>{
       const bool mla=recipe.schema().mla_layout()!=MlaCacheLayout::kNone;
       if(inputs.size()!=(mla?3u:4u))return std::unexpected(Status::InvalidArgument("Apple paged native port count"));
@@ -121,7 +138,27 @@ Result<Program> detail::PagedBatchAccess::prepare_paged_graph(std::shared_ptr<Ru
         const auto nk=std::uint64_t(refs-1)*16+std::uint32_t(host.last_page_lengths[r]);
         HYLE_ASSIGN_OR_RETURN(auto slice,View::slice(0,host.query_indptr[r],nq));
         HYLE_ASSIGN_OR_RETURN(auto sliced,lower(Operation(slice),std::span(&inputs[0],1),stream));
+        if (shared_three && nq == 3 && nk >= 4096 && nk <= 32768) {
+          parts.push_back(detail::paged_three_row_attention(sliced[0], inputs[1], inputs[2], inputs[3],
+              int(nk), host.kv_indptr[r], recipe.scale(), int(c.query_heads), int(c.kv_heads), stream));
+          continue;
+        }
         auto q=mlx::core::transpose(mlx::core::reshape(sliced[0],{1,nq,int(c.query_heads),int(c.qk_head_dim)},stream),{0,2,1,3},stream);
+        // A 512-query tile amortizes gathering the live BF16 pages. Bound the
+        // two temporary dense caches to 64 MiB per request.
+        const auto dense_cache_bytes = std::uint64_t(refs) * c.page_size * c.kv_heads *
+            (c.qk_head_dim + c.value_head_dim) * sizeof(std::uint16_t);
+        if (plain_bf16 && nq == 512 && dense_cache_bytes <= 64u * 1024 * 1024) {
+          namespace mx = mlx::core;
+          const auto pages = mx::slice(inputs[3], {host.kv_indptr[r]}, {host.kv_indptr[r+1]}, stream);
+          auto key = dense_prefill_cache(inputs[1], pages, int(nk), int(c.kv_heads), 256, stream);
+          auto value = dense_prefill_cache(inputs[2], pages, int(nk), int(c.kv_heads), 256, stream);
+          auto result = mx::fast::scaled_dot_product_attention(q, key, value, recipe.scale(),
+              "causal", std::nullopt, std::nullopt, true, stream);
+          parts.push_back(mx::reshape(mx::transpose(result, {0,2,1,3}, stream),
+              {nq, int(c.query_heads), 256}, stream));
+          continue;
+        }
         const bool e4=c.key_storage.data_type()==DataType::kFloat8E4M3FN;
         auto result=e4?mlx::core::fast::hyle_paged_attention(q,k,v,inputs[mla?2:3],int(nk),host.kv_indptr[r],recipe.scale(),recipe.causal(),stream,recipe.window_left(),c.key_storage.scale(),c.value_storage.scale()):
             mlx::core::fast::hyle_paged_attention(q,k,v,inputs[mla?2:3],int(nk),host.kv_indptr[r],recipe.scale(),recipe.causal(),stream,c.key_storage==CacheStorage::q8_0().value(),recipe.window_left());
