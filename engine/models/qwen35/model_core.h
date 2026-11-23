@@ -1753,11 +1753,16 @@ public:
     if (!rows || !layer0_probe.empty()) return 0;
     const auto found = families.find({requests, role, 0, completion, sampling_index, RowPacking::kPrefill});
     if (found == families.end() || !found->second) return 0;
+    // In native Apple text generation, prefer the smallest prepared program.
+    // Reusing a wider carrier also executes its padded projections and recurrence.
+    const bool narrow_apple_prefill = role == GraphRole::kText && completion == TextCompletion::kEmitNext &&
+        execution.kind() == BackendKind::kApple && !execution.has_cpu_assist();
+    const bool prefer_private_capacity = execution_storage_prepared && !execution_workspace.valid() && !narrow_apple_prefill;
     std::size_t selected = 0, resident = 0;
     for (const auto physical : found->second->chunks) {
       if (physical < rows) continue;
       if (!selected || physical < selected) selected = physical;
-      if (execution_storage_prepared && !execution_workspace.valid()) {
+      if (prefer_private_capacity) {
         const auto phase = phases.find({requests, physical, role, completion, sampling_index, false, RowPacking::kPrefill});
         if (phase != phases.end() &&
             (phase->second->private_capacity_preferred || phase->second->slots[0].carrier.initialized()) &&
