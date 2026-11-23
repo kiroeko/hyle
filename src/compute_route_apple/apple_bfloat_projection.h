@@ -40,4 +40,8 @@ HYLE_COMPUTE_ROUTE_APPLE_API mlx::core::array lower_packed_bfloat_projection(
     const PreparedBFloatProjection &, const mlx::core::array &weights,
     const mlx::core::array &activation, mlx::core::Dtype output, mlx::core::Stream);
 
+HYLE_COMPUTE_ROUTE_APPLE_API mlx::core::array lower_indexed_bfloat_projection(
+    const PreparedBFloatProjection *, const mlx::core::array &weights,
+    const mlx::core::array &activation, const mlx::core::array &indices, mlx::core::Stream);
+
 } // namespace hyle::compute::apple::detail

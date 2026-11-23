@@ -1,6 +1,7 @@
 #include "apple_tensor.h"
 #include "apple_bfloat_projection.h"
 #include "apple_carrier.h"
+#include "hyle/compute/apple_weights.h"
 #include "hyle/compute/detail/apple_plan.h"
 
 #include <algorithm>
@@ -33,6 +34,25 @@
 #include "hyle/compute/model_ops.h"
 #include "hyle/compute/sampling_ops.h"
 #include "hyle/compute/sequence_ops.h"
+
+namespace hyle::compute::apple {
+namespace {
+
+bool fixed_bfloat_head(std::int64_t rows, std::int64_t width) noexcept {
+  return rows == 248320 && width == 2048;
+}
+
+} // namespace
+
+bool supports_indexed_bfloat_projection(
+    std::int64_t original_rows, std::int64_t width, std::int64_t selected_rows) noexcept {
+  // Use the full bank already eligible for lossless preparation. Dispatch
+  // pairs of selected rows and keep other geometries on their current route.
+  return fixed_bfloat_head(original_rows, width) &&
+      selected_rows > 0 && selected_rows < original_rows && selected_rows % 2 == 0;
+}
+
+} // namespace hyle::compute::apple
 
 namespace hyle::compute::apple::detail {
 namespace mx = mlx::core;
@@ -1161,7 +1181,7 @@ bool packed_bfloat_projection_eligible(
   // The measured fixed shape and short query path. Other dense heads retain
   // their existing carrier selection.
   const auto x = activation.dimensions(), w = weights.dimensions();
-  return x[0] > 0 && x[0] <= 4 && x[1] == 2048 && w[0] == 248320 && w[1] == x[1];
+  return x[0] > 0 && x[0] <= 4 && fixed_bfloat_head(w[0], w[1]) && w[1] == x[1];
 }
 
 bool packed_bfloat_matmul_eligible(
@@ -1222,14 +1242,11 @@ std::array<mx::array, 2> pack_bfloat_projection(const mx::array &matrix, mx::Str
   return {std::move(results[0]), std::move(results[1])};
 }
 
-mx::array lower_packed_bfloat_projection(
-    const PreparedBFloatProjection &projection, const mx::array &original,
-    const mx::array &input, mx::Dtype output, mx::Stream stream) {
-  const auto rows = original.shape(0);
-  const auto inner = original.shape(1);
-  const auto make_kernel = [](bool bfloat_output) {
-    // Preserve the existing F32 head shader and its device-library key.
-    const auto source = std::string(R"METAL(
+namespace {
+
+auto make_projection_kernel(bool bfloat_output, bool indexed, bool packed) {
+  // Preserve the existing dense shader text and device-library key.
+  std::string source = R"METAL(
     const uint lane = thread_index_in_simdgroup;
     const uint group = simdgroup_index_in_threadgroup;
     const uint row = threadgroup_position_in_grid.x * 2;
@@ -1238,17 +1255,22 @@ mx::array lower_packed_bfloat_projection(
     for (uint start = first; start < INNER_VECTORS; start += 512) {
       #pragma unroll
       for (uint r = 0; r < 2; ++r) {
-        const uint base = (row + r) * INNER_VECTORS + start;
-        float4 w[4];
+        const uint base = )METAL";
+  source += indexed ? "uint(ids[row + r])" : "(row + r)";
+  source += R"METAL( * INNER_VECTORS + start;
+        float4 w[4];)METAL";
+  if (packed) source += R"METAL(
         const uint block = base / 16;
         const uint position = base % 16;
         const uint origin = uint(exponents[block]);
         const auto buffer = words + 24 * block;
-        if (origin == 255u) {
+        if (origin == 255u) {)METAL";
+  source += R"METAL(
           const auto original = reinterpret_cast<const device bfloat4 *>(matrix) + base;
           #pragma unroll
           for (uint i = 0; i < 4; ++i)
-            w[i] = float4(original[i]);
+            w[i] = float4(original[i]);)METAL";
+  if (packed) source += R"METAL(
         } else {
           #pragma unroll
           for (uint i = 0; i < 4; ++i) {
@@ -1262,7 +1284,8 @@ mx::array lower_packed_bfloat_projection(
                                         (expanded << 7) | (mantissas & 127u));
             w[i] = float4(as_type<bfloat4>(encoded));
           }
-        }
+        })METAL";
+  source += R"METAL(
         #pragma unroll
         for (uint q = 0; q < QUERIES; ++q) {
           float partial = 0.0f;
@@ -1297,19 +1320,33 @@ mx::array lower_packed_bfloat_projection(
         for (uint r = 0; r < 2; ++r) {
           const float sum = simd_sum(lane < 4 ? partial[q][r][lane] : 0.0f);
           if (lane == 0)
-            output[q * OUTPUT_ROWS + row + r] = )METAL") +
-        (bfloat_output ? "static_cast<RESULT_TYPE>(sum)" : "sum") + R"METAL(;
+            output[q * OUTPUT_ROWS + row + r] = )METAL";
+  source += bfloat_output ? "static_cast<RESULT_TYPE>(sum)" : "sum";
+  source += R"METAL(;
         }
       }
     }
   )METAL";
-    return mx::fast::metal_kernel(
-        "hyle_bfloat_packed_fixed_head", {"matrix", "words", "exponents", "activation"}, {"output"},
-        source, "", true, false, mx::CompileOptions(static_cast<int>(mx::MathMode::Fast)));
-  };
+  std::vector<std::string> arguments{"matrix"};
+  if (packed) arguments.insert(arguments.end(), {"words", "exponents"});
+  arguments.emplace_back("activation");
+  if (indexed) arguments.emplace_back("ids");
+  const auto *name = indexed ? (packed ? "hyle_bfloat_indexed_head" : "hyle_bfloat_indexed_raw_head")
+                            : "hyle_bfloat_packed_fixed_head";
+  return mx::fast::metal_kernel(name, arguments, {"output"}, source, "", true, false,
+      mx::CompileOptions(static_cast<int>(mx::MathMode::Fast)));
+}
+
+} // namespace
+
+mx::array lower_packed_bfloat_projection(
+    const PreparedBFloatProjection &projection, const mx::array &original,
+    const mx::array &input, mx::Dtype output, mx::Stream stream) {
+  const auto rows = original.shape(0);
+  const auto inner = original.shape(1);
   const bool bfloat_output = output == mx::bfloat16;
-  static const auto scores = make_kernel(false);
-  static const auto matmul = make_kernel(true);
+  static const auto scores = make_projection_kernel(false, false, true);
+  static const auto matmul = make_projection_kernel(true, false, true);
   const auto &kernel = bfloat_output ? matmul : scores;
   const auto queries = input.shape(0);
   std::vector<std::pair<std::string, mx::fast::TemplateArg>> parameters{
@@ -1317,6 +1354,22 @@ mx::array lower_packed_bfloat_projection(
   if (bfloat_output) parameters.emplace_back("RESULT_TYPE", output);
   return kernel({original, projection.packed[0], projection.packed[1], input}, {{queries, rows}}, {output},
                 {64 * rows, 1, 1}, {128, 1, 1}, parameters, std::nullopt, false, stream)[0];
+}
+
+mx::array lower_indexed_bfloat_projection(
+    const PreparedBFloatProjection *projection, const mx::array &original,
+    const mx::array &activation, const mx::array &indices, mx::Stream stream) {
+  static const auto packed = make_projection_kernel(false, true, true);
+  static const auto raw = make_projection_kernel(false, true, false);
+  const auto rows = indices.shape(1);
+  const std::vector<std::pair<std::string, mx::fast::TemplateArg>> parameters{
+      {"INNER_VECTORS", original.shape(2) / 4}, {"QUERIES", 1}, {"OUTPUT_ROWS", rows}};
+  const auto &kernel = projection ? packed : raw;
+  std::vector arguments{original};
+  if (projection) arguments.insert(arguments.end(), projection->packed.begin(), projection->packed.end());
+  arguments.insert(arguments.end(), {activation, indices});
+  return kernel(arguments, {{1, rows, 1}}, {mx::float32}, {64 * rows, 1, 1}, {128, 1, 1},
+                parameters, std::nullopt, false, stream)[0];
 }
 
 } // namespace hyle::compute::apple::detail

@@ -38,6 +38,10 @@
 #include "hyle/sched/scheduler.h"
 #include "hyle/util/scope_guard.h"
 
+#if defined(HYLE_COMPUTE_APPLE) && defined(__APPLE__)
+#include "hyle/compute/apple_weights.h"
+#endif
+
 namespace qwen35 {
 namespace c = hyle::compute;
 namespace g = hyle::graph;
@@ -1063,8 +1067,7 @@ PreparedDraftHead prepare_draft_head(Backend &execution, LoadedWeight &original,
     const c::ResourceBudget &allocation_budget) {
   const auto &description = original.tensor.description;
   Tensor *indexed = nullptr;
-  if (max_requests == 1 && execution.kind() == hyle::inference::BackendKind::kCuda &&
-      description.valid() && description.rank() == 2 && description.is_dense() &&
+  if (max_requests == 1 && description.valid() && description.rank() == 2 && description.is_dense() &&
       description.is_plain() && description.data_type() == Type::kBFloat16 &&
       !original.group_size && (original.codec == prepared::ProjectionCodec::kDense ||
                               original.codec == prepared::ProjectionCodec::kUnspecified) &&
@@ -1072,17 +1075,24 @@ PreparedDraftHead prepare_draft_head(Backend &execution, LoadedWeight &original,
       take(original.tensor.ready.view()).resource() == execution.device()) {
     const auto shape = description.dimensions();
     const auto rows = static_cast<std::int64_t>(mapping.size());
-    const std::array inputs{dense(Type::kBFloat16, {shape[0], 1, shape[1]}),
-        dense(Type::kFloat32, {1, 1, shape[1]}), dense(Type::kInt32, {1, rows})};
-    const std::array outputs{dense(Type::kFloat32, {1, rows, 1})};
-    // Descriptor preparation proves the actual device/strides and capture
-    // contract before choosing this cold representation. It reads no payload.
-    auto candidate = c::prepare(*take(execution.common_context()),
-        c::model_ops::grouped_matmul(), inputs, outputs, execution.device());
-    if (!candidate) {
-      if (!candidate.error().IsUnimplemented() || candidate.error().has_native_error())
-        check(candidate.error());
-    } else if (candidate->capture_compatible()) indexed = &original.tensor;
+    if (execution.kind() == hyle::inference::BackendKind::kCuda) {
+      const std::array inputs{dense(Type::kBFloat16, {shape[0], 1, shape[1]}),
+          dense(Type::kFloat32, {1, 1, shape[1]}), dense(Type::kInt32, {1, rows})};
+      const std::array outputs{dense(Type::kFloat32, {1, rows, 1})};
+      // Descriptor preparation proves the actual capture contract without
+      // reading any payload.
+      auto candidate = c::prepare(*take(execution.common_context()),
+          c::model_ops::grouped_matmul(), inputs, outputs, execution.device());
+      if (!candidate) {
+        if (!candidate.error().IsUnimplemented() || candidate.error().has_native_error())
+          check(candidate.error());
+      } else if (candidate->capture_compatible()) indexed = &original.tensor;
+    }
+#if defined(HYLE_COMPUTE_APPLE) && defined(__APPLE__)
+    if (execution.kind() == hyle::inference::BackendKind::kApple && !execution.has_cpu_assist() &&
+        c::apple::supports_indexed_bfloat_projection(shape[0], shape[1], rows))
+      indexed = &original.tensor;
+#endif
   }
   LoadedWeight selected;
   if (!indexed) selected = select_stored_weight_rows(execution, original, mapping.ids(), allocation_budget);

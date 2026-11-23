@@ -4,9 +4,11 @@
 #include "../../src/compute_route_apple/apple_bfloat_projection.h"
 
 #include <array>
+#include <bit>
 #include <cstdint>
 #include <optional>
 #include <utility>
+#include <vector>
 
 #include <gtest/gtest.h>
 
@@ -100,6 +102,8 @@ TEST(AppleMemoryLifetime, PackedBFloatProjectionSharesOnlyItsOriginalBudgetAndBa
   values[1] = 0x8000; // Preserve the sign of zero.
   values[2] = 0xbf80;
   values[64] = 0x0080; // This block cannot use the short exponent range.
+  values[128] = 0x4000;
+  values[192] = 0x4040;
   auto buffer = m::Buffer::create(resource, sizeof(values), 256).value();
   ASSERT_TRUE(buffer.view().write(std::as_bytes(std::span(values))).ok());
   auto source = owner.adopt_buffer(std::move(buffer)).value();
@@ -120,6 +124,37 @@ TEST(AppleMemoryLifetime, PackedBFloatProjectionSharesOnlyItsOriginalBudgetAndBa
   EXPECT_EQ(exponents[0], 127u);
   EXPECT_EQ(exponents[1], 255u);
   EXPECT_EQ(first->packed[0].data<std::uint32_t>()[0] & 0xffffffu, 0x808000u);
+
+  // Exercise row order, the original-block fallback and F32 activations in
+  // both the shared companion and the route used when its budget is refused.
+  std::array<float, 256> weights;
+  for (std::size_t i = 0; i < weights.size(); ++i)
+    weights[i] = std::bit_cast<float>(static_cast<std::uint32_t>(values[i]) << 16);
+  std::array<float, 64> activation;
+  activation.fill(1.F);
+  constexpr auto fraction = 1.F / 512.F;
+  activation[0] += fraction;
+  const std::array inputs{mx::array(weights.data(), {4, 1, 64}, mx::bfloat16),
+      mx::array(activation.data(), {1, 1, 64}), mx::array({3, 1, 0, 2}, {1, 4}, mx::int32)};
+  const std::array expected{66.F + 3.F * fraction, 63.F, 61.F + fraction, 65.F + 2.F * fraction};
+  for (const auto &companion : {first, decltype(first){}}) {
+    auto program = context.compile([companion](const auto &args, mx::Stream stream)
+        -> hyle::Result<std::vector<mx::array>> {
+      return std::vector{a::detail::lower_indexed_bfloat_projection(
+          companion.get(), args[0], args[1], args[2], stream)};
+    }, inputs);
+    ASSERT_TRUE(program) << program.error().message();
+    auto invocation = program->create_invocation().value();
+    ASSERT_TRUE(invocation.bind(inputs).ok());
+    auto completion = invocation.submit().value();
+    auto result = completion.wait();
+    ASSERT_TRUE(result) << result.error().message();
+    const auto &scores = result->get()->arrays().front();
+    ASSERT_EQ(scores.shape(), (mx::Shape{1, 4, 1}));
+    ASSERT_EQ(scores.dtype(), mx::float32);
+    for (std::size_t i = 0; i < expected.size(); ++i)
+      EXPECT_FLOAT_EQ(scores.data<float>()[i], expected[i]);
+  }
 
   auto smaller = make_budget(packed_bytes - 1);
   EXPECT_FALSE(a::detail::prepare_bfloat_projection(runtime, original, owner, source, smaller).value());

@@ -28,6 +28,7 @@
 #include <string>
 #include <unordered_map>
 #include <utility>
+#include <vector>
 #include <mlx/ops.h>
 #include <mlx/allocator.h>
 
@@ -44,6 +45,7 @@ struct Node {
   bool control_boundary = false;
   bool preserve_outputs = false;
   ca::detail::RegionKind carrier = ca::detail::RegionKind::kMlx;
+  bool indexed_bfloat_projection = false;
   std::shared_ptr<const ca::detail::PreparedBFloatProjection> packed_projection;
 };
 
@@ -94,9 +96,76 @@ Status match(const compute::TensorDesc &description, const mx::array &value) {
   return Status::Ok();
 }
 
+const ConstantBinding *find_constant(const RegionCompileRequest &boundary, std::size_t ordinal) {
+  const auto found = std::ranges::find_if(boundary.constants,
+      [&](const ConstantBinding &value) { return value.value.ordinal() == ordinal; });
+  return found == boundary.constants.end() ? nullptr : &*found;
+}
+
+// A canonical constant may already be a boundary view, or the reshape may
+// still be inside this region. Both keep the exact original immutable bytes.
+const ConstantBinding *find_reshaped_constant(const RegionCompileRequest &boundary,
+    const Plan &plan, std::size_t ordinal, const compute::TensorDesc &canonical) {
+  if (const auto *binding = find_constant(boundary, ordinal);
+      binding && (binding->tensor.description() == plan.descriptions[ordinal] ||
+                  binding->tensor.description() == canonical))
+    return binding;
+  for (const auto &prior : plan.nodes) {
+    const auto *view = prior.operation.get_if<compute::View>();
+    if (view && view->kind() == compute::ViewKind::kReshape &&
+        prior.inputs.size() == 1 && prior.outputs.size() == 1 && prior.outputs[0] == ordinal &&
+        plan.descriptions[prior.inputs[0]] == canonical)
+      return find_constant(boundary, prior.inputs[0]);
+  }
+  return nullptr;
+}
+
+Status prepare_indexed_bfloat_projection(const std::shared_ptr<ca::detail::Runtime> &runtime,
+    const RegionCompileRequest &boundary, const Plan &plan, Node &node,
+    std::span<const compute::TensorDesc> inputs) {
+  using compute::DataType;
+  using compute::TensorDesc;
+  if (inputs[0].rank() != 3 || inputs[1].rank() != 3 || inputs[2].rank() != 2)
+    return Status::Ok();
+  const auto weights = inputs[0].dimensions(), activation = inputs[1].dimensions(),
+             indices = inputs[2].dimensions();
+  if (!inputs[0].is_plain() || !inputs[0].is_dense() || inputs[0].data_type() != DataType::kBFloat16 ||
+      !inputs[1].is_dense() || !inputs[1].is_plain() || inputs[1].data_type() != DataType::kFloat32 ||
+      !inputs[2].is_dense() || !inputs[2].is_plain() || inputs[2].data_type() != DataType::kInt32 ||
+      weights[1] != 1 || activation[0] != 1 || activation[1] != 1 || activation[2] != weights[2] ||
+      indices[0] != 1 || !ca::supports_indexed_bfloat_projection(weights[0], weights[2], indices[1]))
+    return Status::Ok();
+
+  HYLE_ASSIGN_OR_RETURN(auto weight_description,
+      TensorDesc::dense(DataType::kBFloat16, std::array{weights[0], weights[2]}));
+  HYLE_ASSIGN_OR_RETURN(auto index_description, TensorDesc::dense(DataType::kInt32, std::array{indices[1]}));
+  const auto *weight = find_reshaped_constant(boundary, plan, node.inputs[0], weight_description);
+  const auto *ids = find_reshaped_constant(boundary, plan, node.inputs[2], index_description);
+  if (!weight || !weight->owner || !weight->lease || !ids || !ids->owner || !ids->lease)
+    return Status::Ok();
+
+  // This is a cold read of the immutable row map. Regular GroupedMatMul IDs
+  // (e.g. expert choices produced at runtime) keep their checked provider.
+  std::vector<std::int32_t> mapping(static_cast<std::size_t>(indices[1]));
+  const auto bytes = std::as_writable_bytes(std::span(mapping));
+  HYLE_ASSIGN_OR_RETURN(auto source, ids->tensor.storage().subview(0, bytes.size()));
+  HYLE_RETURN_IF_ERROR(source.read(bytes));
+  if (std::ranges::any_of(mapping, [&](auto id) { return id < 0 || id >= weights[0]; }))
+    return Status::OutOfRange("Apple indexed BF16 projection row is outside the immutable bank");
+
+  HYLE_ASSIGN_OR_RETURN(auto original, compute::ConstTensorView::create(weight_description, weight->tensor.storage()));
+  HYLE_ASSIGN_OR_RETURN(node.packed_projection, ca::detail::prepare_bfloat_projection(
+      runtime, original, weight->owner, weight->lease, boundary.resource_budget));
+  node.indexed_bfloat_projection = true;
+  node.carrier = ca::detail::RegionKind::kMlx;
+  return Status::Ok();
+}
+
 Status prepare_packed_projection(const std::shared_ptr<ca::detail::Runtime> &runtime,
     const RegionCompileRequest &boundary, const Plan &plan, Node &node,
     std::span<const compute::TensorDesc> inputs) {
+  if (inputs.size() == 3 && node.operation.custom_as<compute::model_ops::GroupedMatMul>())
+    return prepare_indexed_bfloat_projection(runtime, boundary, plan, node, inputs);
   if (inputs.size() != 2 || node.outputs.size() != 1) return Status::Ok();
   const bool scores = node.carrier == ca::detail::RegionKind::kGgml &&
       ca::detail::packed_bfloat_projection_eligible(node.operation, inputs[0], inputs[1]);
@@ -110,13 +179,8 @@ Status prepare_packed_projection(const std::shared_ptr<ca::detail::Runtime> &run
     HYLE_ASSIGN_OR_RETURN(description, inputs[1].transposed());
     if (!description.is_dense()) return Status::Ok();
   }
-  const auto find_constant = [&](std::size_t ordinal) -> const ConstantBinding * {
-    const auto entry = std::ranges::find_if(boundary.constants,
-        [&](const ConstantBinding &value) { return value.value.ordinal() == ordinal; });
-    return entry == boundary.constants.end() ? nullptr : &*entry;
-  };
   const auto ordinal = node.inputs[1];
-  auto weight = find_constant(ordinal);
+  auto weight = find_constant(boundary, ordinal);
   // A transpose can be an incoming constant alias or a view within the native
   // region. Both refer to the same original contiguous immutable rows.
   if (!weight && matmul) {
@@ -128,7 +192,7 @@ Status prepare_packed_projection(const std::shared_ptr<ca::detail::Runtime> &run
           prior.inputs.size() != 1 || prior.outputs.size() != 1 ||
           prior.outputs[0] != ordinal || plan.descriptions[prior.inputs[0]] != description)
         continue;
-      weight = find_constant(prior.inputs[0]);
+      weight = find_constant(boundary, prior.inputs[0]);
       break;
     }
   }
@@ -468,6 +532,9 @@ Result<std::vector<mx::array>> trace(const Plan &plan,
     }
     ca::detail::RowCacheAccessFacts row_access;
     auto fused = [&]() -> std::optional<mx::array> {
+      if (node.indexed_bfloat_projection)
+        return ca::detail::lower_indexed_bfloat_projection(node.packed_projection.get(),
+            arguments[0], arguments[1], arguments[2], stream);
       if (!node.packed_projection)
         return prepare_gated_projection(producers, uses, node, values, stream);
       const bool matmul = node.operation.get_if<compute::MatMul>() != nullptr;

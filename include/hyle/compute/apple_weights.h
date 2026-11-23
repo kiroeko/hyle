@@ -16,6 +16,11 @@
 namespace hyle::compute::apple {
 namespace detail { struct WeightState; struct WeightAccess; }
 
+// Cold Metal geometry for a single F32 activation selecting rows from the
+// original dense BF16 matrix. Graph still proves the immutable row binding.
+HYLE_COMPUTE_ROUTE_APPLE_API bool supports_indexed_bfloat_projection(
+    std::int64_t original_rows, std::int64_t width, std::int64_t selected_rows) noexcept;
+
 struct WeightSpec final {
   std::uint64_t id = 0;
   TensorDesc description{};
