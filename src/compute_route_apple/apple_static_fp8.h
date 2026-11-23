@@ -3,12 +3,16 @@
 #include "hyle/compute/detail/apple_plan.h"
 #include "../compute_packed_shared/static_fp8_linear.h"
 
+#include <optional>
+
 namespace hyle::compute::apple::detail {
 bool is_mlx_float8_cast(const Operation &, std::span<const TensorDesc>) noexcept;
 bool is_mlx_exact_binary(const Operation &, std::span<const TensorDesc>) noexcept;
 Result<std::vector<mlx::core::array>> lower_exact_binary(
     const Operation &, std::span<const TensorDesc>,
     std::span<const mlx::core::array>, mlx::core::Stream);
+HYLE_COMPUTE_ROUTE_APPLE_API std::optional<mlx::core::array> lower_bfloat_silu_product(
+    const mlx::core::array &gate, const mlx::core::array &up, mlx::core::Stream);
 Result<std::vector<mlx::core::array>> lower_float8_cast(
     const Operation &, std::span<const TensorDesc>,
     std::span<const mlx::core::array>, mlx::core::Stream);

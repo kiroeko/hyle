@@ -2,6 +2,7 @@
 #include "../compute_route_apple/apple_bfloat_projection.h"
 #include "../compute_route_apple/apple_carrier.h"
 #include "../compute_route_apple/apple_sequence.h"
+#include "../compute_route_apple/apple_static_fp8.h"
 #include "hyle/compute/low_precision.h"
 #include "hyle/compute/workload_semantics.h"
 #include "hyle/compute/model_ops.h"
@@ -481,8 +482,11 @@ std::optional<mx::array> prepare_gated_projection(
       values[node.inputs[1]]->dtype() != mx::bfloat16)
     return std::nullopt;
   const auto &x = *values[gate->inputs[0]];
-  return ca::detail::lower_short_bfloat_gated_projection(x,
-      *values[gate->inputs[1]], *values[up->inputs[1]], stream);
+  if (auto short_projection = ca::detail::lower_short_bfloat_gated_projection(x,
+      *values[gate->inputs[1]], *values[up->inputs[1]], stream))
+    return short_projection;
+  return ca::detail::lower_bfloat_silu_product(
+      *values[activate->inputs[0]], *values[node.inputs[1]], stream);
 }
 
 Result<std::vector<mx::array>> trace(const Plan &plan,

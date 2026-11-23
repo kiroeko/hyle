@@ -202,6 +202,50 @@ Result<std::vector<mx::array>> lower_exact_binary(const Operation &operation,
   return std::vector{mx::view(values[0],mx::float32,stream)};
 }
 
+std::optional<mx::array> lower_bfloat_silu_product(
+    const mx::array &gate, const mx::array &up, mx::Stream stream) {
+  if (stream.device.type != mx::Device::gpu || gate.ndim() != 2 ||
+      gate.shape() != up.shape() || gate.dtype() != mx::bfloat16 ||
+      up.dtype() != mx::bfloat16 || gate.shape(0) < 256 ||
+      gate.size() > static_cast<std::size_t>(std::numeric_limits<int>::max()))
+    return std::nullopt;
+  constexpr int threads = 256;
+  const auto count = gate.size();
+  if (!count) return std::nullopt;
+  const auto shape = grid((count + threads - 1) / threads);
+  if (!shape) return std::nullopt;
+  static const auto header = kernel_header();
+  static const auto kernel = mx::fast::metal_kernel("hyle_bfloat_silu_product",
+      {"gate", "up"}, {"output"}, R"METAL(
+    const uint at = uint(thread_position_in_grid.y) * GRID_X + thread_position_in_grid.x;
+    if (at >= COUNT) return;
+    const uint gate_bits = uint(gate[at]) << 16;
+    const float x = as_type<float>(gate_bits);
+    const float y = 1.0f / (1.0f + metal::exp(metal::abs(x)));
+    const float silu = gate_bits == 0xff800000u ? 0.0f : x * (x < 0.0f ? y : 1.0f - y);
+    const uint a = uint(as_type<ushort>(bfloat16_t(silu))) << 16;
+    const uint b = uint(up[at]) << 16;
+    const uint mag_a = a & 0x7fffffffu, mag_b = b & 0x7fffffffu;
+    if (mag_a >= 0x00800000u && mag_a < 0x7f800000u &&
+        mag_b >= 0x00800000u && mag_b < 0x7f800000u) {
+      const uint product = as_type<uint>(as_type<float>(a) * as_type<float>(b));
+      const uint mag = product & 0x7fffffffu;
+      if (mag >= 0x00800000u && mag < 0x7f800000u) {
+        output[at] = ushort(hyle_ct_narrow(product, 2));
+        return;
+      }
+    }
+    output[at] = ushort(hyle_ct_narrow(hyle_f32_mul(a, b), 2));
+  )METAL", header);
+  // Both projections already round to BF16. Preserve the extra BF16
+  // rounding of SiLU and the original exact product, including subnormals.
+  auto result = kernel({mx::view(gate, mx::uint16, stream), mx::view(up, mx::uint16, stream)},
+      {gate.shape()}, {mx::uint16}, {(*shape)[0] * threads, (*shape)[1], 1}, {threads, 1, 1},
+      {{"GRID_X", (*shape)[0] * threads}, {"COUNT", static_cast<int>(count)}},
+      std::nullopt, false, stream).front();
+  return mx::view(result, mx::bfloat16, stream);
+}
+
 Result<std::vector<mx::array>> lower_float8_cast(const Operation &operation,
     std::span<const TensorDesc> descriptions, std::span<const mx::array> inputs, mx::Stream stream) {
   if (!is_mlx_float8_cast(operation, descriptions) || stream.device.type != mx::Device::gpu)
