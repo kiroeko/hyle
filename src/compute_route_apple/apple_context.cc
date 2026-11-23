@@ -2316,21 +2316,24 @@ Result<Program> detail::PagedBatchAccess::prepare_runtime_program(std::shared_pt
     BatchLayoutVersion initial,std::span<const InputSpec> inputs,RuntimeFunction build,
     const WorkloadContext& workload,bool causal,std::int32_t window_left) noexcept {
   try {
-    HYLE_ASSIGN_OR_RETURN(auto program,ContextAccess::compile(std::move(runtime),
-        [initial,build](const std::vector<mx::array>& args,mx::Stream stream){return build(initial,args,stream);},
-        inputs,workload));
-    // Short plain BF16 paged reads can hand their original completion to
-    // the next native consumer. Select the tail with the prepared recipe.
     const auto capacity = initial.origin_schema().capacity();
-    const bool short_query = inputs.size() == 4 && inputs[0].shape.size() == 3 &&
-        inputs[0].shape[0] > 0 && inputs[0].shape[0] <= 8;
-    program.state_->device_prefix = short_query && capacity.storage == BatchStorage::kPaged &&
+    const bool plain_paged = inputs.size() == 4 && capacity.storage == BatchStorage::kPaged &&
         capacity.query_type == DataType::kBFloat16 &&
         capacity.key_storage == CacheStorage::plain(capacity.query_type).value() &&
         capacity.value_storage == capacity.key_storage;
-    auto& compiled=program.state_->compiled;
+    // Trace large native paged reads here. The original Invocation evaluates
+    // the first real input and owns its failure and retirement.
+    const auto example_output = plain_paged && initial.facts().query_rows > 8
+        ? MlxExampleOutput::kTraceOnly : MlxExampleOutput::kEvaluate;
+    HYLE_ASSIGN_OR_RETURN(auto program,compile_region_state(std::move(runtime),
+        [initial,build](const std::vector<mx::array>& args,mx::Stream stream){return build(initial,args,stream);},
+        inputs,workload,{},example_output));
+    // Short plain BF16 paged reads keep their original native handoff.
+    program->device_prefix = plain_paged && inputs[0].shape.size() == 3 &&
+        inputs[0].shape[0] > 0 && inputs[0].shape[0] <= 8;
+    auto& compiled=program->compiled;
     compiled=RuntimeBatchFunction{std::move(initial),std::move(build),causal,window_left,std::move(compiled)};
-    return program;
+    return Program(std::move(program));
   } catch(...) {return std::unexpected(native_exception());}
 }
 Status detail::PagedBatchAccess::update_layout(Invocation& invocation,
