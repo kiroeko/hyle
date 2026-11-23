@@ -484,6 +484,39 @@ void prepare_gdn_inputs(const Plan &plan, std::span<const Node *const> producers
   prepare_conv_gdn_inputs(plan, producers, node, *q, *k, packed, values, arguments, stream);
 }
 
+std::optional<mx::array> prepare_residual_rms(std::span<const Node *const> producers,
+    std::span<const std::uint8_t> uses, const Node &node,
+    std::vector<std::optional<mx::array>> &values, mx::Stream stream) {
+  using namespace compute;
+  const auto *output = node.operation.get_if<Cast>();
+  if (!output || output->output_type != DataType::kBFloat16 || node.inputs.size() != 1)
+    return {};
+  const auto *norm_node = producers[node.inputs[0]];
+  const auto *norm = norm_node ? norm_node->operation.get_if<RmsNorm>() : nullptr;
+  if (!norm || norm->accumulation_type != DataType::kFloat32 || norm_node->inputs.size() != 2 ||
+      uses[node.inputs[0]] != 1 || norm_node->preserve_outputs || norm_node->control_boundary ||
+      values[node.inputs[0]]->dtype() != mx::float32)
+    return {};
+  const auto *widen = producers[norm_node->inputs[0]];
+  const auto *cast = widen ? widen->operation.get_if<Cast>() : nullptr;
+  if (!cast || cast->output_type != DataType::kFloat32 || widen->inputs.size() != 1 ||
+      uses[norm_node->inputs[0]] != 1 || widen->preserve_outputs || widen->control_boundary)
+    return {};
+  const auto residual = widen->inputs[0];
+  const auto *add_node = producers[residual];
+  const auto *add = add_node ? add_node->operation.get_if<Binary>() : nullptr;
+  if (!add || add->kind != BinaryKind::kAdd || add_node->inputs.size() != 2 || uses[residual] != 2 ||
+      add_node->preserve_outputs || add_node->control_boundary || values[residual]->dtype() != mx::bfloat16)
+    return {};
+
+  auto pair = ca::detail::lower_bfloat_residual_rms(*values[add_node->inputs[0]],
+      *values[add_node->inputs[1]], *values[norm_node->inputs[1]], norm->epsilon, stream);
+  if (!pair) return {};
+  // Later skip connections read the same residual from the combined producer.
+  values[residual] = std::move((*pair)[0]);
+  return std::move((*pair)[1]);
+}
+
 std::optional<mx::array> prepare_gated_projection(
     std::span<const Node *const> producers, std::span<const std::uint8_t> uses,
     const Node &node, const std::vector<std::optional<mx::array>> &values, mx::Stream stream) {
@@ -570,8 +603,11 @@ Result<std::vector<mx::array>> trace(const Plan &plan,
       if (node.indexed_bfloat_projection)
         return ca::detail::lower_indexed_bfloat_projection(node.packed_projection.get(),
             arguments[0], arguments[1], arguments[2], stream);
-      if (!node.packed_projection)
+      if (!node.packed_projection) {
+        if (auto normalized = prepare_residual_rms(producers, uses, node, values, stream))
+          return normalized;
         return prepare_gated_projection(producers, uses, node, values, stream);
+      }
       const bool matmul = node.operation.get_if<compute::MatMul>() != nullptr;
       const auto weights = matmul ? mx::transpose(arguments[1], stream) : arguments[1];
       return ca::detail::lower_packed_bfloat_projection(*node.packed_projection, weights,

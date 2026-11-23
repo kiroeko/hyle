@@ -700,6 +700,51 @@ Result<std::vector<mx::array>> lower_attention_math_block(
   }
 }
 
+std::optional<std::array<mx::array, 2>> lower_bfloat_residual_rms(
+    const mx::array &x, const mx::array &delta, const mx::array &weight,
+    float epsilon, mx::Stream stream) {
+  if (stream.device != mx::Device::gpu || x.ndim() != 2 || x.shape(0) < 32 ||
+      x.dtype() != mx::bfloat16 || delta.dtype() != x.dtype() || delta.shape() != x.shape() ||
+      weight.ndim() != 1 || weight.dtype() != mx::float32 || weight.shape(0) != x.shape(1) ||
+      x.size() > std::numeric_limits<int>::max())
+    return std::nullopt;
+  const int width = x.shape(1);
+  if (width < 128 || width > 4096 || width % 128 != 0) return std::nullopt;
+
+  // Publish the rounded residual for the skip connection and use the same
+  // rounded values in the native F32 RMS reduction.
+  static const auto kernel = mx::fast::metal_kernel("hyle_bfloat_residual_rms",
+      {"x", "delta", "gamma", "epsilon"}, {"residual", "normalized"}, R"METAL(
+    const uint tid = thread_position_in_threadgroup.x;
+    const uint lane = thread_index_in_simdgroup;
+    const uint subgroup = simdgroup_index_in_threadgroup;
+    const uint column = tid * 4;
+    const uint start = threadgroup_position_in_grid.x * WIDTH + column;
+    float cells[4], acc = 0.0f;
+    for (uint i = 0; i < 4; ++i) {
+      bfloat16_t rounded = bfloat16_t(float(x[start + i]) + float(delta[start + i]));
+      cells[i] = float(rounded);
+      acc += cells[i] * cells[i];
+      residual[start + i] = rounded;
+    }
+    float partial = simd_sum(acc);
+    threadgroup float sums[32], multiplier;
+    if (lane == 0) sums[subgroup] = partial;
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+    if (subgroup == 0) {
+      float total = simd_sum(lane < WIDTH / 128 ? sums[lane] : 0.0f);
+      if (lane == 0) multiplier = precise::rsqrt(total / WIDTH + epsilon);
+    }
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+    for (uint i = 0; i < 4; ++i)
+      normalized[start + i] = bfloat16_t(gamma[column + i] * (cells[i] * multiplier));
+  )METAL", "", true, false, mx::CompileOptions{});
+  auto outputs = kernel({x, delta, weight, mx::array(epsilon)}, {x.shape(), x.shape()},
+      {mx::bfloat16, mx::bfloat16}, {static_cast<int>(x.size() / 4), 1, 1}, {width / 4, 1, 1},
+      {{"WIDTH", width}}, std::nullopt, false, stream);
+  return std::array{std::move(outputs[0]), std::move(outputs[1])};
+}
+
 std::optional<mx::array> lower_short_bfloat_gated_projection(
     const mx::array &activation, const mx::array &gate, const mx::array &up,
     mx::Stream stream) {

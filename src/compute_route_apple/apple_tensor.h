@@ -2,6 +2,7 @@
 
 #include "hyle/compute/apple.h"
 
+#include <array>
 #include <optional>
 
 namespace hyle::compute::apple::detail {
@@ -25,6 +26,9 @@ struct PreparedMlxAffineMetadata final {
 HYLE_COMPUTE_ROUTE_APPLE_API std::optional<mlx::core::array>
 lower_short_bfloat_gated_projection(const mlx::core::array &, const mlx::core::array &,
     const mlx::core::array &, mlx::core::Stream);
+HYLE_COMPUTE_ROUTE_APPLE_API std::optional<std::array<mlx::core::array, 2>>
+lower_bfloat_residual_rms(const mlx::core::array &x, const mlx::core::array &delta,
+    const mlx::core::array &weight, float epsilon, mlx::core::Stream stream);
 
 Result<std::vector<mlx::core::array>>
 lower_tensor(const Operation &operation,
