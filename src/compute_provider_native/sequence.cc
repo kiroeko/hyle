@@ -17,6 +17,9 @@
 #if HYLE_ARCH_X64 && (HYLE_COMPILER_MSVC || HYLE_COMPILER_GCC || HYLE_COMPILER_CLANG)
 #define HYLE_NATIVE_SEQUENCE_AVX2 1
 #include <immintrin.h>
+#elif HYLE_ARCH_ARM64 && (HYLE_COMPILER_GCC || HYLE_COMPILER_CLANG)
+#define HYLE_NATIVE_SEQUENCE_NEON 1
+#include <arm_neon.h>
 #endif
 
 namespace hyle::compute::native::internal {
@@ -175,15 +178,42 @@ void run_gdn(void *context, std::size_t, std::size_t begin, std::size_t end) noe
 }
 
 
-#if defined(HYLE_NATIVE_SEQUENCE_AVX2)
-inline constexpr std::size_t kChannelTile = 8;
+#if defined(HYLE_NATIVE_SEQUENCE_AVX2) || defined(HYLE_NATIVE_SEQUENCE_NEON)
 inline constexpr std::size_t kKeyTileCapacity = 256;
+
+#if defined(HYLE_NATIVE_SEQUENCE_AVX2) && (HYLE_COMPILER_GCC || HYLE_COMPILER_CLANG)
+#define HYLE_GDN_TILE_TARGET __attribute__((target("avx2,fma")))
+#else
+#define HYLE_GDN_TILE_TARGET
+#endif
+
+#if defined(HYLE_NATIVE_SEQUENCE_AVX2)
+using ChannelVector = __m256;
+inline constexpr std::size_t kChannelTile = 8;
+
+HYLE_GDN_TILE_TARGET HYLE_FORCE_INLINE ChannelVector channels_broadcast(float a) { return _mm256_set1_ps(a); }
+HYLE_GDN_TILE_TARGET HYLE_FORCE_INLINE ChannelVector channels_load(const float *a) { return _mm256_loadu_ps(a); }
+HYLE_GDN_TILE_TARGET HYLE_FORCE_INLINE void channels_store(float *p, ChannelVector a) { _mm256_storeu_ps(p, a); }
+HYLE_GDN_TILE_TARGET HYLE_FORCE_INLINE ChannelVector channels_mul(ChannelVector a, ChannelVector b) { return _mm256_mul_ps(a, b); }
+HYLE_GDN_TILE_TARGET HYLE_FORCE_INLINE ChannelVector channels_sub(ChannelVector a, ChannelVector b) { return _mm256_sub_ps(a, b); }
+HYLE_GDN_TILE_TARGET HYLE_FORCE_INLINE ChannelVector channels_fma(ChannelVector a, float b, ChannelVector c) {
+  return _mm256_fmadd_ps(a, channels_broadcast(b), c);
+}
+#else
+using ChannelVector = float32x4_t;
+inline constexpr std::size_t kChannelTile = 4;
+
+HYLE_FORCE_INLINE ChannelVector channels_broadcast(float a) { return vdupq_n_f32(a); }
+HYLE_FORCE_INLINE ChannelVector channels_load(const float *a) { return vld1q_f32(a); }
+HYLE_FORCE_INLINE void channels_store(float *p, ChannelVector a) { vst1q_f32(p, a); }
+HYLE_FORCE_INLINE ChannelVector channels_mul(ChannelVector a, ChannelVector b) { return vmulq_f32(a, b); }
+HYLE_FORCE_INLINE ChannelVector channels_sub(ChannelVector a, ChannelVector b) { return vsubq_f32(a, b); }
+HYLE_FORCE_INLINE ChannelVector channels_fma(ChannelVector a, float b, ChannelVector c) { return vfmaq_n_f32(c, a, b); }
+#endif
 
 // Each lane owns one value channel. The F32 accumulators traverse keys in
 // the original order and the tile is private to this GDN range invocation.
-#if HYLE_COMPILER_GCC || HYLE_COMPILER_CLANG
-__attribute__((target("avx2,fma")))
-#endif
+HYLE_GDN_TILE_TARGET
 void run_gdn_channel_tile(void *context, std::size_t, std::size_t begin,
                           std::size_t end) noexcept {
   const auto &episode = *static_cast<GdnEpisode<float> *>(context);
@@ -197,10 +227,12 @@ void run_gdn_channel_tile(void *context, std::size_t, std::size_t begin,
   const auto initial_state = reinterpret_cast<const float *>(maps.source[5]);
   auto *values = reinterpret_cast<float *>(maps.target[0]);
   auto *final_state = reinterpret_cast<float *>(maps.target[1]);
-  const auto scale = _mm256_set1_ps(episode.plan->scalar);
+  const auto scale = channels_broadcast(episode.plan->scalar);
+#if defined(HYLE_NATIVE_SEQUENCE_AVX2)
   const auto strides = _mm256_mullo_epi32(_mm256_setr_epi32(0, 1, 2, 3, 4, 5, 6, 7),
                                          _mm256_set1_epi32(static_cast<int>(dk)));
-  alignas(32) __m256 state[kKeyTileCapacity];
+#endif
+  ChannelVector state[kKeyTileCapacity];
   for (auto tile = begin; tile != end; ++tile) {
     const auto unit = tile * kChannelTile;
     const auto batch = unit / (heads * dv), head = unit / dv % heads, channel = unit % dv;
@@ -211,37 +243,45 @@ void run_gdn_channel_tile(void *context, std::size_t, std::size_t begin,
       std::memcpy(result_state, initial, kChannelTile * dk * sizeof(float));
       continue;
     }
-    for (std::size_t key = 0; key != dk; ++key)
+    for (std::size_t key = 0; key != dk; ++key) {
+#if defined(HYLE_NATIVE_SEQUENCE_AVX2)
       state[key] = _mm256_i32gather_ps(initial + key, strides, 4);
+#else
+      const float column[kChannelTile] = {
+          initial[key], initial[dk + key], initial[2 * dk + key], initial[3 * dk + key]};
+      state[key] = channels_load(column);
+#endif
+    }
     for (auto row = first; row != last; ++row) {
       const auto key_base = (row * episode.key_heads + head % episode.key_heads) * dk;
       const auto gate_index = row * heads + head;
       const auto value_index = gate_index * dv + channel;
-      const auto decay = _mm256_set1_ps(std::exp(gate[gate_index]));
-      auto prediction = _mm256_setzero_ps();
+      const auto decay = channels_broadcast(std::exp(gate[gate_index]));
+      auto prediction = channels_broadcast(0.0F);
       for (std::size_t key = 0; key != dk; ++key) {
-        const auto decayed = _mm256_mul_ps(state[key], decay);
-        prediction = _mm256_fmadd_ps(decayed, _mm256_set1_ps(k[key_base + key]), prediction);
+        const auto decayed = channels_mul(state[key], decay);
+        prediction = channels_fma(decayed, k[key_base + key], prediction);
         state[key] = decayed;
       }
-      const auto remaining = _mm256_sub_ps(_mm256_loadu_ps(v + value_index), prediction);
-      const auto delta = _mm256_mul_ps(_mm256_set1_ps(beta[gate_index]), remaining);
-      auto attended = _mm256_setzero_ps();
+      const auto remaining = channels_sub(channels_load(v + value_index), prediction);
+      const auto delta = channels_mul(channels_broadcast(beta[gate_index]), remaining);
+      auto attended = channels_broadcast(0.0F);
       for (std::size_t key = 0; key != dk; ++key) {
-        const auto updated = _mm256_fmadd_ps(delta, _mm256_set1_ps(k[key_base + key]), state[key]);
-        attended = _mm256_fmadd_ps(updated, _mm256_set1_ps(q[key_base + key]), attended);
+        const auto updated = channels_fma(delta, k[key_base + key], state[key]);
+        attended = channels_fma(updated, q[key_base + key], attended);
         state[key] = updated;
       }
-      _mm256_storeu_ps(values + value_index, _mm256_mul_ps(attended, scale));
+      channels_store(values + value_index, channels_mul(attended, scale));
     }
     alignas(32) float column[kChannelTile];
     for (std::size_t key = 0; key != dk; ++key) {
-      _mm256_store_ps(column, state[key]);
+      channels_store(column, state[key]);
       for (std::size_t lane = 0; lane != kChannelTile; ++lane)
         result_state[lane * dk + key] = column[lane];
     }
   }
 }
+#undef HYLE_GDN_TILE_TARGET
 #endif
 
 template <class Value, bool Prefixes = false, bool HardwareFma = false, bool ChannelTile = false>
@@ -267,7 +307,7 @@ detail::EnqueueResult submit_gdn(const NativePlan &plan, std::span<const ConstTe
         static_cast<std::size_t>(inputs[0].description().dimensions()[1]),
         static_cast<std::size_t>(state[1]), static_cast<std::size_t>(state[3]),
         static_cast<std::size_t>(state[2]), static_cast<std::size_t>(inputs[3].description().dimensions()[2])};
-#if defined(HYLE_NATIVE_SEQUENCE_AVX2)
+#if defined(HYLE_NATIVE_SEQUENCE_AVX2) || defined(HYLE_NATIVE_SEQUENCE_NEON)
     if constexpr (ChannelTile) {
       parallel_for_ranges(plan, plan.parameters[0] / kChannelTile, &run_gdn_channel_tile, &episode);
     } else
@@ -362,14 +402,18 @@ Status prepare_sequence(Operation operation, std::span<const TensorDesc> inputs,
     plan.scalar_bits = gdn->snapshot_count;
     plan.scalar = gdn->output_scale.value_or(1.0F / std::sqrt(static_cast<float>(state[3])));
     plan.submit_route = select_gdn_submit<>(type);
-#if defined(HYLE_NATIVE_SEQUENCE_AVX2)
+#if defined(HYLE_NATIVE_SEQUENCE_AVX2) || defined(HYLE_NATIVE_SEQUENCE_NEON)
     // The copy into a channel tile is amortized by more than one row.
     // Each sequence has one final state and one gate per value head.
+#if defined(HYLE_NATIVE_SEQUENCE_AVX2)
     using enum platform::CpuFeature;
+    const bool tile_available = platform::cpu_features().has_all(platform::CpuFeatureSet{kX86Avx2, kX86Fma});
+#else
+    constexpr bool tile_available = true;
+#endif
     if (type == DataType::kFloat32 && gdn->snapshot_count == 1 &&
         inputs[0].dimensions()[0] > 1 && inputs[3].dimensions()[2] == 1 &&
-        state[2] % kChannelTile == 0 && state[3] <= kKeyTileCapacity &&
-        platform::cpu_features().has_all(platform::CpuFeatureSet{kX86Avx2, kX86Fma}))
+        state[2] % kChannelTile == 0 && state[3] <= kKeyTileCapacity && tile_available)
       plan.submit_route = &submit_gdn<float, false, true, true>;
 #endif
 
