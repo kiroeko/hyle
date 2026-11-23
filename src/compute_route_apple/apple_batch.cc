@@ -144,11 +144,11 @@ Result<Program> detail::PagedBatchAccess::prepare_paged_graph(std::shared_ptr<Ru
           continue;
         }
         auto q=mlx::core::transpose(mlx::core::reshape(sliced[0],{1,nq,int(c.query_heads),int(c.qk_head_dim)},stream),{0,2,1,3},stream);
-        // A 512-query tile amortizes gathering the live BF16 pages. Bound the
+        // A prefill tile amortizes gathering the live BF16 pages. Bound the
         // two temporary dense caches to 64 MiB per request.
         const auto dense_cache_bytes = std::uint64_t(refs) * c.page_size * c.kv_heads *
             (c.qk_head_dim + c.value_head_dim) * sizeof(std::uint16_t);
-        if (plain_bf16 && nq == 512 && dense_cache_bytes <= 64u * 1024 * 1024) {
+        if (plain_bf16 && nq >= 128 && nq <= 512 && dense_cache_bytes <= 64u * 1024 * 1024) {
           namespace mx = mlx::core;
           const auto pages = mx::slice(inputs[3], {host.kv_indptr[r]}, {host.kv_indptr[r+1]}, stream);
           auto key = dense_prefill_cache(inputs[1], pages, int(nk), int(c.kv_heads), 256, stream);
