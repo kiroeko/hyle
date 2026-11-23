@@ -29,6 +29,10 @@ Context在准备期预留最大单矩阵的转换临时区，执行期间复用�
 BLAS片段在提交线程执行，要求实际可用的macOS15线程局部控制，并在返回前恢复调用方政策；
 不满足这项能力的系统保留原CPU程序。完成、取消和资源回收沿用原同步执行合同。
 
+Apple Silicon 纯 CPU 的默认 native 团队可按可用核心数扩大。单行大 BF16 投影在图准备时可以使用扩大后的团队，多行矩阵与常规运算按性能核数量确定线程数。所有计划共用原线程池，扩大后的团队在等待作业时休眠。
+
+符合形状约束的 F32 packed GDN 使用 AVX2 或 Arm64 NEON 按独立值通道执行。各通道保留原来的逐键 FMA 顺序和状态格式。
+
 ## CUDA
 
 cuBLAS/cuBLASLt、原生kernel和ggml等完整region互补。准备时完成适用的handle、stream、tactic、

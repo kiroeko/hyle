@@ -7,6 +7,7 @@
 
 int main() {
   using namespace hyle;
+  using enum inference::CpuNativeThreadPreference;
   using platform::CpuCacheClassInfo;
   using platform::CpuKind;
   using platform::ProcessCpuCapacity;
@@ -25,16 +26,23 @@ int main() {
   const std::array guest{
       CpuCacheClassInfo{.logical_cpus = 32, .physical_cores = 16}};
   check(inference::select_cpu_native_threads(guest, {32}, 32) == 16);
-  check(inference::select_cpu_native_threads(guest, {32}, 32, true) == 8);
-  check(inference::select_cpu_native_threads(guest, {4}, 32, true) == 4);
-  check(inference::select_cpu_native_threads(guest, {32}, 6, true) == 6);
+  check(inference::select_cpu_native_threads(guest, {32}, 32, kCompactUniformGuest) == 8);
+  check(inference::select_cpu_native_threads(guest, {4}, 32, kCompactUniformGuest) == 4);
+  check(inference::select_cpu_native_threads(guest, {32}, 6, kCompactUniformGuest) == 6);
   const std::array ranked_guest{
       CpuCacheClassInfo{.kind = CpuKind::kPerformance, .logical_cpus = 32, .physical_cores = 16}};
-  check(inference::select_cpu_native_threads(ranked_guest, {32}, 32, true) == 8);
+  check(inference::select_cpu_native_threads(ranked_guest, {32}, 32, kCompactUniformGuest) == 8);
   const std::array differentiated_guest{
       CpuCacheClassInfo{.kind = CpuKind::kPerformance, .logical_cpus = 24, .physical_cores = 12},
       CpuCacheClassInfo{.kind = CpuKind::kEfficiency, .logical_cpus = 8, .physical_cores = 8}};
-  check(inference::select_cpu_native_threads(differentiated_guest, {32}, 32, true) == 12);
+  check(inference::select_cpu_native_threads(differentiated_guest, {32}, 32, kCompactUniformGuest) == 12);
+  const std::array apple_silicon{
+      CpuCacheClassInfo{.kind = CpuKind::kPerformance, .logical_cpus = 4, .physical_cores = 4},
+      CpuCacheClassInfo{.kind = CpuKind::kEfficiency, .logical_cpus = 6, .physical_cores = 6}};
+  check(inference::select_cpu_native_threads(apple_silicon, {10}, 16, kWideMatrixTeam) == 8);
+  check(inference::select_cpu_native_threads(apple_silicon, {5}, 16, kWideMatrixTeam) == 5);
+  check(inference::select_cpu_native_threads(apple_silicon, {10}, 3, kWideMatrixTeam) == 3);
+  check(inference::select_cpu_native_threads(guest, {32}, 32, kWideMatrixTeam) == 16);
   check(inference::select_cpu_native_threads({}, {32}, 16) == 1);
   check(inference::select_cpu_native_threads(mixed, {}, 16) == 1);
   check(inference::select_cpu_native_threads(mixed, {32}, 1) == 1);

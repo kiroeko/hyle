@@ -17,6 +17,9 @@
 #include <new>
 #include <vector>
 #endif
+#if HYLE_OS_MACOS && HYLE_ARCH_ARM64
+#include "hyle/platform/cpu_convenience.h"
+#endif
 
 namespace hyle::compute::ggml_runtime {
 #if defined(__APPLE__)
@@ -33,6 +36,44 @@ struct CpuBlasSegments final {
 };
 #endif
 namespace {
+#if HYLE_OS_MACOS && HYLE_ARCH_ARM64
+int performance_threads(int budget) noexcept {
+  if (budget <= 1)
+    return budget;
+  const auto classes = platform::available_cpu_cache_classes();
+  int count = 0;
+  if (classes)
+    for (const auto &level : *classes)
+      if (level.kind == platform::CpuKind::kPerformance) {
+        const auto cores = level.physical_cores ? level.physical_cores : level.logical_cpus;
+        count += static_cast<int>((std::min)(cores, static_cast<unsigned>(budget - count)));
+      }
+  return count ? count : budget;
+}
+
+int plan_thread_count(const ggml_cgraph &graph, int performance, int budget) noexcept {
+  if (performance == budget)
+    return budget;
+  // Keep the extra workers for single-row BF16 projections with enough
+  // contiguous weight traffic per worker. Multirow matrices keep the
+  // compact team so prefill does not pay mixed-core barrier costs.
+  constexpr std::size_t bytes_per_worker = 128 * 1024;
+  const auto minimum_bytes = static_cast<std::size_t>(budget) * bytes_per_worker;
+  bool large_projection = false;
+  for (int index = 0; index < graph.n_nodes; ++index) {
+    const auto *node = graph.nodes[index];
+    if (node->op != GGML_OP_MUL_MAT || !node->src[0] || !node->src[1])
+      continue;
+    if (ggml_nrows(node->src[1]) != 1)
+      return performance;
+    const auto *weights = node->src[0];
+    large_projection |= weights->type == GGML_TYPE_BF16 && ggml_is_contiguous(weights) &&
+                        ggml_nbytes(weights) >= minimum_bytes;
+  }
+  return large_projection ? budget : performance;
+}
+#endif
+
 
 struct ActiveTeam final {
   const void *team;
@@ -136,6 +177,9 @@ private:
 struct CpuTeam::State final : util::RefCounted<State> {
   mem::AllocatorRef allocator;
   int threads;
+#if HYLE_OS_MACOS && HYLE_ARCH_ARM64
+  int preferred_threads;
+#endif
   const CpuProgram *program = nullptr;
   ggml_threadpool *pool = nullptr;
   std::mutex gate;
@@ -144,7 +188,11 @@ struct CpuTeam::State final : util::RefCounted<State> {
 #endif
 
   State(mem::AllocatorRef source, int count) noexcept
-      : allocator(source), threads(count) {}
+      : allocator(source), threads(count)
+#if HYLE_OS_MACOS && HYLE_ARCH_ARM64
+      , preferred_threads(performance_threads(count))
+#endif
+  {}
   void destroy() noexcept {
     const auto source = allocator;
     if (pool)
@@ -170,6 +218,12 @@ struct CpuTeam::State final : util::RefCounted<State> {
       selected_program->initialize();
     auto params = ggml_threadpool_params_default(threads);
     params.prio = GGML_SCHED_PRIO_NORMAL;
+#if HYLE_OS_MACOS && HYLE_ARCH_ARM64
+    // Compact plans use only part of an expanded team. Park unused workers
+    // between jobs so their polling does not compete with those plans.
+    if (threads != preferred_threads)
+      params.poll = 0;
+#endif
     int native_error = 0;
     auto *prepared = selected_program->create_pool(&params, &native_error);
     if (prepared == nullptr) {
@@ -287,15 +341,19 @@ Result<CpuExecution> CpuExecution::prepare(ggml_cgraph *graph,
     execution.program_ = state.program;
     // Planning reads the same native pool used by compute and is serialized
     // with it. Each slot still owns its independent plan and workspace.
+    int threads = state.threads;
+#if HYLE_OS_MACOS && HYLE_ARCH_ARM64
+    threads = plan_thread_count(*graph, state.preferred_threads, state.threads);
+#endif
 #if defined(__APPLE__)
     HYLE_ASSIGN_OR_RETURN(execution.blas_segments_, prepare_blas_segments(
-        graph, *state.program, state.threads, state.pool, allocator));
+        graph, *state.program, threads, state.pool, allocator));
     if (execution.blas_segments_) {
       HYLE_RETURN_IF_ERROR(state.prepare_blas(execution.blas_segments_->blas_bytes));
       execution.plan_.work_size = execution.blas_segments_->cpu_bytes;
     } else
 #endif
-    execution.plan_ = state.program->plan(graph, state.threads, state.pool);
+    execution.plan_ = state.program->plan(graph, threads, state.pool);
   }
   execution.plan_.abort_callback = abort;
   execution.plan_.abort_callback_data = abort_data;

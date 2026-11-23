@@ -699,7 +699,7 @@ private:
       if (capacity && classes)
         options.native_threads = select_cpu_native_threads(*classes, *capacity,
             compute::cpu::native_thread_limit(),
-            primary && uses_wsl2_guest_cpu_topology());
+            default_cpu_native_thread_preference(primary));
       HYLE_ASSIGN_OR_RETURN(endpoint.context, graph::cpu::create_context(options));
     }
     HYLE_ASSIGN_OR_RETURN(endpoint.memory, compute::cpu::memory_resource(compute::cpu::device()));

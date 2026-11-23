@@ -14,6 +14,12 @@
 
 namespace hyle::inference {
 
+enum class CpuNativeThreadPreference {
+  kPerformanceCores,
+  kCompactUniformGuest,
+  kWideMatrixTeam,
+};
+
 inline bool uses_wsl2_guest_cpu_topology() noexcept {
 #if HYLE_OS_LINUX && HYLE_ARCH_X64
   struct utsname kernel {};
@@ -24,6 +30,18 @@ inline bool uses_wsl2_guest_cpu_topology() noexcept {
 #endif
 }
 
+inline CpuNativeThreadPreference default_cpu_native_thread_preference(bool primary) noexcept {
+  if (primary) {
+#if HYLE_OS_MACOS && HYLE_ARCH_ARM64
+    return CpuNativeThreadPreference::kWideMatrixTeam;
+#else
+    if (uses_wsl2_guest_cpu_topology())
+      return CpuNativeThreadPreference::kCompactUniformGuest;
+#endif
+  }
+  return CpuNativeThreadPreference::kPerformanceCores;
+}
+
 // Cold engine default for ggml's existing Context-owned native team. Explicit
 // caller options keep their original budget. Available classes are disjoint;
 // a known physical count avoids charging SMT siblings as separate cores.
@@ -31,7 +49,7 @@ inline std::uint32_t select_cpu_native_threads(
     std::span<const platform::CpuCacheClassInfo> classes,
     const platform::ProcessCpuCapacity &capacity,
     std::uint32_t native_limit,
-    bool prefer_compact_uniform_guest_team = false) noexcept {
+    CpuNativeThreadPreference preference = CpuNativeThreadPreference::kPerformanceCores) noexcept {
   const auto ceiling = (std::max)(std::size_t{1}, (std::min)(
       capacity.parallelism_ceiling(), std::size_t{native_limit}));
   std::size_t all = 0, performance = 0;
@@ -47,8 +65,12 @@ inline std::uint32_t select_cpu_native_threads(
   // WSL2 can report the same CPU capacity for every virtual core, including
   // on a heterogeneous host. Use a compact team for CPU-only inference with
   // uniform guest capacity, within the original process budget.
-  if (prefer_compact_uniform_guest_team && !has_efficiency_class)
+  if (preference == CpuNativeThreadPreference::kCompactUniformGuest && !has_efficiency_class)
     selected = (std::min)(selected, std::size_t{8});
+  // Apple Silicon CPU-only matrix-vector work can use the extra bandwidth
+  // beyond the performance cluster. Bound the extra workers by that cluster.
+  if (preference == CpuNativeThreadPreference::kWideMatrixTeam && has_efficiency_class && performance)
+    selected = performance + (std::min)(performance, all - performance);
   return static_cast<std::uint32_t>((std::max)(selected, std::size_t{1}));
 }
 
