@@ -56,6 +56,35 @@ class PreparedPrompt:
 class ExecutionPlacementFacts:
     primary_backend: str
     cpu_ffn_layers: int
+    cpu_ffn_ranges: tuple[tuple[int, int], ...] | None = None
+
+
+def parse_cpu_ffn_layers(value: str) -> tuple[tuple[int, int], ...]:
+    def number(text: str) -> int:
+        if not text.isascii() or not text.isdecimal():
+            raise ValueError('invalid CPU FFN layer index')
+        index = int(text)
+        if index >= 1 << 64:
+            raise ValueError('CPU FFN layer index exceeds the supported range')
+        return index
+
+    if ':' not in value:
+        count = number(value)
+        return ((0, count),) if count else ()
+    ranges = []
+    for item in value.split(','):
+        first, _, end = item.partition(':')
+        ranges.append((number(first), number(end)))
+    ranges.sort()
+    merged: list[tuple[int, int]] = []
+    for first, end in ranges:
+        if first >= end or (merged and first < merged[-1][1]):
+            raise ValueError('invalid or overlapping CPU FFN ranges')
+        if merged and first == merged[-1][1]:
+            merged[-1] = (merged[-1][0], end)
+        else:
+            merged.append((first, end))
+    return tuple(merged)
 
 
 @dataclass(frozen=True)

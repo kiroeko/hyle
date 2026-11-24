@@ -3630,7 +3630,7 @@ public:
     description.execution_profiles[0].max_draft_tokens = mtp_ ? model_.max_drafts() : 0;
     if (model_.vision) description.execution_profiles[0].input_modalities.push_back("image");
     description.source_identity = model_.source_identity;
-    description.placement = {model_.execution.kind(), model_.ffn_placement.cpu_layers()};
+    description.placement = {model_.execution.kind(), model_.ffn_placement.layers()};
     return description;
   }
   bool supports_dynamic_admission() const noexcept override { return true; }
@@ -3696,7 +3696,7 @@ public:
         {model_eos_tokens.begin(), model_eos_tokens.end()}};
     description.execution_profiles.clear();
     description.source_identity = models_[0]->source_identity;
-    description.placement = {models_[0]->execution.kind(), models_[0]->ffn_placement.cpu_layers()};
+    description.placement = {models_[0]->execution.kind(), models_[0]->ffn_placement.layers()};
     for (std::size_t j = 0; j < models_.size(); ++j) {
       const auto &model = *models_[j];
       inference::ExecutionProfileDescription profile{names_[j], model.cache_plan.draft_cache ? "mtp" : "ordinary",
@@ -3772,7 +3772,7 @@ struct ExecutionProfilePreparation final {
   std::size_t draft_depth;
   bool overlap;
   std::filesystem::path vision_path;
-  std::size_t cpu_ffn_layers;
+  inference::CpuFfnLayers cpu_ffn_layers;
 };
 
 ExecutionProfilePreparation prepare_execution_profile(const inference::ModelLoadConfig &config,
@@ -3793,7 +3793,8 @@ ExecutionProfilePreparation prepare_execution_profile(const inference::ModelLoad
       config.execution.active_sequences > config.execution.resident_sessions || !config.execution.prefill_rows ||
       (profile.draft_count && *profile.draft_count >= config.execution.context))
     throw std::invalid_argument("model loading requires valid context, sequence, prefill and draft capacities");
-  const auto cpu_layers = config.execution.cpu_ffn_layers;
+  const auto &cpu_ffn_layers = config.execution.cpu_ffn_layers;
+  const auto cpu_layers = cpu_ffn_layers.count();
   const auto execution = select_execution(BackendSelection{.primary = config.execution.backend}, cpu_layers);
   const bool has_greedy_sampling = !config.sampling.random || std::ranges::any_of(config.additional_sampling,
       [](const auto &policy) { return !policy.random; });
@@ -3830,7 +3831,7 @@ ExecutionProfilePreparation prepare_execution_profile(const inference::ModelLoad
   const auto depth = (std::min)(selected_depth, config.execution.context - 1);
   if (mtp && !depth) throw std::invalid_argument("model draft depth requires a remaining context row");
   const auto geometry = source.roles.geometry;
-  FfnPlacement::validate(cpu_layers, geometry.layers.size());
+  FfnPlacement::validate(cpu_ffn_layers, geometry.layers.size());
   validate_mtp_source(geometry, mtp);
   const auto valid_sampling = [&](const inference::PreparedSamplingPolicy &policy) {
     if (policy.top_k > static_cast<std::size_t>(geometry.vocabulary))
@@ -3903,9 +3904,9 @@ ExecutionProfilePreparation prepare_execution_profile(const inference::ModelLoad
       .policy = {config.sampling.temperature, config.sampling.top_k, config.sampling.top_p}, .seed = 0};
   auto backend = shared_endpoint ? take(shared_endpoint->share_endpoint()) :
       continuous.endpoint ? std::move(*continuous.endpoint) :
-      query_endpoint ? std::move(*query_endpoint) : create_execution(geometry, plan, cpu_layers, execution);
+      query_endpoint ? std::move(*query_endpoint) : create_execution(geometry, plan, cpu_ffn_layers, execution);
   return {std::move(source), std::move(backend), plan, sampling, std::move(additional_sampling), depth, overlap,
-      vision_asset?vision_asset->path:std::filesystem::path{}, cpu_layers};
+      vision_asset?vision_asset->path:std::filesystem::path{}, cpu_ffn_layers};
 }
 
 std::unique_ptr<Model> instantiate_execution_profile(ExecutionProfilePreparation preparation,

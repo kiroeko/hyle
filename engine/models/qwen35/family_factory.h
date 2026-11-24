@@ -120,7 +120,7 @@ struct FamilyModelFacts final {
   std::map<std::string, LoadedWeight> &weights;
   const ProjectionBindings &projections;
   const WeightMeanings &weight_meanings;
-  std::size_t cpu_ffn_layers = 0;
+  const inference::CpuFfnLayers &cpu_ffn_layers;
   bool conditioned_prefill = false;
 };
 struct FamilyPreparedFacts final {

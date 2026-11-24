@@ -175,11 +175,12 @@ inline BackendSelection select_execution(BackendSelection selection, std::size_t
   return selection;
 }
 inline Backend create_execution(const ModelGeometry &geometry, const cache::Plan &plan,
-    std::size_t cpu_layers, BackendSelection selection,
+    const inference::CpuFfnLayers &cpu_ffn_layers, BackendSelection selection,
     const c::cpu::DefaultContextOptions *cpu_options = nullptr) {
   geometry.validate();
   validate_mtp_source(geometry, plan.draft_cache);
-  FfnPlacement::validate(cpu_layers, geometry.layers.size());
+  FfnPlacement::validate(cpu_ffn_layers, geometry.layers.size());
+  const auto cpu_layers = cpu_ffn_layers.count();
   selection = select_execution(selection, cpu_layers);
   if (selection.primary != BackendKind::kCpu && !cpu_layers) {
     if (cpu_options) return take(Backend::create(selection, {}, *cpu_options));
@@ -1079,19 +1080,19 @@ public:
                   ReplayPolicy replay = ReplayPolicy::kAuto,
                   std::size_t max_cache_bytes = (std::numeric_limits<std::size_t>::max)(),
                   Sampling sampling_configuration = {false, {}, 0, {}},
-                  std::size_t cpu_ffn_layer_count = 0,
+                  const inference::CpuFfnLayers &cpu_ffn_layers = {},
                   BackendSelection backend_selection = {}, std::span<const SamplingConfiguration> additional_sampling = {})
        : Model(prepare_weight_source(manifest, selected_cache.draft_cache), model_geometry, selected_capacity,
            selected_cache, std::move(probe), progress, replay, max_cache_bytes,
-           sampling_configuration, cpu_ffn_layer_count, backend_selection, additional_sampling) {}
+           sampling_configuration, cpu_ffn_layers, backend_selection, additional_sampling) {}
 
   Model(PreparedWeightSource source, const ModelGeometry &model_geometry, std::size_t selected_capacity,
       cache::Plan selected_cache, std::filesystem::path probe, bool progress, ReplayPolicy replay,
-      std::size_t max_cache_bytes, Sampling sampling_configuration, std::size_t cpu_ffn_layer_count,
+      std::size_t max_cache_bytes, Sampling sampling_configuration, const inference::CpuFfnLayers &cpu_ffn_layers,
       BackendSelection backend_selection, std::span<const SamplingConfiguration> additional_sampling = {})
-       : Model(create_execution(model_geometry, selected_cache, cpu_ffn_layer_count, backend_selection), {},
+       : Model(create_execution(model_geometry, selected_cache, cpu_ffn_layers, backend_selection), {},
            std::move(source), model_geometry, selected_capacity, selected_cache, std::move(probe), progress,
-           replay, max_cache_bytes, sampling_configuration, cpu_ffn_layer_count, additional_sampling) {}
+           replay, max_cache_bytes, sampling_configuration, cpu_ffn_layers, additional_sampling) {}
 
   // Explicit cold seam: endpoints exist before the caller constructs one
   // requested-byte scope from their actual resource identities. No new owner
@@ -1100,10 +1101,10 @@ public:
   Model(Backend &&prepared_execution, c::ResourceBudget shared_budget,
       PreparedWeightSource source, const ModelGeometry &model_geometry, std::size_t selected_capacity,
       cache::Plan selected_cache, std::filesystem::path probe, bool progress, ReplayPolicy replay,
-      std::size_t max_cache_bytes, Sampling sampling_configuration, std::size_t cpu_ffn_layer_count,
+      std::size_t max_cache_bytes, Sampling sampling_configuration, const inference::CpuFfnLayers &cpu_ffn_layers,
       std::span<const SamplingConfiguration> additional_sampling = {},
       std::shared_ptr<WeightStorage> shared_weights = {})
-       : sampling_seed(sampling_configuration.seed), ffn_placement(source.roles, cpu_ffn_layer_count),
+       : sampling_seed(sampling_configuration.seed), ffn_placement(source.roles, cpu_ffn_layers),
          precision(PrecisionProfile::from_roles(source.roles)),
          geometry(model_geometry), hidden(geometry.hidden), intermediate(geometry.intermediate), vocabulary(geometry.vocabulary),
          target_kv_layers(geometry.attention_layers()), draft_bank(target_kv_layers * 2),
@@ -1132,7 +1133,6 @@ public:
          replay_policy(replay), layer0_probe(std::move(probe)) {
     geometry.validate();
     validate_mtp_source(geometry, cache_plan.draft_cache);
-    FfnPlacement::validate(ffn_placement.cpu_layers(), geometry.layers.size());
     if (execution.kind() == BackendKind::kDefault || execution.has_cpu_assist() != (ffn_placement.cpu_layers() != 0))
       throw std::runtime_error("prepared Backend differs from the model CPU placement");
     allocation_budget = std::move(shared_budget);
@@ -1243,7 +1243,7 @@ public:
     const auto weight_load_start = Clock::now();
     WeightLoadReport loading;
     if (shared_weights) {
-      validate_shared_weights(*shared_weights, execution, source_roles, ffn_placement.cpu_layers());
+      validate_shared_weights(*shared_weights, execution, source_roles, ffn_placement.layers());
       loading = *resources_->weight_bank->inventory;
       loading.stream = {}; // Aliasing original read leases performs no IO/copy.
       std::cerr << "shared_weight_bank source=" << source_identity << " original_bytes=" << loading.bytes
@@ -1291,6 +1291,7 @@ public:
         << " source_operands_resident=true decode_precision=F16 selected_plan_reports_packed_or_decomposed=true\n";
     std::cerr << "weights_load_seconds=" << weight_load_seconds << '\n';
     if (ffn_placement.cpu_layers()) std::cerr << "weight_placement cpu_ffn_layers=" << ffn_placement.cpu_layers()
+        << " cpu_ffn_ranges=" << ffn_placement.layers().ranges_text()
         << " original_host_weight_bytes=" << host_weight_bytes
         << " original_device_weight_bytes=" << device_weight_bytes
         << " duplicated_original_weight_bytes=0\n";
@@ -1594,7 +1595,7 @@ public:
       const SamplingConfiguration &selected_sampler) {
     return build_family(
         {chunks, requests, prefix_rows, role, completion, packing, diagnostic, admitted_exact},
-        {geometry, precision, weights, projections, weight_meanings, ffn_placement.cpu_layers(), bool(vision)},
+        {geometry, precision, weights, projections, weight_meanings, ffn_placement.layers(), bool(vision)},
         {attention_schema, attention_schemas, state_schema, cache_plan.state_slots, cache_plan.hidden_slots,
          retains_sampling_frontier(), cache_plan.in_flight_batches >= 2 && !scheduler &&
              (role != GraphRole::kMtpContinuation || device_mtp_continuous_enabled()),
@@ -1866,7 +1867,7 @@ public:
         : select_replay_mode(replay_policy, head ? planned_uses : 1);
     const auto packet_rows = head && draft_packet_enabled(selected_sampler) ? max_drafts() + 1 : 0;
     auto built = build_draft_program({rows, selected_index, head, replay_mode, packet_rows, steps},
-        {geometry, precision, weights, projections, weight_meanings, ffn_placement.cpu_layers()},
+        {geometry, precision, weights, projections, weight_meanings, ffn_placement.layers()},
         {attention_schema, cache_plan.hidden_slots, cache_plan.active_sequences, cache_plan.candidate_boundaries,
          prepared_draft_projection(subset)}, selected_sampler,
         {execution, allocation_budget, execution_budget, cache_budget});
@@ -2236,7 +2237,7 @@ public:
     const PrefixSamplingKey key{proposals, sampling_index, conditional};
     if (prefix_sampling_programs.contains(key)) return;
     auto built = build_prefix_sampling({proposals, sampling_index, conditional},
-        {geometry, precision, weights, projections, weight_meanings, ffn_placement.cpu_layers()}, selected_sampler,
+        {geometry, precision, weights, projections, weight_meanings, ffn_placement.layers()}, selected_sampler,
         {execution, allocation_budget, execution_budget, cache_budget});
     auto prepared = std::move(built.program); auto &program = *prepared;
     merge_execution_plan(built.plan);
@@ -2432,7 +2433,7 @@ public:
       if (!selected_sampler.enabled && selected_sampler.modifiers.empty() && sampling_configuration_count() == 1) continue;
       if (!entry->frontier) {
         auto built = build_sampling_frontier(
-            {geometry, precision, weights, projections, weight_meanings, ffn_placement.cpu_layers()}, selected_sampler,
+            {geometry, precision, weights, projections, weight_meanings, ffn_placement.layers()}, selected_sampler,
             {execution, allocation_budget, execution_budget, cache_budget});
         merge_execution_plan(built.plan);
         auto prepared = std::move(built.program);

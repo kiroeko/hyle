@@ -17,6 +17,7 @@ from .runtime import GenerationProgress, TextEngine
 from .server import TextHttpServer
 from .worker_client import WorkerClient
 from .configuration import PreparedChoices, Selection, ExecutionChoice, read_configuration
+from .contracts import parse_cpu_ffn_layers
 from ..model_preparation import prepare_local_assets, validate_local_tokenizer, local_image_processor, local_text_format
 
 
@@ -85,8 +86,8 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
     common.add_argument('--config', type=Path, help='cold execution/sampling and session policy TOML')
     common.add_argument('--asset-cache', type=Path, help='immutable store for configured automatic asset recipes')
     common.add_argument('--backend', choices=('auto', 'cpu', 'cuda', 'apple'), default='auto')
-    common.add_argument('--cpu-ffn-layers', type=int, default=0,
-                        help='place the first N target FFNs on CPU at cold loading; requires CPU+GPU')
+    common.add_argument('--cpu-ffn-layers', default=0, metavar='N|START:END[,START:END...]',
+                        help='cold target FFNs on CPU, as a count or zero-based end-exclusive ranges')
     common.add_argument('--capacity', type=int, default=4096)
     common.add_argument('--prefill-chunk-tokens', type=int,
                         help='cold physical prefill row limit; does not reduce the model context')
@@ -114,9 +115,13 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
     generate.add_argument('--sampling-profile', default='default')
     generate.add_argument('--request-seed', type=int)
     args = parser.parse_args(argv)
-    if args.cpu_ffn_layers < 0 or args.cpu_ffn_layers >= 1 << 64:
-        parser.error('--cpu-ffn-layers requires an unsigned 64-bit integer')
-    if args.cpu_ffn_layers and args.backend == 'cpu':
+    try:
+        cpu_ffn_ranges = parse_cpu_ffn_layers(str(args.cpu_ffn_layers))
+    except ValueError:
+        parser.error('--cpu-ffn-layers requires a count or disjoint zero-based START:END ranges')
+    if not cpu_ffn_ranges:
+        args.cpu_ffn_layers = 0
+    if cpu_ffn_ranges and args.backend == 'cpu':
         parser.error('--cpu-ffn-layers requires a GPU primary backend')
     if args.prefill_chunk_tokens is not None and not 0 < args.prefill_chunk_tokens < 1 << 64:
         parser.error('--prefill-chunk-tokens requires a positive unsigned 64-bit integer')

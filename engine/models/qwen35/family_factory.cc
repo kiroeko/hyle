@@ -1036,7 +1036,7 @@ FamilyBuildResult build_family(const FamilyBuildRequest &build_request,
     for (std::size_t index = 0; index < definition.chunks.size(); ++index) {
       const auto &child = definition.programs.child(index);
       merge_execution_plan_facts(plan_facts, inspect_execution_plan(
-          execution, model.cpu_ffn_layers, child.compiled.report, assembly.constants()));
+          execution, model.cpu_ffn_layers.count(), child.compiled.report, assembly.constants()));
       report_packed_projections(definition.graph, child.compiled.report, r.packed_projection_nodes,
           child.compiled.executable.workspace_bytes());
     }

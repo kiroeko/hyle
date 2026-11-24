@@ -33,6 +33,9 @@ class ModelFactsTest(unittest.TestCase):
         actual.worker.placement = ExecutionPlacementFacts('apple', 2)
         self.assertEqual(actual.describe_capabilities()['placement'],
                          {'primary_backend': 'apple', 'cpu_ffn_layers': 2})
+        actual.worker.placement = ExecutionPlacementFacts('apple', 2, ((0, 1), (3, 4)))
+        self.assertEqual(actual.describe_capabilities()['placement'],
+                         {'primary_backend': 'apple', 'cpu_ffn_layers': 2, 'cpu_ffn_ranges': [[0, 1], [3, 4]]})
 
     def test_declared_assets_and_draft_preferences_never_claim_native_capabilities(self):
         value=engine().describe_capabilities()

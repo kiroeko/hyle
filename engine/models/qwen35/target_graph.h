@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "execution_mode.h"
+#include "../../inference/cpu_ffn_layers.h"
 #include "hyle/compute/batch_layout.h"
 #include "hyle/compute/tensor_desc.h"
 #include "hyle/graph/graph.h"
@@ -41,7 +42,7 @@ struct TargetGraphInputs final {
   std::span<const StateSchema> recurrent_descriptions;
   const c::BatchSchema &plain_attention_schema;
   std::span<const c::BatchSchema> target_attention_schemas;
-  std::size_t cpu_ffn_layers;
+  const hyle::inference::CpuFfnLayers &cpu_ffn_layers;
   g::NodeId preceding_append;
   bool has_preceding_append;
   // Optional R1 predecessor index. The original Slot Gather retains the

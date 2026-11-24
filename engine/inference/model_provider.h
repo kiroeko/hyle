@@ -72,8 +72,8 @@ struct ExecutionPreparation final {
   std::size_t prefill_rows = (std::numeric_limits<std::size_t>::max)();
   // Cold placement intent. The model owns FFN roles, graph boundaries and
   // legal sharing; unsupported placements must be rejected, never ignored.
-  // Zero retains the original single-endpoint preparation.
-  std::size_t cpu_ffn_layers = 0;
+  // An empty selection retains the original single-endpoint preparation.
+  CpuFfnLayers cpu_ffn_layers;
 };
 
 // Immutable bindings for one prepared algorithm. The provider interprets

@@ -64,6 +64,7 @@ inline std::string qwen35_cache_report(const qwen35::Model &model,
       << ",\"backend\":\"" << model.execution.name()
       << "\",\"cache_budget_scope\":\"shared_pools_retained_outputs_and_resource_metadata\""
       << ",\"cpu_ffn_layers\":" << model.ffn_placement.cpu_layers()
+      << ",\"cpu_ffn_ranges\":\"" << model.ffn_placement.layers().ranges_text() << '"'
       << ",\"original_host_weight_bytes\":" << model.host_weight_bytes
       << ",\"original_device_weight_bytes\":" << model.device_weight_bytes
       << ",\"cache_shared_backing_bytes\":" << model.known_cache_backing_bytes

@@ -22,7 +22,7 @@ int qwen35::run(int argc, char **argv) {
         "  --steps N                   Maximum output tokens (default: 4)\n"
         "  --capacity N                Total context capacity (default: 128)\n"
         "  --prefill-chunk-tokens N    Maximum real rows per natural prefill episode\n"
-        "  --cpu-ffn-layers N          First N target FFNs on CPU; needs CPU+GPU build (default: 0)\n"
+        "  --cpu-ffn-layers N|START:END[,START:END...]  Zero-based target FFNs; end exclusive. Needs CPU+GPU.\n"
         "  --schedule FILE             One session's prompt/generate turns\n"
         "  --session-schedules FILE    Multiple named session schedules\n"
         "  --max-sessions auto|N       Bounded retained session states\n"
@@ -49,7 +49,8 @@ int qwen35::run(int argc, char **argv) {
     std::filesystem::path input, continuation, trace, layer0_probe, decode_ids, schedule_file, session_file;
     std::filesystem::path draft_vocabulary = "auto";
     std::filesystem::path draft_head="auto";
-    std::size_t steps = 4, capacity = 128, max_sessions = 0, active_sequences = 0, cache_bytes = 0, max_drafts = 1, cpu_ffn_layers = 0;
+    std::size_t steps = 4, capacity = 128, max_sessions = 0, active_sequences = 0, cache_bytes = 0, max_drafts = 1;
+    hyle::inference::CpuFfnLayers cpu_ffn_layers;
     std::size_t max_prefill_rows = SIZE_MAX;
     bool warmup_planned_shapes = false, decode_overlap = true, require_bounded_generation = false;
     bool progress = false, trace_states = true, explicit_steps = false;
@@ -139,11 +140,7 @@ int qwen35::run(int argc, char **argv) {
         if(value.empty())throw std::runtime_error("--mtp-draft-head requires a nonempty file path");
         draft_head=value;
       }
-      else if (option == "--cpu-ffn-layers") {
-        const auto parsed = std::from_chars(value.data(), value.data() + value.size(), cpu_ffn_layers);
-        if (parsed.ec != std::errc{} || parsed.ptr != value.data() + value.size())
-          throw std::runtime_error("--cpu-ffn-layers requires a nonnegative integer within the supported size range");
-      }
+      else if (option == "--cpu-ffn-layers") cpu_ffn_layers = hyle::inference::CpuFfnLayers::parse(value);
       else if (option == "--continuation") { continuation = value; explicit_continuation = true; }
       else if (option == "--schedule") { schedule_file = value; single_schedule = true; }
       else if (option == "--session-schedules") { session_file = value; multiple_schedules = true; }
@@ -184,7 +181,7 @@ int qwen35::run(int argc, char **argv) {
     }
     const bool scheduled = single_schedule || multiple_schedules;
     if (input.empty()) throw std::runtime_error("--inputs DIR is required");
-    backend_selection = qwen35::select_execution(backend_selection, cpu_ffn_layers);
+    backend_selection = qwen35::select_execution(backend_selection, cpu_ffn_layers.count());
     const bool prefix_enabled = prefix_policy == "auto" || (prefix_policy.empty() && multiple_schedules);
     using Grammar = qwen35::benchmark::ScheduleGrammar;
     const auto grammar = single_schedule ? qwen35::benchmark::schedule_grammar(schedule_file)
@@ -198,7 +195,7 @@ int qwen35::run(int argc, char **argv) {
     const hyle::inference::ColdWorkloadFacts cold_workload{
         .natural_generation = natural_generation, .multiple_schedules = multiple_schedules,
         .prefix_enabled = prefix_enabled, .scheduler_progress = progress,
-        .planned_shapes = warmup_planned_shapes, .cpu_assist = cpu_ffn_layers != 0,
+        .planned_shapes = warmup_planned_shapes, .cpu_assist = !cpu_ffn_layers.empty(),
         .greedy = unmodified_greedy,
         .state_trace = !trace.empty() && trace_states,
         .max_sessions = max_sessions, .active_sequences = active_sequences, .capacity = capacity};
@@ -370,7 +367,7 @@ int qwen35::run(int argc, char **argv) {
     const auto requested_active = (std::min)(active_sequences, input_sessions);
     const bool stored_draft_head = qwen35::supports_stored_draft_projection(weight_source.roles);
     const qwen35::DeviceRelayCapabilities device_relay{
-        backend_selection.primary, cpu_ffn_layers != 0, progress,
+        backend_selection.primary, !cpu_ffn_layers.empty(), progress,
         sampler.enabled && mtp_enabled, !sampler.modifiers.empty()};
     const qwen35::DecodeRouteFacts route_facts{
         .workload = cold_workload, .overlap_requested = decode_overlap,

@@ -37,8 +37,8 @@ namespace hyle::inference {
 // comma_separated_ids appends one turn; Z id sequence closes its input. K acknowledges
 // output credit; C cancels; Q shuts down. S and O request ordered B id turn
 // events; both tokens and boundaries use credit. Later turn inputs may be empty.
-// Startup is READY 5 vocabulary context stop_ids source_identity profile_count
-// actual_primary_backend actual_cpu_ffn_layers,
+// Startup is READY 6 vocabulary context stop_ids source_identity profile_count
+// actual_primary_backend actual_cpu_ffn_layers actual_cpu_ffn_ranges_or_dash,
 // then PROFILE index base64(name) base64(algorithm) max_drafts
 // comma_separated_base64(input_modalities) co_resident_indices_or_dash.
 // Metadata is a cold immutable
@@ -75,15 +75,16 @@ public:
   ~TokenWorker() { close(); }
 
   int run() {
-    std::string ready = "READY\t5\t" + std::to_string(description_.vocabulary) + "\t" +
+    std::string ready = "READY\t6\t" + std::to_string(description_.vocabulary) + "\t" +
         std::to_string(description_.context) + "\t";
     if (description_.stop_ids.empty()) ready += "-";
     else for (std::size_t index = 0; index < description_.stop_ids.size(); ++index)
       ready += (index ? "," : "") + std::to_string(description_.stop_ids[index]);
     ready += "\t" + (description_.source_identity.empty() ? "-" : description_.source_identity);
     ready += "\t" + std::to_string(description_.execution_profiles.size());
+    const auto &layers = description_.placement.cpu_ffn_layers;
     ready += "\t" + std::string(backend_protocol_name(description_.placement.primary)) +
-        "\t" + std::to_string(description_.placement.cpu_ffn_layers);
+        "\t" + std::to_string(layers.count()) + "\t" + (layers.empty() ? "-" : layers.ranges_text());
     if (!emit(ready)) return 1;
     for (std::size_t i = 0; i < description_.execution_profiles.size(); ++i) {
       const auto &profile = description_.execution_profiles[i];

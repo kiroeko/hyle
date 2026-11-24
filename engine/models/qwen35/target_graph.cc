@@ -290,7 +290,7 @@ TargetGraphResult emit_target_graph(Recipe &r,
     }
     const auto ffn_input = r.binary(c::BinaryKind::kAdd, x, mixed);
     {
-      GraphAssembly::Scope scope(assembly, i < inputs.cpu_ffn_layers ? assembly.cpu() : assembly.primary());
+      GraphAssembly::Scope scope(assembly, inputs.cpu_ffn_layers.contains(i) ? assembly.cpu() : assembly.primary());
       x = block_graph::emit_ffn(r, ffn_input, "model.language_model." + prefix,
           i == 0 ? std::span<V>(outputs.layer0_probes) : std::span<V>{});
     }

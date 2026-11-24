@@ -15,7 +15,7 @@ python -B -m engine.text.app serve --engine <build-dir>/bin/hyle.exe --inputs <p
 | WSL2 Linux x64 | CPU、CUDA、CPU＋CUDA |
 | macOS ARM64 | CPU、Metal、CPU＋Metal |
 
-专项包含官方 SDK 的普通／SSE、停止、额度、断连退休与复用，以及客户端工具结果回填。其他路线、MTP 与多方案共存分别验收。Metal 使用 `--backend apple`。`--template FILE` 可选择本地 Jinja 模板。`--cpu-ffn-layers N` 沿同一模型装载路径准备 CPU＋GPU 放置，加载后固定；模型发现的 `hyle.placement` 报告实际主后端和 CPU FFN 层数，不回显启动参数充当执行事实。
+专项包含官方 SDK 的普通／SSE、停止、额度、断连退休与复用，以及客户端工具结果回填。其他路线、MTP 与多方案共存分别验收。Metal 使用 `--backend apple`。`--template FILE` 可选择本地 Jinja 模板。`--cpu-ffn-layers` 接受前缀层数或零基半开范围（例如 `0:1,8:9`）。放置在模型装载时固定。模型发现的 `hyle.placement` 报告实际主后端、CPU FFN 层数与范围。
 
 `--prefill-chunk-tokens N` 设置加载时准备的物理预填行数上限，较长输入分块执行；它不缩小 `--capacity` 的逻辑上下文，也不是每请求选项。省略时保留模型提供者的默认准备。准备多个方案会增加执行资源，不能从权重已共享推断它们的工作区也能共享。上述服务专项固定 32 行预填，混合路线使用两层 CPU FFN。
 

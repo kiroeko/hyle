@@ -300,13 +300,17 @@ CPU分置、prefix、多会话、scheduler和随机采样不自动启用。`--re
 
 ### CPU 与 GPU 分置
 
-需要明确的 CPU＋GPU 分置时，用 `scripts/init.py` 的 `--backends cpu,cuda` 或 `--backends cpu,metal`
-准备对应构建，运行时选择 GPU 主后端并添加 `--cpu-ffn-layers 2`，将前两层 target FFN 及其
-原始权重放到 CPU；注意力、缓存和 MTP 留在所选 GPU。默认值 0 保持 GPU 放置。
-该参数在正式 token CLI、worker 和 `engine.text.app serve|generate` 使用同一冷装载路径；
-加载后不按请求改变放置。超过模型层数、缺少 CPU 路线或以 CPU 为主后端时明确报错。
-worker 和 `/v1/models` 的 `hyle.placement` 报告实际 `primary_backend` 与 `cpu_ffn_layers`，
-与实际执行方案的算法和草稿上限一起使用，不从启动参数推断能力。
+用 `scripts/init.py --backends cpu,metal` 准备 Apple Silicon 混合构建，运行时选择 `--backend apple`。
+在 CUDA 混合构建中使用 `--backends cpu,cuda` 和 `--backend cuda`。
+`--cpu-ffn-layers 2` 将前两层目标 FFN 及其原始权重放到 CPU。
+`--cpu-ffn-layers 0:1,8:9` 则选择第 0 和第 8 层。层号从 0 开始，范围含起点、终点排除，多个范围用逗号分隔。
+注意力、缓存和 MTP 留在主 GPU。默认值 0 使用纯 GPU 放置。
+
+正式 token CLI、worker 和文本服务共用同一冷装载计划。放置在模型装载时固定。
+范围重叠、超过模型层数、缺少 CPU 路线或以 CPU 为主后端时明确报错。
+模型发现的 `hyle.placement` 报告实际主后端、CPU FFN 层数和 `cpu_ffn_ranges`，
+范围以 `[起点, 终点]` 数组给出，纯 GPU 路线返回空数组。MacBook Air M4 已以 Qwen3.5-2B HF BF16
+验证非连续范围的普通和 K1 两轮续接。
 混合执行的适用制品和后端见[模型覆盖](../implementation/model-operators.md)；功能可用不代表比纯GPU更快。
 
 引擎在 CPU 端点冷创建时，按进程可用的物理核心和 CPU 配额设置原有 ggml 原生线程组；

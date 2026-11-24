@@ -14,7 +14,7 @@ import time
 from pathlib import Path
 from typing import Sequence
 
-from .contracts import ExecutionPlacementFacts, ExecutionProfileFacts, TokenEvent, WorkerError
+from .contracts import ExecutionPlacementFacts, ExecutionProfileFacts, TokenEvent, WorkerError, parse_cpu_ffn_layers
 
 
 def _metadata_text(encoded: str) -> str:
@@ -410,19 +410,29 @@ class WorkerClient:
                             self._ready.set()
                         continue
                     legacy = len(fields) == 5 and fields[:2] == ['READY', '2']
-                    placed = len(fields) == 9 and fields[:2] == ['READY', '5']
+                    exact_placement = len(fields) == 10 and fields[:2] == ['READY', '6']
+                    placed = exact_placement or (len(fields) == 9 and fields[:2] == ['READY', '5'])
                     profiled = placed or (len(fields) == 7 and fields[:2] == ['READY', '4'])
                     current = profiled or (len(fields) == 6 and fields[:2] == ['READY', '3'])
                     if not legacy and not current:
                         raise WorkerError("protocol", "invalid model worker handshake")
                     if placed:
-                        backend, layers = fields[7:]
+                        backend, layers = fields[7:9]
                         if (backend not in ('-', 'cpu', 'cuda', 'apple') or
                                 not layers.isascii() or not layers.isdecimal() or not 0 <= int(layers) < 1 << 64 or
                                 (int(layers) and backend in ('-', 'cpu'))):
                             raise WorkerError('protocol', 'invalid actual worker placement')
+                        ranges = None
+                        if exact_placement:
+                            try:
+                                ranges = () if fields[9] == '-' else parse_cpu_ffn_layers(fields[9])
+                            except ValueError as error:
+                                raise WorkerError('protocol', 'invalid worker CPU FFN ranges') from error
+                            canonical = ','.join(f'{first}:{end}' for first, end in ranges) or '-'
+                            if fields[9] != canonical or sum(end - first for first, end in ranges) != int(layers):
+                                raise WorkerError('protocol', 'worker CPU FFN ranges differ from its placement count')
                         if backend != '-':
-                            self.placement = ExecutionPlacementFacts(backend, int(layers))
+                            self.placement = ExecutionPlacementFacts(backend, int(layers), ranges)
                     self.source_identity = fields[5] if current and fields[5] != '-' else None
                     if self.source_identity is not None and (not self.source_identity or
                             any(not 32 < ord(char) < 127 for char in self.source_identity)):

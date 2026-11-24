@@ -28,6 +28,24 @@ class WorkerClientLifecycleTest(unittest.TestCase):
                     WorkerClient([sys.executable, '-B', '-c',
                         f'import sys; sys.stdout.reconfigure(encoding="utf-8"); print({frame!r}, flush=True)'], startup_timeout=3)
 
+    def test_exact_cpu_ffn_ranges_must_match_the_worker_placement_count(self):
+        profile = 'PROFILE\t0\tZGVmYXVsdA==\tb3JkaW5hcnk=\t0\tdGV4dA==\t-'
+
+        def command(layers, ranges):
+            ready = f'READY\t6\t256\t128\t3\t-\t1\tapple\t{layers}\t{ranges}'
+            script = (f'import sys; print({ready!r}, flush=True); print({profile!r}, flush=True); '
+                      "assert sys.stdin.readline().strip() == 'Q'; print('BYE', flush=True)")
+            return [sys.executable, '-B', '-c', script]
+
+        worker = WorkerClient(command(2, '0:1,3:4'), startup_timeout=3)
+        try:
+            self.assertEqual(worker.placement.cpu_ffn_ranges, ((0, 1), (3, 4)))
+        finally:
+            worker.close(timeout=3)
+        for count, ranges in ((1, '0:1,3:4'), (2, '0:2,1:3'), (2, '-'), (2, '2')):
+            with self.subTest(count=count, ranges=ranges), self.assertRaises(WorkerError):
+                WorkerClient(command(count, ranges), startup_timeout=3)
+
     def test_prepared_metadata_reports_actual_profiles_and_escaped_names(self):
         name = 'pictures\t图\nprofile'
         encode = lambda value: base64.b64encode(value.encode('utf-8')).decode('ascii')

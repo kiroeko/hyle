@@ -91,7 +91,7 @@ AuxiliaryProgramResult<DraftProgram> build_draft_chain(
       program.graph, variants, {{}, stores}, take(context.execution_budget.metadata_allocator())));
   const auto &compiled = program.programs.child(0).compiled;
   check(program.carrier.prepare(compiled, execution.queue_bindings()));
-  const auto plan = inspect_execution_plan(execution, model.cpu_ffn_layers, compiled.report, assembly.constants());
+  const auto plan = inspect_execution_plan(execution, model.cpu_ffn_layers.count(), compiled.report, assembly.constants());
   program.literals = std::move(assembly.literals);
   program.token_values = auxiliary_tensor(context.allocation_budget, execution.device(), dense(Type::kInt32, {rows}));
   program.position_values = auxiliary_tensor(context.allocation_budget, execution.device(), dense(Type::kInt32, {total}));
@@ -230,7 +230,7 @@ AuxiliaryProgramResult<DraftProgram> build_draft_program(
         {{}, extra_stores}, take(execution_budget.metadata_allocator())));
     const auto &compiled_program = program.programs.child(0).compiled;
     check(program.carrier.prepare(compiled_program, execution.queue_bindings()));
-    const auto plan = inspect_execution_plan(execution, model.cpu_ffn_layers, compiled_program.report, assembly.constants());
+    const auto plan = inspect_execution_plan(execution, model.cpu_ffn_layers.count(), compiled_program.report, assembly.constants());
     program.literals = std::move(assembly.literals);
     program.token_values = auxiliary_tensor(allocation_budget, execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
     program.position_values = auxiliary_tensor(allocation_budget, execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
@@ -382,7 +382,7 @@ AuxiliaryProgramResult<PrefixSamplingProgram> build_prefix_sampling(
     check(program.programs.prepare(std::move(*compiled), program.graph, variants));
     const auto &compiled_program = program.programs.child(0).compiled;
     check(program.carrier.prepare(compiled_program, execution.queue_bindings()));
-    const auto plan = inspect_execution_plan(execution, model.cpu_ffn_layers, compiled_program.report, assembly.constants());
+    const auto plan = inspect_execution_plan(execution, model.cpu_ffn_layers.count(), compiled_program.report, assembly.constants());
     program.literals = std::move(assembly.literals);
     if (program.identities) {
       program.identity_values = auxiliary_tensor(allocation_budget, execution.device(), dense(Type::kUInt32, {static_cast<std::int64_t>(proposals + 1), 4}));
@@ -455,7 +455,7 @@ AuxiliaryProgramResult<SamplingFrontier> build_sampling_frontier(
              .constants = assembly.constants(), .resource_budget = execution_budget}))), prepared->graph, variants));
         const auto &compiled_program = prepared->programs.child(0).compiled;
         check(prepared->carrier.prepare(compiled_program, execution.queue_bindings()));
-        const auto plan = inspect_execution_plan(execution, model.cpu_ffn_layers, compiled_program.report, assembly.constants());
+        const auto plan = inspect_execution_plan(execution, model.cpu_ffn_layers.count(), compiled_program.report, assembly.constants());
         prepared->literals = std::move(assembly.literals);
         if (selected_sampler.enabled) prepared->identity = auxiliary_tensor(allocation_budget, execution.device(), dense(Type::kUInt32, {1, 4}));
         check(prepared->io.prepare(compiled_program, bool(prepared->identity_port),

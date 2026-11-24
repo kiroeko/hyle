@@ -268,20 +268,22 @@ void ct_block128_and_bf16_local_policy(const fs::path &directory) {
 }
 void check_placement(const p::Roles &roles) {
   const qwen35::FfnPlacement primary(roles, 0), mixed(roles, 2), all_ffn(roles, roles.geometry.layers.size());
+  const qwen35::FfnPlacement sparse(roles, hyle::inference::CpuFfnLayers::parse("2:3,0:1"));
   require(primary.cpu_layers() == 0 && mixed.cpu_layers() == 2 &&
       mixed.target_layers() == roles.geometry.layers.size(), "cold FFN dimensions differ");
   for (std::size_t i = 0; i < roles.geometry.layers.size(); ++i)
-    require(!primary.ffn_on_cpu(i) && mixed.ffn_on_cpu(i) == (i < 2) && all_ffn.ffn_on_cpu(i),
-        "ordinary graph FFN placement differs from the requested prefix");
+    require(!primary.ffn_on_cpu(i) && mixed.ffn_on_cpu(i) == (i < 2) && all_ffn.ffn_on_cpu(i) &&
+        sparse.ffn_on_cpu(i) == (i == 0 || i == 2), "graph FFN placement differs from the requested layers");
   for (const auto &role : roles.selected) {
-    bool expected = false;
-    for (const auto *prefix : {"model.language_model.layers.0.", "model.language_model.layers.1."}) {
-      const std::string layer(prefix);
-      expected |= role.name == layer + "post_attention_layernorm.weight";
+    const auto is_ffn = [&](std::size_t index) {
+      const auto layer = "model.language_model.layers." + std::to_string(index) + '.';
+      if (role.name == layer + "post_attention_layernorm.weight") return true;
       for (const auto *projection : {"mlp.gate_proj.", "mlp.up_proj.", "mlp.down_proj."})
-        expected |= role.name.starts_with(layer + projection);
-    }
-    require(!primary.role_on_cpu(role.name) && mixed.role_on_cpu(role.name) == expected,
+        if (role.name.starts_with(layer + projection)) return true;
+      return false;
+    };
+    require(!primary.role_on_cpu(role.name) && mixed.role_on_cpu(role.name) == (is_ffn(0) || is_ffn(1)) &&
+        sparse.role_on_cpu(role.name) == (is_ffn(0) || is_ffn(2)),
         "physical FFN principal/auxiliary differs from graph placement");
     if (role.name.starts_with("mtp.")) require(!all_ffn.role_on_cpu(role.name),
         "NextN roles must retain their independent primary placement");
@@ -307,6 +309,7 @@ void cold_ffn_placement_comes_from_inventory() {
   require(partial.selected.size() == 5, "selected component fixture differs");
   check_placement(partial);
   rejects([&] { (void)qwen35::FfnPlacement(selected, geometry.layers.size() + 1); }, "exceeds");
+  rejects([&] { (void)qwen35::FfnPlacement(selected, hyle::inference::CpuFfnLayers::parse("1000:1001")); }, "exceeds");
 }
 void check_selected(const p::Roles &result, std::size_t count, std::size_t bytes, bool mtp) {
   check_placement(result);

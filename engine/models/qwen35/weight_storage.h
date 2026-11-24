@@ -20,7 +20,7 @@ struct WeightStorage final {
   std::string identity;
   std::optional<WeightLoadReport> inventory;
   std::optional<prepared::Roles> source_roles;
-  std::size_t cpu_ffn_layers = 0;
+  hyle::inference::CpuFfnLayers cpu_ffn_layers;
 };
 
 inline bool same_weight_reader(const prepared::Roles &a, const prepared::Roles &b) {
@@ -64,7 +64,7 @@ inline prepared::Roles shared_weight_roles(std::span<const PreparedWeightSource 
 }
 
 inline std::shared_ptr<WeightStorage> prepare_shared_weights(hyle::inference::Backend &endpoint,
-    prepared::Roles roles, std::size_t cpu_ffn_layers = 0,
+    prepared::Roles roles, const hyle::inference::CpuFfnLayers &cpu_ffn_layers = {},
     const hyle::compute::ResourceBudget &budget = {}) {
   auto bank = std::make_shared<WeightStorage>();
   bank->endpoint.emplace(take(endpoint.share_endpoint()));
@@ -83,7 +83,7 @@ inline std::shared_ptr<WeightStorage> prepare_shared_weights(hyle::inference::Ba
 }
 
 inline void validate_shared_weights(const WeightStorage &bank, const hyle::inference::Backend &endpoint,
-    const prepared::Roles &roles, std::size_t cpu_ffn_layers) {
+    const prepared::Roles &roles, const hyle::inference::CpuFfnLayers &cpu_ffn_layers) {
   if (!bank.endpoint || !bank.inventory || !bank.source_roles ||
       !endpoint.same_endpoint(*bank.endpoint) || !same_weight_reader(*bank.source_roles, roles) ||
       bank.identity != roles.identity || bank.cpu_ffn_layers != cpu_ffn_layers)

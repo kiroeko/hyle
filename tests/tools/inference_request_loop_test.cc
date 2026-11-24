@@ -1517,9 +1517,17 @@ void application_uses_one_provider_path_for_cli_and_worker() {
   require(!cli_status && generated == "2 3 4\n" && cli_error.empty() && application_loaded,
       "generic CLI did not execute through its selected provider");
   const auto cli_config = *application_loaded;
+  const auto [range_status, range_output, range_error] =
+      run({"--inputs", "other-model", "--tokens", "-", "--cpu-ffn-layers", "6:8,1:2,2:4"});
+  require(!range_status && range_error.empty() && !range_output.empty() &&
+      application_loaded->execution.cpu_ffn_layers.ranges_text() == "1:4,6:8",
+      "application lost or changed exact CPU FFN placement");
+  for (const auto *ranges : {"1:4,3:5", "3:3", "1:4,", "0:18446744073709551616"})
+    require(std::get<0>(run({"--inputs", "other-model", "--tokens", "-", "--cpu-ffn-layers", ranges})) == 1,
+        "application accepted malformed CPU FFN ranges");
   auto worker = common; worker.insert(worker.begin(), "--engine-worker");
   const auto [worker_status, frames, worker_error] = run(worker, "Q\n");
-  require(!worker_status && frames.starts_with("READY\t5\t256\t128\t-\t-\t1\t-\t0\nPROFILE\t0\t") && frames.ends_with("BYE\n") && worker_error.empty() &&
+  require(!worker_status && frames.starts_with("READY\t6\t256\t128\t-\t-\t1\t-\t0\t-\nPROFILE\t0\t") && frames.ends_with("BYE\n") && worker_error.empty() &&
       application_loaded->execution.cpu_ffn_layers == 2 && cli_config.execution.cpu_ffn_layers == 2 &&
       application_loaded->execution.context == cli_config.execution.context &&
       application_loaded->execution.resident_sessions == cli_config.execution.resident_sessions &&
@@ -1599,7 +1607,7 @@ void token_worker_reports_actual_profiles_without_executing_requests() {
   std::ostringstream output;
   i::TokenWorker worker(std::make_unique<ApplicationTestExecutor>(std::move(config)), 1, 1, 1, 16, input, output);
   require(worker.run() == 0, "profile metadata worker did not stop");
-  require(output.str() == "READY\t5\t256\t128\t-\t-\t2\t-\t0\n"
+  require(output.str() == "READY\t6\t256\t128\t-\t-\t2\t-\t0\t-\n"
       "PROFILE\t0\tZGVmYXVsdA==\taG9zdC1maXh0dXJl\t0\tdGV4dA==\t-\n"
       "PROFILE\t1\tcGljdHVyZXMJCg==\taG9zdC1maXh0dXJl\t2\tdGV4dA==,aW1hZ2U=\t-\nBYE\n",
       "worker profile identity, actual depth, modality or UTF-8 framing differs");
@@ -1615,7 +1623,7 @@ void token_worker_rejects_malformed_frames_without_starting_model() {
   std::ostringstream output;
   i::TokenWorker worker(std::make_unique<IngressTestExecutor>(control), 2, 2, 1, 16, input, output);
   require(worker.run() == 0, "worker protocol did not close cleanly");
-  require(output.str() == "READY\t5\t256\t128\t3,4\t-\t1\t-\t0\nPROFILE\t0\tZGVmYXVsdA==\t\t0\tdGV4dA==\t-\n"
+  require(output.str() == "READY\t6\t256\t128\t3,4\t-\t1\t-\t0\t-\nPROFILE\t0\tZGVmYXVsdA==\t\t0\tdGV4dA==\t-\n"
       "E\t0\tprotocol\tinvalid request identity\n"
       "E\t7\tinvalid\tinvalid output limit or token list\n"
       "E\t8\tinvalid\tinvalid output limit or token list\n"
@@ -1698,7 +1706,7 @@ void token_worker_credit_and_cancellation_do_not_hang() {
       if (!output_buffer.line(line, std::chrono::seconds(3))) throw std::runtime_error("worker test timed out");
       return line;
     };
-    require(next() == "READY\t5\t256\t128\t3,4\t-\t1\t-\t0", "worker did not become ready");
+    require(next() == "READY\t6\t256\t128\t3,4\t-\t1\t-\t0\t-", "worker did not become ready");
     require(next() == "PROFILE\t0\tZGVmYXVsdA==\t\t0\tdGV4dA==\t-", "worker omitted prepared profile facts");
     input_buffer.send("G\t1\t2\t10\n");
     require(next() == "A\t1" && next() == "T\t1\t10", "worker lost initial accepted token");

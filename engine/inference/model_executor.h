@@ -16,6 +16,7 @@
 #include "request_stop_policy.h"
 #include "token_consumer.h"
 #include "backend_kind.h"
+#include "cpu_ffn_layers.h"
 
 namespace hyle::inference {
 
@@ -105,7 +106,7 @@ struct ExecutionPlacementDescription final {
   // Unknown is allowed for host-only contract fixtures, not a prepared native
   // model. These are actual endpoint/placement facts, not requested options.
   BackendKind primary = BackendKind::kDefault;
-  std::size_t cpu_ffn_layers = 0;
+  CpuFfnLayers cpu_ffn_layers;
 };
 
 struct ModelDescription final {
@@ -125,7 +126,7 @@ inline bool execution_profiles_co_resident(const ModelDescription &model, std::s
 }
 
 inline void validate_model_description(const ModelDescription &model) {
-  if (model.placement.cpu_ffn_layers && (model.placement.primary == BackendKind::kDefault ||
+  if (!model.placement.cpu_ffn_layers.empty() && (model.placement.primary == BackendKind::kDefault ||
       model.placement.primary == BackendKind::kCpu))
     throw std::invalid_argument("CPU assistance requires an actual GPU primary endpoint");
   if (model.execution_profiles.empty()) throw std::invalid_argument("model has no prepared execution profile");

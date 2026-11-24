@@ -65,7 +65,10 @@ def run(args):
         assert capabilities == ant_model.model_dump()['hyle'] == engine.describe_capabilities()
         assert [m.id for m in oa.models.list().data] == [m.id for m in ant.models.list().data] == ['hyle']
         assert capabilities['context_tokens'] == worker.context == 4096
-        assert capabilities['placement'] == {'primary_backend': args.backend, 'cpu_ffn_layers': args.cpu_ffn_layers}
+        placement = capabilities['placement']
+        assert placement['primary_backend'] == args.backend and placement['cpu_ffn_layers'] == args.cpu_ffn_layers
+        if 'cpu_ffn_ranges' in placement:
+            assert placement['cpu_ffn_ranges'] == ([[0, args.cpu_ffn_layers]] if args.cpu_ffn_layers else [])
         assert capabilities['execution_profiles'][0]['algorithm'] == 'ordinary'
         assert capabilities['execution_profiles'][0]['max_draft_tokens'] == 0
         assert capabilities['codec']['tools']['supported'] and not capabilities['codec']['tools']['strict']

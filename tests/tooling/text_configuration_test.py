@@ -19,7 +19,10 @@ class TextConfigurationTest(unittest.TestCase):
                 self.assertEqual(command[command.index('--cpu-ffn-layers') + 1], '2')
                 self.assertEqual(command[command.index('--backend') + 1], 'cuda')
                 self.assertEqual(command[command.index('--prefill-chunk-tokens') + 1], '32')
-        for value in ('-1', '18446744073709551616'):
+        args = parse_arguments(['serve', *base, '--backend', 'apple', '--cpu-ffn-layers', '2:4,10:11'])
+        command = make_worker_command(args, read_configuration(args))
+        self.assertEqual(command[command.index('--cpu-ffn-layers') + 1], '2:4,10:11')
+        for value in ('-1', '18446744073709551616', '1:3,2:4', '3:3', '1:2,'):
             with self.subTest(value=value), self.assertRaises(SystemExit):
                 parse_arguments(['serve', *base, '--cpu-ffn-layers', value])
         with self.assertRaises(SystemExit):
