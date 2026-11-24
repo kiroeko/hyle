@@ -12,7 +12,7 @@ import subprocess
 import threading
 import time
 from pathlib import Path
-from typing import Sequence
+from typing import Sequence, TextIO
 
 from .contracts import ExecutionPlacementFacts, ExecutionProfileFacts, TokenEvent, WorkerError, parse_cpu_ffn_layers
 
@@ -198,11 +198,12 @@ class WorkerRequest:
 
 
 class WorkerClient:
-    def __init__(self, command: Sequence[str | Path], *, startup_timeout: float = 60):
+    def __init__(self, command: Sequence[str | Path], *, startup_timeout: float = 60,
+                 stderr: TextIO | None = None):
         if not command:
             raise ValueError("model worker command must not be empty")
         self._process = subprocess.Popen(list(map(str, command)), stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                                         stderr=None, text=True, encoding="utf-8", errors="replace", bufsize=1)
+                                         stderr=stderr, text=True, encoding="utf-8", errors="replace", bufsize=1)
         self._state_lock = threading.Lock()
         self._write_lock = threading.Lock()
         self._pending: dict[int, queue.Queue] = {}

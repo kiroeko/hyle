@@ -44,6 +44,23 @@ GPU dedicated＋shared仅可在同一采样时刻相加，不能相加两项各�
 `capture-associated cold prep` 是发生录图那步的准备区间，不能当作纯录图耗时直接从 decode 扣除。
 把准备前移使 decode 变快，仍须检查启动到完成和首 token；增加私有模型计算可能使这两项退步。
 
+## Mac 纯 Metal 多请求回归
+
+涉及纯 Metal 推理热路径或请求调度的改动，使用现有 Qwen3.5-2B BF16 制品运行多请求回归。
+固定输入包含八个 512-token 的中、英、匈代码提示和一个 3903-token 长提示。
+普通和全词表 K1 各测 1、4、8 路。另在短请求已经生成 16 个 token 后接入长提示。
+
+```sh
+python3 -B scripts/inference-concurrency-bench.py \
+  --engine /path/to/hyle --engine-version BUILD_COMMIT \
+  --inputs /path/to/prepared-qwen35-2b-bf16
+```
+
+调用正式 worker 并核对实际 Metal 放置和草稿深度。输出记录实际批宽、交付 token 数和输出摘要，
+分别报告 decode 吞吐、完整进程吞吐、首字与 p95 token 间隔。长预填场景单列已有请求的间隔和新请求首字。
+默认每格三个独立进程。传入 `--baseline` 和 `--baseline-version` 时，同时轮换运行冻结版本和它的 A/A 对照。
+`--repeats 1` 可用于验收入口，正式回归保留默认三次。模型和二进制均使用本地制品。
+
 ## 对齐工作量
 
 先确定比较的是用户自然使用的完整路线、相同语义下的实现，还是一个内部机制。
