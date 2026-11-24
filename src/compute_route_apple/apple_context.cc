@@ -390,10 +390,14 @@ std::vector<mx::array> prepare_mlx(MlxProgram &program, RegionFunction region,
       isolated.push_back(mx::zeros(spec.shape, spec.dtype, stream));
     }
   }
-  mx::async_eval(isolated);
-  mx::synchronize(stream);
-  for (auto &input : isolated)
-    input.wait();
+  // Shape tracing needs only the input descriptors. Materialize the isolated
+  // inputs when the caller also requires a sample evaluation.
+  if (example_output == MlxExampleOutput::kEvaluate) {
+    mx::async_eval(isolated);
+    mx::synchronize(stream);
+    for (auto &input : isolated)
+      input.wait();
+  }
   auto outputs = program.compiled(isolated);
   if (example_output == MlxExampleOutput::kEvaluate) {
     mx::async_eval(outputs);
