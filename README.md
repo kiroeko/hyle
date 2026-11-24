@@ -4,7 +4,7 @@
 
 **HYLE (HYbrid LEvels)** is a pre-release C++23 inference engine for a single machine.
 Its foundation libraries can also be built, installed and used independently. Builds target Windows,
-Linux and macOS; backend components include CPU, CUDA, Apple Metal and Vulkan. Actual model,
+Linux and macOS. Backend components include CPU, CUDA and Apple Metal. Actual model,
 format and backend coverage depends on the configuration and validation described below.
 
 HYLE 是面向单机的推理引擎。推理引擎内核负责已接纳工作的准备、模型计算、生成与状态推进；
@@ -32,7 +32,7 @@ Compute、Graph、内存、调度、I/O 等基础库；推理内核也不同于�
 
 - **完整文本入口是 Qwen**：普通生成、greedy／随机采样、MTP、多轮／多会话、共享前缀及有界缓存恢复。
   当前日常完整验证模型为 Qwen3.5-2B；其它制品与较大模型的实际运行范围见[模型覆盖](docs/implementation/model-operators.md)。
-- **单机运行**：同源 Qwen3.5-2B HF BF16 已在 Windows、WSL 和 Mac 的 15 条单端／CPU＋GPU 路线完成普通、K1／K2／K3 的贪心与随机双轮短请求。涉及 CPU、CUDA、Metal、Vulkan；WSL Vulkan 使用 Dozen／D3D12 测试驱动。设备接力、长上下文、图片、完整服务与吞吐仍按各自范围验收，实际设备与限制见[验证范围](docs/user/inference.md#制品与验证范围)。其他模型仍为组件范围。
+- **单机运行**：Qwen3.5-2B HF BF16 的普通生成和 K1／K2／K3 已在 Windows、WSL 的 CPU／CUDA／CPU＋CUDA，以及 macOS 的 CPU／Metal／CPU＋Metal 上完成贪心与随机双轮短请求验证。设备接力、长上下文、图片、完整服务与吞吐的验证范围见[推理指南](docs/user/inference.md#制品与验证范围)。其他模型仍为组件范围。
 - **文本服务**：本地 tokenizer／Jinja，具名执行与采样选择；支持 OpenAI Responses、Chat Completions 和 Anthropic Messages 的文本、图片、客户端函数工具调用与 SSE。Responses 提供进程内续接／分叉；三种协议共用受限 KV 驻留和可信前缀域；提供模型发现、实际准备能力、连接／排队／读写限额及 owner 指标。冷期制品可独立生成或在加载时按配方生成，之后复用；功能与限制见[接口指南](docs/user/text-api.md)。
 - **图片理解**：Qwen3.5-2B 的原始 HF 视觉权重或独立 GGUF mmproj，经[一次准备](docs/user/vision.md)复用；CLI 与三种 HTTP 协议接通图片、视觉计算及语言输入。实际验证 CUDA、BF16／Q8／Q4 语言模型、普通贪心及随机采样；图片 MTP 尚未实现。
 - **范围边界**：尚未交付通用模型目录加载、C++ tokenizer、完整服务 API、严格结构化生成及多卡／多机。当前排除视频、LoRA 加载和模型热切换；LoRA 可在项目外先合并到源权重。
@@ -69,7 +69,7 @@ MTP、采样、后端及会话配置继续看[推理引擎指南](docs/user/infe
 ## 平台与工具链
 
 Windows、Linux 使用 x86_64；macOS 使用 Apple Silicon。需要 C++23、Python 和 CMake，
-编译器、CUDA／Metal／Vulkan 版本及系统条件统一见[环境准备](docs/developer/setup/README.md)。
+编译器、CUDA／Metal 版本及系统条件见[环境准备](docs/developer/setup/README.md)。
 源码、静态 SDK 和动态 SDK 使用相同 C++ API；部署与 ABI 条件见[交付与集成](docs/user/distribution.md)。
 
 ## 文档

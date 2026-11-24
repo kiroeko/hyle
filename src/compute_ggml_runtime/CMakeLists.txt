@@ -1,5 +1,5 @@
 # Shared source ownership does not imply a shared backend executor. Only the
-# selected CPU/CUDA/Metal/Vulkan closures enable their native implementation targets.
+# selected CPU, CUDA and Metal closures enable their native implementation targets.
 set(_cpu OFF)
 set(_explicit_factors "${HYLE_DEV_FACTORS}")
 string(REPLACE "," ";" _explicit_factors "${_explicit_factors}")
@@ -13,7 +13,7 @@ if(DEFINED _HYLE_COMPUTE_REQUEST_CPU AND NOT _HYLE_COMPUTE_REQUEST_CPU)
   set(_cpu OFF)
 endif()
 set(HYLE_GGML_CPU_ENABLED "${_cpu}" PARENT_SCOPE)
-if(NOT _cpu AND NOT _HYLE_COMPUTE_HAVE_VULKAN AND
+if(NOT _cpu AND
    NOT _HYLE_COMPUTE_HAVE_CUDA AND NOT _HYLE_COMPUTE_HAVE_APPLE)
   hyle_add_module(compute_ggml_runtime OPTIONAL_ABSENT)
   set_property(TARGET hyle_compute_ggml_runtime PROPERTY HYLE_INTERNAL_ONLY_ABSENT TRUE)
@@ -31,7 +31,7 @@ set(_patch_dependency ggml_runtime_patches)
 set(_patch_dependency_upper GGML_RUNTIME_PATCHES)
 set(_patch_root "${HYLE_SOURCE_DIR}/third_party/ggml_runtime")
 if(_cpu AND NOT _HYLE_COMPUTE_HAVE_CUDA AND
-   NOT _HYLE_COMPUTE_HAVE_APPLE AND NOT _HYLE_COMPUTE_HAVE_VULKAN)
+   NOT _HYLE_COMPUTE_HAVE_APPLE)
   set(_cpu_upgrade ON)
   set(_dependency ggml_cpu)
   set(_dependency_upper GGML_CPU)
@@ -121,34 +121,6 @@ if(_HYLE_COMPUTE_HAVE_APPLE)
   set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
     "${_metal_iq1_root}/patches.json" "${CMAKE_CURRENT_SOURCE_DIR}/prepare_metal_iq1_manifest.py")
 endif()
-if(_HYLE_COMPUTE_HAVE_VULKAN)
-  hyle_audit_in_tree_dependencies(ggml_vulkan_runtime_patches)
-  set(_vk_patches "${HYLE_SOURCE_DIR}/third_party/ggml_vulkan_runtime")
-  set(_vk_e4_manifest "${CMAKE_CURRENT_BINARY_DIR}/vulkan-e4-source.json")
-  execute_process(COMMAND "${Python3_EXECUTABLE}"
-    "${CMAKE_CURRENT_SOURCE_DIR}/prepare_vulkan_e4_manifest.py" --output "${_vk_e4_manifest}"
-    RESULT_VARIABLE _vk_e4_result ERROR_VARIABLE _vk_e4_error)
-  if(NOT _vk_e4_result EQUAL 0)
-    message(FATAL_ERROR "Vulkan E4 numerical source preparation failed: ${_vk_e4_error}")
-  endif()
-  list(APPEND _manifests "${_vk_e4_manifest}")
-  list(APPEND _patch_args --manifest "${_vk_e4_manifest}")
-  foreach(_vk_e4_input IN ITEMS
-      "${CMAKE_CURRENT_SOURCE_DIR}/prepare_vulkan_e4_manifest.py"
-      "${HYLE_SOURCE_DIR}/src/compute_shader_shared/nvfp4_f32.h"
-      "${HYLE_SOURCE_DIR}/src/compute_route_vulkan/shaders/fp8_storage.glsl")
-    file(SHA256 "${_vk_e4_input}" _vk_e4_sha)
-    string(APPEND _source_identity "${_vk_e4_sha}")
-    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${_vk_e4_input}")
-  endforeach()
-  list(APPEND _manifests "${_vk_patches}/patches.json")
-  list(APPEND _patch_args --manifest "${_vk_patches}/patches.json")
-  string(APPEND _source_identity "${HYLE_DEP_GGML_VULKAN_RUNTIME_PATCHES_VENDORED_TREE_SHA256}")
-  list(APPEND _locked ggml_vulkan_runtime_patches)
-  list(APPEND _licenses
-    "${_vk_patches}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-vulkan-patches-LICENSE"
-    "${_vk_patches}/NOTICE.md|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-vulkan-patches-NOTICE.md")
-endif()
 if(_HYLE_COMPUTE_HAVE_CUDA)
   hyle_audit_in_tree_dependencies(ggml_cuda_runtime_patches)
   set(_cuda_patches "${HYLE_SOURCE_DIR}/third_party/ggml_cuda_runtime")
@@ -224,8 +196,7 @@ block()
   set(HYLE_GGML_PARENT_PROJECT_INCLUDE_BEFORE "${CMAKE_PROJECT_ggml_INCLUDE_BEFORE}")
   set(CMAKE_PROJECT_ggml_INCLUDE_BEFORE "${HYLE_SOURCE_DIR}/cmake/HyleGgmlProjectPolicy.cmake")
   set(BUILD_SHARED_LIBS OFF)
-  foreach(_option IN ITEMS CUDA HIP MUSA METAL BLAS SYCL VULKAN_CHECK_RESULTS
-      VULKAN_RUN_TESTS VULKAN_VALIDATE VULKAN_DEBUG VULKAN_MEMORY_DEBUG
+  foreach(_option IN ITEMS CUDA HIP MUSA METAL BLAS SYCL
       OPENMP OPENMP_FETCH RPC OPENCL WEBGPU HEXAGON ZDNN VIRTGPU VIRTGPU_BACKEND
       OPENVINO ET ET_SYSEMU CANN KOMPUTE ZENDNN NATIVE CCACHE BACKEND_DL LTO
       STATIC CPU_ALL_VARIANTS BUILD_TESTS BUILD_EXAMPLES
@@ -243,7 +214,7 @@ block()
   set(GGML_CUDA "${_HYLE_COMPUTE_HAVE_CUDA}")
   set(GGML_CUDA_GRAPHS "${_HYLE_COMPUTE_HAVE_CUDA}")
   set(GGML_CUDA_NCCL OFF)
-  set(GGML_VULKAN "${_HYLE_COMPUTE_HAVE_VULKAN}")
+  set(GGML_VULKAN OFF)
   set(GGML_METAL "${_HYLE_COMPUTE_HAVE_APPLE}")
   # Original embedded Metal sources survive prefix relocation in every delivery.
   # Device libraries and shape pipelines are prepared cold by the native owner.
@@ -383,20 +354,10 @@ if(_HYLE_COMPUTE_HAVE_CUDA)
   hyle_apply_sanitizer(ggml-cuda-precise-unary)
   target_sources(ggml-cuda PRIVATE $<TARGET_OBJECTS:ggml-cuda-precise-unary>)
 endif()
-if(_HYLE_COMPUTE_HAVE_VULKAN)
-  list(APPEND _vendor_targets ggml-vulkan)
-  target_link_libraries(ggml-vulkan PRIVATE "$<BUILD_INTERFACE:Vulkan-Headers>")
-  target_include_directories(ggml-vulkan BEFORE PRIVATE
-    "$<TARGET_PROPERTY:Vulkan-Headers,INTERFACE_INCLUDE_DIRECTORIES>")
-  target_include_directories(ggml-vulkan PRIVATE
-    "${HYLE_SOURCE_DIR}/src/compute_provider_ggml_vulkan")
-  target_compile_definitions(ggml-base PRIVATE GGML_HYLE_EMBEDDED=1)
-endif()
 foreach(_gdn_entry IN ITEMS
     "ggml-cpu|src/ggml-cpu/ops.cpp"
     "ggml-cuda|src/ggml-cuda/gated_delta_net.cu"
-    "ggml-metal|src/ggml-metal/ggml-metal-ops.cpp"
-    "ggml-vulkan|src/ggml-vulkan/ggml-vulkan.cpp")
+    "ggml-metal|src/ggml-metal/ggml-metal-ops.cpp")
   string(REPLACE "|" ";" _gdn_parts "${_gdn_entry}")
   list(GET _gdn_parts 0 _gdn_target)
   list(GET _gdn_parts 1 _gdn_relative)
@@ -443,7 +404,6 @@ if(_cpu AND HYLE_TARGET_PROCESSOR STREQUAL "x86_64" AND
   target_link_libraries(hyle_compute_ggml_runtime PRIVATE ${CMAKE_DL_LIBS})
 endif()
 set(HYLE_GGML_SOURCE_DIR "${_patched_source}" PARENT_SCOPE)
-set(HYLE_GGML_VULKAN_SOURCE_DIR "${_patched_source}" PARENT_SCOPE)
 hyle_register_package_dependency(
   NAME ggml_runtime OWNER compute_ggml_runtime
   STATIC_EXPORT_TARGETS ${_vendor_targets}

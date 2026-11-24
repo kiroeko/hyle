@@ -3,11 +3,7 @@
 #include <hyle/graph/result.h>
 #include <hyle/sched/scheduler.h>
 #include <hyle/sched/blocking.h>
-#if defined(HYLE_G09_APPLE)
 #include <hyle/graph/apple.h>
-#else
-#include <hyle/graph/vulkan.h>
-#endif
 
 #include <algorithm>
 #include <array>
@@ -19,13 +15,8 @@ namespace {
 namespace c = hyle::compute;
 namespace g = hyle::graph;
 namespace m = hyle::mem;
-#if defined(HYLE_G09_APPLE)
 namespace ng = g::apple;
 namespace n = c::apple;
-#else
-namespace ng = g::vulkan;
-namespace n = c::vulkan;
-#endif
 using hyle::Status;
 constexpr g::ExecutionTargetId native_target{0},cpu_target{1};
 constexpr g::StorageDomainId host_storage{0},native_storage{1};
@@ -62,14 +53,9 @@ Status branches(PipelineResources resources, bool cpu_first, unsigned workers, b
   HYLE_ASSIGN_OR_RETURN(auto source, tensor(desc));
   std::vector<float> values(elements, 1.25f);
   HYLE_RETURN_IF_ERROR(source.buffer.view().write(std::as_bytes(std::span(values))));
-#if defined(HYLE_G09_APPLE)
   HYLE_ASSIGN_OR_RETURN(auto resident, resources.device.allocate(desc));
   HYLE_RETURN_IF_ERROR(resources.device.copy_from_host(resident, source.view.as_const()));
   HYLE_ASSIGN_OR_RETURN(auto resident_read, resources.device.import_readonly(resident,desc));
-#else
-  HYLE_ASSIGN_OR_RETURN(auto resident, resources.native.upload(desc, std::as_bytes(std::span(values))));
-  HYLE_ASSIGN_OR_RETURN(auto resident_read, resources.device.import_readonly(resident));
-#endif
   HYLE_ASSIGN_OR_RETURN(auto builder, g::GraphBuilder::create());
   HYLE_ASSIGN_OR_RETURN(auto xi, builder.input(desc));
   HYLE_ASSIGN_OR_RETURN(auto ai, builder.input(desc));
@@ -227,14 +213,8 @@ Status branches(PipelineResources resources, bool cpu_first, unsigned workers, b
 Status contracts() {
   HYLE_ASSIGN_OR_RETURN(auto cpu, g::cpu::create_context());
   HYLE_ASSIGN_OR_RETURN(auto native, n::Context::create());
-#if defined(HYLE_G09_APPLE)
   HYLE_ASSIGN_OR_RETURN(auto memory, n::MemoryResource::create(native));
   const PipelineResources environment{cpu,native,memory};
-#else
-  HYLE_ASSIGN_OR_RETURN(auto device, n::MemoryResource::create(native, n::MemoryKind::kDevice));
-  HYLE_ASSIGN_OR_RETURN(auto staging, n::MemoryResource::create(native, n::MemoryKind::kStaging));
-  const PipelineResources environment{cpu,native,device,&staging};
-#endif
   for (unsigned workers : {1u, 2u}) {
     HYLE_RETURN_IF_ERROR(branches(environment, true, workers, false));
     HYLE_RETURN_IF_ERROR(branches(environment, false, workers, false));
@@ -245,11 +225,6 @@ Status contracts() {
   // request handoffs while the root must keep admitting newly ready work.
   HYLE_RETURN_IF_ERROR(branches(environment, true, 1, false, 8, 2, nullptr, false, true));
   HYLE_RETURN_IF_ERROR(branches(environment, false, 1, true, 8, 2, nullptr, false, true));
-#if !defined(HYLE_G09_APPLE)
-  // A caller may deliberately budget one blocking worker. Slots may queue, but
-  // finite graphs without a pool dependency cycle must still drain and reuse.
-  HYLE_RETURN_IF_ERROR(branches(environment, false, 1, false, 4, 2, nullptr, false, true, 1));
-#endif
   return Status::Ok();
 }
 } // namespace

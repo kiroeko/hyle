@@ -9,15 +9,13 @@ endif()
 cmake_minimum_required(VERSION 3.25)
 project(g08_topk_p1 LANGUAGES C CXX)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
-set(HYLE_G08_ROUTE "" CACHE STRING "cpu, cuda, apple or vulkan")
+set(HYLE_G08_ROUTE "" CACHE STRING "cpu, cuda or apple")
 set(HYLE_G08_SOURCE "" CACHE PATH "Frozen current canonical source or verification mirror")
 set(HYLE_G08_REFERENCE_DIR "" CACHE PATH "Original85 materialization with source-identity.json")
 set(HYLE_G08_REFERENCE_SOURCE "" CACHE PATH "Clean pinned original85 Git checkout")
-set(HYLE_G08_VULKAN_PRODUCER "" CACHE PATH "Producer src/compute_route_vulkan directory")
-set(HYLE_G08_GLSLANG "" CACHE FILEPATH "Vulkan shader compiler used by the producer")
 set(HYLE_G08_GGML_INCLUDE "" CACHE PATH "CPU producer private native headers for original provider only")
-if(NOT HYLE_G08_ROUTE MATCHES "^(cpu|cuda|apple|vulkan)$")
-  message(FATAL_ERROR "Specify HYLE_G08_ROUTE=cpu, cuda, apple or vulkan")
+if(NOT HYLE_G08_ROUTE MATCHES "^(cpu|cuda|apple)$")
+  message(FATAL_ERROR "Specify HYLE_G08_ROUTE=cpu, cuda or apple")
 endif()
 if(NOT EXISTS "${HYLE_G08_SOURCE}/bench/nanobench_impl.cc")
   message(FATAL_ERROR "Specify the frozen current HYLE source")
@@ -43,7 +41,6 @@ include("${HYLE_G08_REFERENCE_DIR}/sources.cmake")
 set(_cpu 0)
 set(_cuda 0)
 set(_apple 0)
-set(_vulkan 0)
 set(_rounds 16)
 if(HYLE_G08_ROUTE STREQUAL "cpu")
   set(_cpu 1)
@@ -63,10 +60,6 @@ elseif(HYLE_G08_ROUTE STREQUAL "apple")
   set(_apple 1)
   set(_owner compute_route_apple)
   set(_arm apple_arm.cc)
-else()
-  set(_vulkan 1)
-  set(_owner compute_route_vulkan)
-  set(_arm vulkan_arm.cc)
 endif()
 
 add_library(g08_original85 STATIC ${G08_ORIGINAL_SOURCES})
@@ -74,8 +67,7 @@ target_include_directories(g08_original85 PRIVATE
   "${HYLE_G08_REFERENCE_DIR}/src/${_owner}"
   "${HYLE_G08_REFERENCE_DIR}/src/compute"
   "${HYLE_G08_REFERENCE_DIR}/src/compute_backend_cuda"
-  "${HYLE_G08_REFERENCE_DIR}/src/compute_ggml_runtime"
-  "${HYLE_G08_REFERENCE_DIR}/src/compute_provider_ggml_vulkan")
+  "${HYLE_G08_REFERENCE_DIR}/src/compute_ggml_runtime")
 target_link_libraries(g08_original85 PUBLIC hyle::compute)
 if(_cpu)
   if(NOT EXISTS "${HYLE_G08_GGML_INCLUDE}/ggml.h" OR
@@ -104,27 +96,6 @@ elseif(_apple)
   target_compile_definitions(g08_original85 PRIVATE lower_tensor=g08_original_lower_tensor
     lower_mature_indexing=g08_original_lower_mature_indexing
     is_mlx_tensor_custom=g08_original_is_mlx_tensor_custom)
-else()
-  if(NOT EXISTS "${HYLE_G08_VULKAN_PRODUCER}/vulkan_build.h" OR NOT EXISTS "${HYLE_G08_GLSLANG}")
-    message(FATAL_ERROR "Bind Vulkan to the producer config and shader compiler")
-  endif()
-  # Only owned Vulkan declarations are isolated. The archived full include
-  # directory is never used: common declarations come from the same current SDK.
-  target_include_directories(g08_original85 BEFORE PRIVATE "${HYLE_G08_REFERENCE_DIR}/public-overlay")
-  file(READ "${HYLE_G08_VULKAN_PRODUCER}/vulkan_build.h" _config)
-  string(REPLACE "hyle::compute::vulkan" "hyle::compute::g08_original_vulkan" _config "${_config}")
-  file(CONFIGURE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/original-generated/vulkan_build.h" CONTENT "${_config}" @ONLY)
-  set(_shaders "${CMAKE_CURRENT_BINARY_DIR}/original-generated/shaders")
-  add_custom_command(OUTPUT "${_shaders}/vulkan_shaders.cc" "${_shaders}/vulkan_shaders.h"
-    COMMAND "${Python3_EXECUTABLE}" "${HYLE_G08_REFERENCE_DIR}/src/compute_route_vulkan/build_shaders.py"
-      --compiler "${HYLE_G08_GLSLANG}"
-      --source "${HYLE_G08_REFERENCE_DIR}/third_party/ggml_vulkan_shaders/shaders"
-      --tensor-source "${HYLE_G08_REFERENCE_DIR}/src/compute_route_vulkan/shaders"
-      --output "${_shaders}"
-    DEPENDS "${HYLE_G08_REFERENCE_DIR}/src/compute_route_vulkan/build_shaders.py"
-    VERBATIM)
-  target_sources(g08_original85 PRIVATE "${_shaders}/vulkan_shaders.cc")
-  target_include_directories(g08_original85 PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/original-generated" "${_shaders}")
 endif()
 target_compile_features(g08_original85 PRIVATE cxx_std_23)
 set_property(TARGET g08_original85 PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
@@ -139,9 +110,6 @@ foreach(_role IN ITEMS candidate reference)
   if(_role STREQUAL "reference")
     target_compile_definitions(g08_${_role}_arm PRIVATE HYLE_G08_REFERENCE=1)
     target_link_libraries(g08_${_role}_arm PUBLIC g08_original85)
-    if(_vulkan)
-      target_include_directories(g08_${_role}_arm BEFORE PRIVATE "${HYLE_G08_REFERENCE_DIR}/public-overlay")
-    endif()
   else()
     target_compile_definitions(g08_${_role}_arm PRIVATE HYLE_G08_REFERENCE=0)
   endif()

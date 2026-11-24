@@ -1,12 +1,7 @@
 #include "native_page_reference.h"
 #include "hyle/compute/detail/materialized_native_controller.h"
-#if defined(HYLE_PAGE_APPLE_BENCH)
 #include "hyle/compute/detail/apple_batch_access.h"
 #include "hyle/compute/detail/apple_copy_stream_access.h"
-#else
-#include "hyle/compute/detail/vulkan_batch_access.h"
-#include "hyle/compute/detail/vulkan_copy_stream_access.h"
-#endif
 #include "../common/perf_process.h"
 #include <nanobench.h>
 #include <algorithm>
@@ -23,13 +18,8 @@
 
 namespace {
 namespace c=hyle::compute;namespace nb=ankerl::nanobench;
-#if defined(HYLE_PAGE_APPLE_BENCH)
 namespace n=c::apple;
 constexpr const char* backend="Apple";
-#else
-namespace n=c::vulkan;
-constexpr const char* backend="Vulkan";
-#endif
 #ifndef HYLE_PAGE_PLACEMENT
 #define HYLE_PAGE_PLACEMENT 0
 #endif
@@ -71,11 +61,7 @@ struct Data final {
 struct PeerTraits final {
   using Context=n::Context;using Program=n::Program;using Memory=n::MemoryResource;
   using Invocation=n::Invocation;using CopyInvocation=n::CopyBatchInvocation;
-#if defined(HYLE_PAGE_APPLE_BENCH)
   using View=mlx::core::array;
-#else
-  using View=n::Tensor;
-#endif
   using Submission=c::OwnedResult<n::Results>;
   using CopyAccess=n::detail::CopyStreamAccess;
   static auto invocation(const Program& p,hyle::mem::AllocatorRef a){return p.create_invocation(a);}
@@ -98,18 +84,9 @@ struct Harness final {
   std::array<n::PagedBatchInvocation,2> selected;std::array<std::unique_ptr<PeerState>,2> peers;
   bool original;unsigned next=0;
   Harness(const Data& data,bool use_original):context(take(n::Context::create())),
-#if defined(HYLE_PAGE_APPLE_BENCH)
       device(take(n::MemoryResource::create(context))),staging(take(n::MemoryResource::create(context))),
-#else
-      device(take(n::MemoryResource::create(context,n::MemoryKind::kDevice))),staging(take(n::MemoryResource::create(context,n::MemoryKind::kStaging))),
-#endif
       original(use_original){
-#if defined(HYLE_PAGE_APPLE_BENCH)
     const auto env=take(context.environment());std::fprintf(stderr,"# NATIVE_PAGE_ENV backend=Apple device=%s architecture=%s runtime=%s revision=%s\n",env.device_name.c_str(),env.architecture.c_str(),env.os_runtime.c_str(),env.mlx_revision.c_str());
-#else
-    const auto& env=context.environment();if(env.software_device)check(hyle::Status::Unimplemented("page P1 requires real GPU"));
-    std::fprintf(stderr,"# NATIVE_PAGE_ENV backend=Vulkan device=%s driver=%s revision=%s\n",env.device_name.c_str(),env.driver_name.c_str(),env.ggml_revision.c_str());
-#endif
     schema=take(c::BatchSchema::create(data.cap));layout=take(schema.version({data.qp,data.kp,data.pages,data.tails}));
     recipe=take(c::NativePagedBatchProgram::prepare(schema,{.max_host_metadata_bytes=1<<20,.scale=data.scale,.causal=data.causal}));
     keys=take(c::PagedArena::create(schema,c::BatchCacheRole::kKey,device.ref(),{.max_backing_bytes=1<<24}));values=take(c::PagedArena::create(schema,c::BatchCacheRole::kValue,device.ref(),{.max_backing_bytes=1<<24}));
@@ -146,11 +123,7 @@ struct Harness final {
     auto submitted=original?take(peers[slot]->submit(),"peer submit"):take(selected[slot].submit(),"selected submit");
     const std::array peer_wait{"peer wait slot 0","peer wait slot 1"},selected_wait{"selected wait slot 0","selected wait slot 1"};
     auto result=take(submitted.wait(),original?peer_wait[slot]:selected_wait[slot]);
-#if defined(HYLE_PAGE_APPLE_BENCH)
     const auto output=result->arrays()[0];if(host){auto desc=take(c::TensorDesc::dense(c::DataType::kFloat16,std::array<std::int64_t,3>{layout.facts().query_rows,8,schema.capacity().qk_head_dim}));auto read=take(device.import_readonly(output,desc));check(read.view()->read(std::as_writable_bytes(std::span(*host))));}
-#else
-    const auto output=result->tensors()[0];if(host)check(context.download(output,std::as_writable_bytes(std::span(*host))));
-#endif
     nb::doNotOptimizeAway(output);
   }
   void verify(const Data& data,const std::vector<double>& expected){std::vector<std::uint16_t> actual(expected.size());execute(&actual);double worst=0;

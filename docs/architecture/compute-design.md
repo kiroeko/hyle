@@ -19,7 +19,7 @@ Provider有三种合法接入：直接primitive、自有编译程序、明确扩
 输出由真实owner保活，不为统一out-buffer而复制到影子存储，也不伪造第三方buffer或调用私有字段绕过权限。
 
 caller-owned interop须核device、范围、编码、coherence、borrow／ownership和完成边界。
-CPU外部指针能力不能推广到CUDA／MLX／Vulkan；同GPU或同runtime名称不自动保证内存与时间线互通。
+CPU外部指针能力不能推广到CUDA／MLX；同GPU或同runtime名称不自动保证内存与时间线互通。
 
 ## 冷路由
 
@@ -59,7 +59,7 @@ host metadata、payload、第三方heap及driver私有内存分别计量；未�
 只读租约可共享，独占写要求对应物理范围没有读者或在途使用。alias按实际存储范围判断，
 成功写入后才能发布ready读内容。device仍引用的payload、索引、参数、代码和真实owner必须活到最后使用。
 
-CPU happens-before、CUDA event、Metal hazard／event及Vulkan执行／内存依赖保留各自语义。
+CPU happens-before、CUDA event 和 Metal hazard／event保留各自语义。
 统一内存不消除同步。取消只停止未接纳后继，事件记录失败或Status非OK不证明此前工作已经退休；
 未知完成状态不能变成可回收状态。停止接纳、观察错误、close与显式drain分别按owner合同处理，不靠析构隐藏无界等待。
 

@@ -15,10 +15,8 @@ using NativeGate = q::probe::NativeGate;
 constexpr auto native_backend = hyle::inference::BackendKind::kApple;
 #elif defined(HYLE_COMPUTE_CUDA)
 constexpr auto native_backend = hyle::inference::BackendKind::kCuda;
-#elif defined(HYLE_COMPUTE_VULKAN)
-constexpr auto native_backend = hyle::inference::BackendKind::kVulkan;
 #else
-#error "This native gate probe requires an Apple, CUDA or Vulkan endpoint"
+#error "This native gate probe requires an Apple or CUDA endpoint"
 #endif
 
 void require(bool condition, const char *message) {
@@ -173,8 +171,7 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &tape_
   auto weight_source = q::prepare_weight_source(inputs / "weights.tsv", false);
   const auto plan = q::cache::plan(geometry, weight_source.cache_row_bytes, capacity, 1, prompt.size(),
                                   q::recurrent_bytes(q::state_schema_for(geometry, capacity), geometry));
-  const bool progress = native_backend == hyle::inference::BackendKind::kApple ||
-      native_backend == hyle::inference::BackendKind::kVulkan;
+  const bool progress = native_backend == hyle::inference::BackendKind::kApple;
   q::Model model(std::move(weight_source), geometry, capacity, plan, {}, progress,
       q::ReplayPolicy::kAuto, SIZE_MAX, {false, {}, 0}, 0, {.primary=native_backend});
   const std::array<std::size_t, 3> calls{128, 1, 1};
@@ -422,8 +419,7 @@ void run_mtp(const std::filesystem::path &inputs, std::size_t verify_rows) {
   auto weight_source = q::prepare_weight_source(inputs / "weights.tsv", true);
   const auto plan = q::cache::plan(geometry, weight_source.cache_row_bytes, capacity, 2, prompt.size(),
       q::recurrent_bytes(q::state_schema_for(geometry, capacity), geometry), 1, 2, true);
-  const bool progress = native_backend == hyle::inference::BackendKind::kApple ||
-      native_backend == hyle::inference::BackendKind::kVulkan;
+  const bool progress = native_backend == hyle::inference::BackendKind::kApple;
   q::Model model(std::move(weight_source), geometry, capacity, plan, {}, progress,
       q::ReplayPolicy::kAuto, SIZE_MAX, {false, {}, 0}, 0, {.primary=native_backend});
   require(model.weights.size() == 335, "MTP probe did not load the real text+15MTP inventory");

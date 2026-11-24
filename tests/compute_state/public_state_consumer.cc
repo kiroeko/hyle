@@ -14,10 +14,6 @@
 #include <hyle/compute/apple_memory.h>
 #include <mlx/ops.h>
 #endif
-#if defined(HYLE_COMPUTE_VULKAN)
-#include <hyle/graph/vulkan.h>
-#include <hyle/compute/vulkan_memory.h>
-#endif
 #include <array>
 #include <algorithm>
 #include <cmath>
@@ -146,49 +142,6 @@ struct AppleRoute {
 };
 #endif
 
-#if defined(HYLE_COMPUTE_VULKAN)
-struct VulkanRoute {
-  c::vulkan::Context &context;c::vulkan::MemoryResource &memory;c::vulkan::MemoryResource &staging;
-  c::LeasePool &host_pool;
-  Result<c::ReadLease> load(const c::TensorDesc &desc,std::span<const float> data) {
-    HYLE_ASSIGN_OR_RETURN(auto tensor,context.upload(desc,std::as_bytes(data)));return memory.import_readonly(tensor);
-  }
-  Result<std::vector<float>> read(const c::ReadLease &lease,const c::TensorDesc &desc) {
-    HYLE_ASSIGN_OR_RETURN(auto tensor,memory.binding(lease,desc));std::vector<float> values(lease.size()/sizeof(float));
-    HYLE_RETURN_IF_ERROR(context.download(tensor,std::as_writable_bytes(std::span(values))));return values;
-  }
-  Result<c::StateCloneRoute> clones(c::StateStore &store,std::size_t bytes,m::MemoryResourceRef source={}) {
-    const std::array specs{c::CopyResourceSpec{source.valid()?source:memory.ref(),bytes},c::CopyResourceSpec{memory.ref(),bytes}};
-    HYLE_ASSIGN_OR_RETURN(auto program,c::vulkan::CopyBatchProgram::prepare(context,specs));
-    return c::StateCloneRoute::prepare(store,{.resource=memory.ref(),.capacity_bytes=64u*1024u,.slots=2},program,
-      [](const c::vulkan::CopyBatchProgram &p) noexcept {return c::vulkan::CopyBatchInvocation::create(p);});
-  }
-  Status update(c::StateWriter &writer,std::span<const float> data) {
-    HYLE_ASSIGN_OR_RETURN(auto host_writer,host_pool.allocate(data.size_bytes()));HYLE_RETURN_IF_ERROR(host_writer.view()->write(std::as_bytes(data)));
-    HYLE_ASSIGN_OR_RETURN(auto host,host_writer.publish());
-    const std::array specs{c::CopyResourceSpec{staging.ref(),data.size_bytes()},c::CopyResourceSpec{memory.ref(),data.size_bytes()}};
-    HYLE_ASSIGN_OR_RETURN(auto program,c::vulkan::CopyBatchProgram::prepare(context,specs));
-    HYLE_ASSIGN_OR_RETURN(auto invocation,c::vulkan::CopyBatchInvocation::create(program));
-    HYLE_RETURN_IF_ERROR(invocation.bind_source({0},host));HYLE_RETURN_IF_ERROR(invocation.bind_mutable({1},std::move(writer.lease())));
-    const std::array<c::CopyPhase,1> phases{{{}}};const std::array<c::CopyRange,1> ranges{{{{0},{1},{0},0,0,data.size_bytes()}}};
-    HYLE_RETURN_IF_ERROR(invocation.prepare_replay(phases,ranges));HYLE_ASSIGN_OR_RETURN(auto submitted,invocation.submit());HYLE_RETURN_IF_ERROR(submitted.wait());
-    HYLE_ASSIGN_OR_RETURN(auto ready,submitted.output({0},{1},0,data.size_bytes()));submitted={};HYLE_RETURN_IF_ERROR(invocation.reset());
-    return writer.complete(ready);
-  }
-  Result<std::vector<c::ReadLease>> math(const Work &work,std::span<const c::ReadLease> leases,bool graph) {
-    std::vector<c::vulkan::Tensor> inputs;std::vector<c::vulkan::Argument> arguments;
-    for(std::size_t i=0;i<leases.size();++i){HYLE_ASSIGN_OR_RETURN(auto tensor,memory.binding(leases[i],work.inputs[i]));inputs.push_back(std::move(tensor));arguments.emplace_back(work.inputs[i]);}
-    c::vulkan::Program program;
-    if(graph){HYLE_ASSIGN_OR_RETURN(auto graph_work,logical(work));HYLE_ASSIGN_OR_RETURN(program,g::vulkan::compile(context,graph_work.graph));}
-    else {HYLE_ASSIGN_OR_RETURN(program,c::vulkan::prepare(context,work.operation,std::span<const c::vulkan::Argument>(arguments)));}
-    HYLE_ASSIGN_OR_RETURN(auto invocation,program.create_invocation());HYLE_RETURN_IF_ERROR(invocation.bind(inputs));
-    HYLE_ASSIGN_OR_RETURN(auto submitted,invocation.submit());HYLE_ASSIGN_OR_RETURN(auto output,submitted.wait());
-    std::vector<c::ReadLease> result;
-    for(const auto &tensor:output->tensors()){HYLE_ASSIGN_OR_RETURN(auto lease,memory.import_readonly(tensor));result.push_back(std::move(lease));}
-    return result;
-  }
-};
-#endif
 
 #include "mtp_prefix_consumer.h"
 #include "kda_prefix_consumer.h"
@@ -303,10 +256,6 @@ Status run() {
 #endif
 #if defined(HYLE_COMPUTE_APPLE)
   {HYLE_ASSIGN_OR_RETURN(auto context,c::apple::Context::create());HYLE_ASSIGN_OR_RETURN(auto memory,c::apple::MemoryResource::create(context));HYLE_ASSIGN_OR_RETURN(auto pool,c::LeasePool::create(memory.ref(),2u*1024u*1024u));AppleRoute route{context,memory,pool};HYLE_RETURN_IF_ERROR(exercise(route,"Apple"));HYLE_RETURN_IF_ERROR(exercise_mtp_prefixes(route,"Apple"));}
-#endif
-#if defined(HYLE_COMPUTE_VULKAN)
-  {HYLE_ASSIGN_OR_RETURN(auto context,c::vulkan::Context::create());HYLE_ASSIGN_OR_RETURN(auto memory,c::vulkan::MemoryResource::create(context,c::vulkan::MemoryKind::kDevice));HYLE_ASSIGN_OR_RETURN(auto staging,c::vulkan::MemoryResource::create(context,c::vulkan::MemoryKind::kStaging));HYLE_ASSIGN_OR_RETURN(auto pool,c::LeasePool::create(staging.ref(),64u*1024u));
-   VulkanRoute route{context,memory,staging,pool};HYLE_RETURN_IF_ERROR(exercise(route,"Vulkan"));HYLE_RETURN_IF_ERROR(exercise_mtp_prefixes(route,"Vulkan"));}
 #endif
 #if defined(HYLE_COMPUTE_CPU) && defined(HYLE_COMPUTE_CUDA)
   {

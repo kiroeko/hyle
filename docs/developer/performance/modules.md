@@ -55,7 +55,7 @@
 | Process 环境合并 | 排序索引将重复比较改为 M log M＋E log M，保留平台大小写语义 | [同工计数与回归](../../evidence/performance/library-review-2026-10-18/process-env/summary.json)；不是完整 spawn 吞吐排名 |
 | HTTP/2 大 body | 参考绕过 TCP 检查是双 Task 小残差的重要来源；修正归因对照后，三轮中位差 −0.92%／−1.49%／−0.43% | [TCP 干预](../../evidence/performance/library-review-2026-10-18/http2/tcp-transport/summary.json)；产品本轮未因此变快，原自然路线差距仍需分别看 |
 
-Apple／Vulkan 的 attention 分块、mask、dtype 与显存改进有各自实际受理域和失败记录，
+Apple 的 attention 分块、mask、dtype 与显存改进有各自实际受理域和失败记录，
 在[同一排查记录](../../evidence/performance/library-review-2026-10-18/README.md)按实验顺序保留。
 不能只取前段方案：后续曾撤回使峰值增加或显著变慢的候选，并修正过早期范围判断。
 同样，G04／G05 的[双 K 加载筛选](../../evidence/performance/g04-g05-same-process-ilp-2026-10-17/README.md)

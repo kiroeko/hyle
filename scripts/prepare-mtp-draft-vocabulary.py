@@ -95,7 +95,7 @@ def recorded_counts(folder: Path, identity: str, vocabulary: int,
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--hyle", type=Path, help="ordinary Hyle executable with the public token-worker entry")
-    parser.add_argument('--backend', choices=('cpu', 'cuda', 'apple', 'vulkan'),
+    parser.add_argument('--backend', choices=('cpu', 'cuda', 'apple'),
                         help='native execution backend; absent uses the engine default')
     parser.add_argument("--inputs", type=Path, required=True)
     parser.add_argument("--tokenizer-dir", type=Path)

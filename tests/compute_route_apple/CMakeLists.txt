@@ -9,10 +9,8 @@ if(_HYLE_COMPUTE_HAVE_APPLE)
   hyle_stage_runtime(hyle_compute_route_apple_device_lengths_test)
   hyle_add_test(compute_route_apple NAME gdn_output_scale
     SOURCES ../compute_provider_native/gdn_output_scale_test.cc)
-  target_compile_definitions(hyle_compute_route_apple_gdn_output_scale_test PRIVATE HYLE_GDN_SCALE_APPLE=1)
   hyle_stage_runtime(hyle_compute_route_apple_gdn_output_scale_test)
-  hyle_add_test(compute_route_apple NAME row_cache_paged SOURCES ../compute_route_vulkan/row_cache_paged_test.cc DEPS hyle_compute_batch)
-  target_compile_definitions(hyle_compute_route_apple_row_cache_paged_test PRIVATE HYLE_ROW_CACHE_PAGED_APPLE=1)
+  hyle_add_test(compute_route_apple NAME row_cache_paged SOURCES row_cache_paged_test.cc DEPS hyle_compute_batch)
   hyle_add_test(compute_route_apple NAME packed_consumer SOURCES packed_resident_consumer.cc)
   hyle_stage_runtime(hyle_compute_route_apple_packed_consumer_test)
   hyle_add_test(compute_route_apple NAME sequence SOURCES sequence_test.cc DEPS hyle_simd)
@@ -45,13 +43,11 @@ if(_HYLE_COMPUTE_HAVE_APPLE AND TARGET hyle_graph_route_apple)
     SOURCES gguf_nvfp4_test.cc DEPS hyle_graph_route_apple)
   hyle_stage_runtime(hyle_compute_route_apple_gguf_nvfp4_test)
   hyle_add_test(compute_route_apple NAME row_cache_padded
-    SOURCES ../compute_route_vulkan/row_cache_padded_test.cc
+    SOURCES row_cache_padded_test.cc
     DEPS hyle_graph_route_apple hyle_compute_batch hyle_simd)
-  target_compile_definitions(hyle_compute_route_apple_row_cache_padded_test PRIVATE HYLE_NATIVE_ROW_PADDED_APPLE=1)
   hyle_stage_runtime(hyle_compute_route_apple_row_cache_padded_test)
   hyle_add_test(compute_route_apple NAME row_cache_indexer
-    SOURCES ../compute_route_vulkan/row_cache_indexer_test.cc DEPS hyle_graph_route_apple hyle_simd)
-  target_compile_definitions(hyle_compute_route_apple_row_cache_indexer_test PRIVATE HYLE_ROW_INDEXER_APPLE=1)
+    SOURCES row_cache_indexer_test.cc DEPS hyle_graph_route_apple hyle_simd)
   hyle_stage_runtime(hyle_compute_route_apple_row_cache_indexer_test)
   hyle_add_test(compute_route_apple NAME gather_elements
     SOURCES gather_elements_test.cc DEPS hyle_graph_route_apple hyle_simd)

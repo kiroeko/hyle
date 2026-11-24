@@ -16,25 +16,15 @@
 #include "hyle/compute/model_ops.h"
 #include "hyle/graph/batch.h"
 #include "hyle/graph/result.h"
-#if defined(HYLE_NATIVE_ROW_INDEXER_APPLE)
 #include "hyle/compute/apple_memory.h"
 #include "hyle/graph/apple.h"
-#else
-#include "hyle/compute/vulkan_memory.h"
-#include "hyle/graph/vulkan.h"
-#endif
 
 namespace {
 namespace c = hyle::compute;
 namespace g = hyle::graph;
 namespace gb = g::batch;
-#if defined(HYLE_NATIVE_ROW_INDEXER_APPLE)
 namespace native = c::apple;
 namespace ng = g::apple;
-#else
-namespace native = c::vulkan;
-namespace ng = g::vulkan;
-#endif
 using row_cache_native_test::take;
 constexpr unsigned tokens = 3, heads = 64, depth = 512, selected = 3;
 
@@ -46,13 +36,8 @@ c::TensorDesc dense(c::DataType type, std::initializer_list<std::int64_t> shape)
 }
 struct Route final {
   native::Context context = native::Context::create().value();
-#if defined(HYLE_NATIVE_ROW_INDEXER_APPLE)
   native::MemoryResource device = native::MemoryResource::create(context).value();
   native::MemoryResource staging = native::MemoryResource::create(context).value();
-#else
-  native::MemoryResource device = native::MemoryResource::create(context, native::MemoryKind::kDevice).value();
-  native::MemoryResource staging = native::MemoryResource::create(context, native::MemoryKind::kStaging).value();
-#endif
   c::LeasePool host = c::LeasePool::create(staging.ref(), 2u << 20).value();
   c::LeasePool pool = c::LeasePool::create(device.ref(), 4u << 20).value();
   native::CopyBatchProgram copy_program = native::CopyBatchProgram::prepare(context,
@@ -81,13 +66,8 @@ struct Route final {
 template<class T> std::vector<T> read(Route &route, const g::GraphOutput &output) {
   const auto description = output.description().value();
   std::vector<T> values(description.element_count().value());
-#if defined(HYLE_NATIVE_ROW_INDEXER_APPLE)
   (void)route;
   check(output.storage_lease().value().view()->read(std::as_writable_bytes(std::span(values))), "read Metal result");
-#else
-  const auto tensor = route.device.binding(output.storage_lease().value(), description).value();
-  check(route.context.download(tensor, std::as_writable_bytes(std::span(values))), "download native result");
-#endif
   return values;
 }
 
@@ -183,17 +163,10 @@ g::CompiledGraph compile(Route &route, const Recipe &model, bool split = false) 
   const std::array domains{g::StorageDomain{route.device.ref()}, g::StorageDomain{route.staging.ref()}};
   if (!split) return take(gb::compile(model.graph, {.storage_domains = domains,
       .targets = std::array{g::ExecutionTarget{source, g::StorageDomainId{0}}}}), "native scorer Graph compile");
-#if defined(HYLE_NATIVE_ROW_INDEXER_APPLE)
   const ng::CustomLowering custom = [](const c::Operation &, std::span<const mlx::core::array>, mlx::core::Stream)
       -> hyle::Result<std::vector<mlx::core::array>> {
     return std::unexpected(hyle::Status::Unimplemented("test uses original native math"));
   };
-#else
-  const ng::CustomLowering custom = [](const c::Operation &, std::span<const c::TensorDesc>, const c::TensorDesc &)
-      -> hyle::Result<ng::CustomDispatch> {
-    return std::unexpected(hyle::Status::Unimplemented("test uses original native math"));
-  };
-#endif
   const auto other = ng::execution_source(route.context, {.custom = custom}).value();
   const std::array targets{g::ExecutionTarget{source, g::StorageDomainId{0}},
                            g::ExecutionTarget{other, g::StorageDomainId{0}}};

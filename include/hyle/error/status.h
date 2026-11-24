@@ -51,7 +51,7 @@ enum class NativeErrorDomain : std::uint16_t {
   None = 0,
   PosixErrno = 1,
   Win32 = 2,
-  Vulkan = 3,
+  // Value 3 is reserved.
   CudaRuntime = 4,
   CudaDriver = 5,
   Nvrtc = 6,
@@ -121,7 +121,6 @@ normalize_native_error_domain(NativeErrorDomain domain) noexcept {
   case NativeErrorDomain::None:
   case NativeErrorDomain::PosixErrno:
   case NativeErrorDomain::Win32:
-  case NativeErrorDomain::Vulkan:
   case NativeErrorDomain::CudaRuntime:
   case NativeErrorDomain::CudaDriver:
   case NativeErrorDomain::Nvrtc:

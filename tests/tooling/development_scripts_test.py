@@ -39,15 +39,10 @@ class DevelopmentCommandsTest(unittest.TestCase):
         for name, value in (("ROOT", self.root), ("_host", lambda: ("Linux", "x86_64")),
                             ("discover_environment", self.environment), ("_run", self.run_command),
                             ("discover_test_environment", self.runtime_environment),
-                            ("find_openssl", lambda environment: {}),
-                            ("find_glslang", lambda environment: None)):
+                            ("find_openssl", lambda environment: {})):
             active = patch.object(support, name, value)
             active.start()
             self.addCleanup(active.stop)
-        resources = patch.object(support, "prepare_resources")
-        self.resources = resources.start()
-        self.resources.return_value = {}
-        self.addCleanup(resources.stop)
 
     def environment(self, compiler="auto", cache=None, backends=(), generator=None, configuring=False):
         cache = cache or {}
@@ -115,13 +110,16 @@ class DevelopmentCommandsTest(unittest.TestCase):
                 for path in self.base.rglob("*") if path.is_file()}
 
     def test_backend_sets_are_canonical_and_all_is_platform_specific(self):
-        self.assertEqual(support.parse_backends("VULKAN,cpu,CUDA,cpu", "Linux", "x86_64"),
-                         ("cpu", "cuda", "vulkan"))
+        self.assertEqual(support.parse_backends("CUDA,cpu,CUDA,cpu", "Linux", "x86_64"),
+                         ("cpu", "cuda"))
         self.assertEqual(support.parse_backends("all", "Windows", "x86_64"),
-                         ("cpu", "cuda", "vulkan"))
+                         ("cpu", "cuda"))
         self.assertEqual(support.parse_backends("all", "Darwin", "aarch64"),
-                         ("cpu", "apple", "vulkan"))
-        self.assertEqual(support.parse_backends("all", "Linux", "aarch64"), ("vulkan",))
+                         ("cpu", "apple"))
+        with self.assertRaisesRegex(SetupError, "No complete backend"):
+            support.parse_backends("all", "Linux", "aarch64")
+        self.assertEqual(support.parse_backends("all", "Linux", "aarch64", complete_math=False),
+                         ("cpu", "cuda"))
 
     def test_invalid_and_unavailable_backend_requests_fail(self):
         for value, system, arch in (("cuda", "Darwin", "aarch64"),
@@ -130,6 +128,8 @@ class DevelopmentCommandsTest(unittest.TestCase):
                                     ("cpu", "Darwin", "x86_64"),
                                     ("metal", "Windows", "x86_64"),
                                     ("unknown", "Linux", "x86_64"),
+                                    ("vulkan", "Linux", "x86_64"),
+                                    ("cpu,vulkan", "Linux", "x86_64"),
                                     ("", "Linux", "x86_64"),
                                     ("cpu,,cuda", "Linux", "x86_64"),
                                     ("all,cpu", "Linux", "x86_64")):
@@ -152,19 +152,18 @@ class DevelopmentCommandsTest(unittest.TestCase):
                 patch.object(support, "find_openssl") as openssl:
             for value in ("typo", "compute,typo", "io;typo", "util_core"):
                 with self.subTest(components=value):
-                    result, _, errors = self.invoke("init", "--components", value, "--backends", "vulkan")
+                    result, _, errors = self.invoke("init", "--components", value, "--backends", "cuda")
                     self.assertEqual(result, 2)
                     self.assertIn("Unknown Hyle product(s)", errors)
                     self.assertIn(value.split(",")[-1].split(";")[-1], errors)
             directory = self.root / ".scratch/build/old"
-            self.write_cache(directory, HYLE_COMPONENTS="compute;cached_typo", HYLE_COMPUTE_ROUTES="vulkan")
+            self.write_cache(directory, HYLE_COMPONENTS="compute;cached_typo", HYLE_COMPUTE_ROUTES="cuda")
             result, _, errors = self.invoke("init", "--name", "old")
             self.assertEqual(result, 2)
             self.assertIn("cached_typo", errors)
             discovery.assert_not_called()
             openssl.assert_not_called()
         self.assertEqual(self.commands, [])
-        self.resources.assert_not_called()
 
     def test_product_catalog_remains_the_source_of_public_product_names(self):
         with self.catalog.open("a", encoding="utf-8") as stream:
@@ -185,13 +184,12 @@ class DevelopmentCommandsTest(unittest.TestCase):
         with self.catalog.open("a", encoding="utf-8") as stream:
             stream.write('\n_hyle_declare_product("${unknown_product}" FACTORS core)\n')
         with patch.object(support, "discover_environment", wraps=self.environment) as discovery:
-            result, _, errors = self.invoke("init", "--components", "compute", "--backends", "vulkan")
+            result, _, errors = self.invoke("init", "--components", "compute", "--backends", "cuda")
             self.assertEqual(result, 2)
             self.assertIn("product catalog", errors)
             self.assertIn("unsupported product declaration", errors)
             discovery.assert_not_called()
         self.assertEqual(self.commands, [])
-        self.resources.assert_not_called()
 
     def test_file_service_passes_its_backend_without_full_math_restrictions(self):
         with patch.object(support, "_host", return_value=("Linux", "aarch64")):
@@ -212,7 +210,6 @@ class DevelopmentCommandsTest(unittest.TestCase):
                     self.assertIn("complete CPU backend", errors)
             discovery.assert_not_called()
         self.assertEqual(self.commands, [])
-        self.resources.assert_not_called()
 
     def test_default_cpu_shared_configuration_reuses_its_directory(self):
         for _ in range(2):
@@ -251,13 +248,12 @@ class DevelopmentCommandsTest(unittest.TestCase):
         with patch.object(support, "discover_environment", wraps=self.environment) as discovery:
             for definition in definitions:
                 with self.subTest(definition=definition):
-                    result, _, errors = self.invoke("init", "--backends", "vulkan", "--dry-run", "-D", definition)
+                    result, _, errors = self.invoke("init", "--backends", "cuda", "--dry-run", "-D", definition)
                     self.assertNotEqual(result, 0)
                     self.assertIn("Required providers are selected automatically", errors)
                     self.assertIn("--components and --backends", errors)
             discovery.assert_not_called()
         self.assertEqual(self.commands, [])
-        self.resources.assert_not_called()
 
     def test_reinitializing_old_provider_selection_preserves_the_configuration(self):
         for value in ("ON", "OFF"):
@@ -330,14 +326,13 @@ class DevelopmentCommandsTest(unittest.TestCase):
         self.assertEqual(cache["HYLE_COMPUTE_ROUTES"], "cpu")
 
     def test_engine_prepares_selected_route_and_debug_test_configuration(self):
-        self.succeeds("init", "--name", "engine-debug", "--backends", "vulkan",
+        self.succeeds("init", "--name", "engine-debug", "--backends", "cuda",
                       "--config", "Debug", "--tests")
         cache = support.read_cache(self.selected())
         self.assertEqual(cache["HYLE_COMPONENTS"], "engine")
-        self.assertEqual(cache["HYLE_COMPUTE_ROUTES"], "vulkan")
+        self.assertEqual(cache["HYLE_COMPUTE_ROUTES"], "cuda")
         self.assertEqual(cache["CMAKE_BUILD_TYPE"], "Debug")
         self.assertEqual(cache["HYLE_BUILD_TESTS"], "ON")
-        self.resources.assert_called_once()
         self.succeeds("test", "--list")
         self.assertEqual(self.commands[-1][0], "mock-ctest")
         with patch.object(support, "_host", return_value=("Linux", "aarch64")):
@@ -345,9 +340,8 @@ class DevelopmentCommandsTest(unittest.TestCase):
 
     def test_library_selection_does_not_probe_or_prepare_unused_gpu_routes(self):
         with patch.object(support, "discover_environment", wraps=self.environment) as discovery:
-            self.succeeds("init", "--name", "utility", "--components", "util", "--backends", "vulkan")
+            self.succeeds("init", "--name", "utility", "--components", "util", "--backends", "cuda")
             self.assertEqual(discovery.call_args.kwargs["backends"], ())
-            self.resources.assert_not_called()
             directory = self.selected()
             cache = support.read_cache(directory)
             self.assertEqual(cache["HYLE_COMPONENTS"], "util")
@@ -359,7 +353,6 @@ class DevelopmentCommandsTest(unittest.TestCase):
             self.assertEqual(discovery.call_args.kwargs["backends"], ())
             self.succeeds("build", "--name", "utility")
             self.assertEqual(discovery.call_args.kwargs["backends"], ())
-            self.resources.assert_not_called()
             self.assertEqual(support.read_cache(directory)["HYLE_COMPONENTS"], "util")
 
     def test_unused_routes_do_not_restrict_foundation_products_on_other_hosts(self):
@@ -376,7 +369,6 @@ class DevelopmentCommandsTest(unittest.TestCase):
                         self.succeeds("init", "--name", name, "--components", "util")
                         self.assertEqual(discovery.call_args.kwargs["backends"], ())
                         self.assertEqual(support.read_cache(directory)["HYLE_COMPONENTS"], "util")
-        self.resources.assert_not_called()
 
     def test_named_configurations_remain_independently_selectable(self):
         self.succeeds("init", "--name", "debug", "--components", "core", "--config", "Debug", "--tests")
@@ -434,7 +426,6 @@ class DevelopmentCommandsTest(unittest.TestCase):
                 for action in ("build", "test"):
                     self.assertNotEqual(self.invoke(action, "--name", name, "--config", "Missing")[0], 0)
                 self.assertEqual(len(self.commands), attempted)
-        self.resources.assert_not_called()
 
     def test_build_and_test_accept_only_available_custom_configurations(self):
         for name, settings in (("custom-single", {"CMAKE_BUILD_TYPE": "Profile"}),
@@ -456,7 +447,6 @@ class DevelopmentCommandsTest(unittest.TestCase):
         with self.assertRaises(SystemExit) as error:
             self.invoke("init", "--config", "Profile", "--dry-run")
         self.assertEqual(error.exception.code, 2)
-        self.resources.assert_not_called()
 
     def test_explicit_and_cached_sdk_paths_override_automatic_discovery(self):
         custom = str(self.base / "custom OpenSSL SDK")
@@ -469,12 +459,6 @@ class DevelopmentCommandsTest(unittest.TestCase):
             self.succeeds("init", "--name", "tls")
             self.assertEqual(support.read_cache(directory)["OPENSSL_ROOT_DIR"], custom)
             discovery.assert_not_called()
-        shader = str(self.base / "custom shader tools/glslang")
-        self.succeeds("init", "--name", "shader", "--backends", "vulkan", "--components", "compute",
-                      "-D", "HYLE_VULKAN_GLSLANG=" + shader)
-        self.resources.reset_mock()
-        self.succeeds("init")
-        self.assertEqual(self.resources.call_args.args[0].definitions.get("HYLE_VULKAN_GLSLANG"), shader)
 
     def test_io_product_automatically_prepares_dependency_locations(self):
         openssl = str(self.base / "installed OpenSSL SDK")
@@ -552,7 +536,6 @@ class DevelopmentCommandsTest(unittest.TestCase):
                     self.assertIn("--components io", errors)
             discovery.assert_not_called()
         self.assertEqual(self.commands, [])
-        self.resources.assert_not_called()
 
     def test_custom_cuda_sdk_is_available_to_discovery_without_replacing_cached_compiler(self):
         toolkit = str(self.base / "custom CUDA SDK")
@@ -596,7 +579,6 @@ class DevelopmentCommandsTest(unittest.TestCase):
                         self.assertIn("internal factor build", errors)
             discovery.assert_not_called()
         self.assertEqual(self.commands, [])
-        self.resources.assert_not_called()
 
     def test_existing_cmake_build_does_not_require_script_metadata(self):
         directory = self.root / ".scratch/build/manual"
@@ -630,16 +612,15 @@ class DevelopmentCommandsTest(unittest.TestCase):
         self.assertEqual(cache["HYLE_BUILD_TESTS"], "ON")
         # Failure before the first CMake cache exists must retain the request,
         # rather than retrying as default all/CPU/tests-OFF.
-        self.resources.side_effect = SetupError("host tool unavailable")
-        result, _, _ = self.invoke("init", "--name", "fresh", "--backends", "vulkan",
+        self.failures.append(19)
+        result, _, _ = self.invoke("init", "--name", "fresh", "--backends", "cuda",
                                    "--components", "compute,graph", "--config", "Debug", "--tests")
         self.assertNotEqual(result, 0)
         self.assertFalse((self.root / ".scratch/build/fresh/CMakeCache.txt").exists())
-        self.resources.side_effect = None
         self.succeeds("init")
         self.assertEqual(self.selected().name, "fresh")
         cache = support.read_cache(self.selected())
-        self.assertEqual(cache["HYLE_COMPUTE_ROUTES"], "vulkan")
+        self.assertEqual(cache["HYLE_COMPUTE_ROUTES"], "cuda")
         self.assertEqual(cache["HYLE_COMPONENTS"], "compute;graph")
         self.assertEqual(cache["CMAKE_BUILD_TYPE"], "Debug")
         self.assertEqual(cache["HYLE_BUILD_TESTS"], "ON")
@@ -664,7 +645,6 @@ class DevelopmentCommandsTest(unittest.TestCase):
     def test_running_and_listing_tests_do_not_discover_compilers_or_prepare_resources(self):
         self.succeeds("init", "--name", "built", "--backends", "cuda", "--tests")
         self.commands.clear()
-        self.resources.reset_mock()
         with patch.object(support, "discover_environment", side_effect=SetupError("compiler SDK is absent")) as discovery, \
                 patch.object(support, "discover_test_environment", wraps=self.runtime_environment) as runtime:
             self.succeeds("test", "--name", "built", "--list")
@@ -674,7 +654,6 @@ class DevelopmentCommandsTest(unittest.TestCase):
         self.assertEqual([command[0] for command in self.commands], ["mock-ctest", "mock-ctest"])
         self.assertIn("--show-only", self.commands[0])
         self.assertNotIn("--show-only", self.commands[1])
-        self.resources.assert_not_called()
 
     def test_test_environment_uses_existing_runtime_and_ctest_without_toolchain_probes(self):
         directory = self.base / "built runtime"
@@ -745,10 +724,9 @@ class DevelopmentCommandsTest(unittest.TestCase):
 
     def test_dry_runs_do_not_write_state_prepare_resources_or_invoke_children(self):
         before = self.snapshot()
-        self.succeeds("init", "--name", "preview", "--backends", "vulkan", "--dry-run")
+        self.succeeds("init", "--name", "preview", "--backends", "cuda", "--dry-run")
         self.assertEqual(self.snapshot(), before)
         self.assertEqual(self.commands, [])
-        self.resources.assert_not_called()
         directory = self.root / ".scratch/build/manual"
         self.write_cache(directory, HYLE_BUILD_TESTS="ON")
         before = self.snapshot()
@@ -756,7 +734,6 @@ class DevelopmentCommandsTest(unittest.TestCase):
         self.succeeds("test", "--build-dir", str(directory), "--dry-run")
         self.assertEqual(self.snapshot(), before)
         self.assertEqual(self.commands, [])
-        self.resources.assert_not_called()
 
     def test_spaces_and_semicolons_remain_single_child_arguments(self):
         directory = self.root / ".scratch/build/space label"

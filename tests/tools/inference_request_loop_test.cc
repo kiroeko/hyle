@@ -1504,6 +1504,11 @@ void application_uses_one_provider_path_for_cli_and_worker() {
   const auto [help_status, help, help_error] = run({"--help"});
   require(!help_status && help.find("Hyle text inference") != std::string::npos && !application_loaded && help_error.empty(),
       "application help loaded a model or assumed a model family");
+  const auto [backend_status, backend_output, backend_error] =
+      run({"--inputs", "other-model", "--tokens", "-", "--backend", "vulkan"});
+  require(backend_status == 1 && backend_output.empty() && !application_loaded &&
+      backend_error.find("backend must be auto, cpu, cuda or apple") != std::string::npos,
+      "application accepted the retired Vulkan backend");
   const std::vector<std::string> common{"--inputs", "other-model", "--capacity", "128", "--max-sessions", "2", "--active-sequences", "2", "--asset", "private.table=shared.bin",
                                        "--backend", "cuda", "--cpu-ffn-layers", "2",
                                        "--sampling", "random", "--temperature", "0.8"};

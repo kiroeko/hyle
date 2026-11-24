@@ -3,8 +3,7 @@
 Graph 用于把多个 Compute operation 编成可复用执行计划：推导中间值、选择实现、规划 workspace，
 然后用不同输入重复执行。只需要一个固定 operation 时先用 [Compute](compute.md)。
 
-普通 CPU/CUDA 路径使用共享 Queue 片段；[Vulkan](vulkan-compute.md) 与
-[Apple](apple-compute.md) 同一 Runtime 的固定纯图也可通过实际 ExecutionSource 进入同一
+普通 CPU/CUDA 路径使用共享 Queue 片段。[Apple](apple-compute.md) 同一 Runtime 的固定纯图也可通过实际 ExecutionSource 进入同一
 Executable／Invocation，内部继续使用原生 Program、结果与完成机制。其余混合运行时仍在迁移。
 项目内的引擎层拥有模型加载、请求循环和 offload 策略；Graph 保持模型无关，亦可独立使用。
 
@@ -193,9 +192,7 @@ HYLE_ASSIGN_OR_RETURN(auto readonly, result.tensor());
 并发请求各建Invocation和可变workspace／输出，实际copy/compute重叠取决于原生路线与硬件。
 取消或首错停止后继，已接纳工作仍须实际退休。释放旧结果与Completion后才能重放或重绑。
 
-CPU+MLX/Metal与CPU+Vulkan也以共同环境、Invocation和GraphOutput组合，分别见
-[Apple sample](../../samples/package/graph/cpu_apple/README.md)与
-[Vulkan sample](../../samples/package/graph/cpu_vulkan/README.md)。原专用合同、流水线和分页风险消费者也已迁入共同入口；
+CPU+MLX/Metal也以共同环境、Invocation和GraphOutput组合，见[Apple sample](../../samples/package/graph/cpu_apple/README.md)。原专用合同、流水线和分页风险消费者也已迁入共同入口；
 这些定向检查不代表全部模型和数学域已覆盖。
 原生私有字节、UMA和任务／线程成本按实际合同报告，不能从有限依赖表推断整条调用零分配。
 
@@ -217,14 +214,11 @@ auto invocation = family->executable.create_invocation({.shape = large});
 各原生常量必须对所列每个形状都合法，任一点校验/准备失败则整表失败，原 caller tensor 不被消费。
 共同编译先验证完整形状表，并累计编译及槽配额；共享 ResourceBudget 仍按实际资源收费，
 MLX/driver 私有字节仍 UNKNOWN。精确表不证明 general/capture/零复制。
-CPU＋Vulkan 的固定／有限形状数据链已接入共同入口，配置实际 host、device 与 staging 域即可选择双向
-搬运；原生 Copy 在冷绑定录制，同址改内容后可直接重复 submit。当前原生复制要求跨度和偏移满足4字节对齐，
-原生数学域仍由实际 lowerer 决定。Apple也通过实际Source准备共同固定／有限形状入口，
-不能拿局部数据链推导全部混合／分页／custom 路线已经覆盖。
+Apple 通过实际 Source 准备共同固定／有限形状入口，原生数学域由实际 lowerer 决定。
 pure control 前驱通过冷可达性保留，并在原生完成/barrier 边界排序；只有控制用途的输出可能需要
 物化，Apple managed region 与 hybrid 会有显式等待。hybrid `prepare_replay` 的
 `HostWaitPolicy::kReject` 仍可拒绝这些拓扑。外部 effects/resource ports 仍需真实 qualified carrier，
-GPU native admission 明确拒绝未资格 carrier。CPU+Apple/Vulkan 可将 effect 显式放在
+GPU native admission 明确拒绝未资格 carrier。CPU+Apple 可将 effect 显式放在
 `kCpuTarget`，用 `CompileOptions::effect_bindings` 声明实际固定 footprint；原 CPU Provider
 与 Graph 校验负责端口、alias 和执行。零输出 effect 不会被剪掉。不同资源 ID 的重叠 footprint、
 跨片段 tensor/constant alias、缺失/重复 binding 都拒绝；未知 native input/weight 的 alias
@@ -447,8 +441,7 @@ Region Provider 可通过下述入口共享兼容 packing，未接入的 Provide
 metadata View 共享目的域中的完整常量根，再按具体形状和偏移取子范围。region 与 packing factory 取得的是
 本片段实际使用的副本。`kBorrow` 的主绑定仍借用原源，其寿命要求不因已有其他副本而缩短。
 Apple 原生源可同步复制 ready 主机／共享 Metal 来源至真正可写的共享 Metal 分配，无需 CPU Context；
-readonly 原生导入只能作源。Vulkan 冷能力支持主机上传、下载和四字节对齐的同 Runtime D2D，
-原生尾部 padding 仅供完整逻辑根使用，裁短的范围不能借此扩大权限。实际源读取、设备完成或目标写入失败即返回原错。
+readonly 原生导入只能作源。实际源读取、设备完成或目标写入失败即返回原错。
 
 ### 常量所有权与不可变 packing
 
@@ -459,7 +452,7 @@ readonly 原生导入只能作源。Vulkan 冷能力支持主机上传、下载�
 真实 resource/handle/子范围。CUDA 简单入口也接受 `compile(graph, context, owner, options)`。
 默认采用系统 metadata allocator；自定义 allocator 传其真实 `std::shared_ptr<Allocator>` 给
 `StorageOwner::adopt` 的第三参数，`.ref()` 必须与原 Context allocator 完整匹配。
-Apple／Vulkan 的原生 `MemoryResource` 可调用 `retain_storage_owner(context)`，
+Apple 的原生 `MemoryResource` 可调用 `retain_storage_owner(context)`，
 保留同一分配控制器和实际 Runtime，再把返回的 owner 放进对应 `StorageDomain::owner`。
 此入口使用进程系统 metadata allocator，不创建 Compute Context／Queue，也不复制原生分配。
 `owner.endpoint_identity()` 表达实际分配端点；原生 owner 的 `context_identity()` 为空，
@@ -1030,11 +1023,11 @@ ID 本身不保活 Context/artifact；报告可留作诊断，不能用
 
 ### 原生路线报告
 
-Apple 与 Vulkan 的原生 `CompileReport` 是可选冷态快照：复制环境、版本、输入输出、原节点序号、
+Apple 的原生 `CompileReport` 是可选冷态快照：复制环境、版本、输入输出、原节点序号、
 数值 traits、固定规则和边界，不保活 Graph、Program、常量、custom payload 或设备 owner。
 每次 compile 先 reset；报告分配失败也会拒绝编译。同一 report 不能被并发写入。
 不传报告时不构造这些诊断数据。原生 dispatch、managed region 与内存字段各按
-[Apple](apple-compute.md)和[Vulkan](vulkan-compute.md)的具体含义解释，不从逻辑大小猜实际驻留。
+[Apple 指南](apple-compute.md)的具体含义解释，不从逻辑大小猜实际驻留。
 
 ## 外部可变资源：声明访问与顺序
 
@@ -1215,11 +1208,11 @@ HYLE_RETURN_IF_ERROR(done.wait());
 创建图时提供同类型 rows 和 I32 `[M]` 索引输入，不把池或写权限放进数学描述符。
 索引输入必须只被这一个 Store 使用，也不能发布为图输出。
 
-普通 CPU／CUDA 和 Apple／Vulkan 原生编译入口自动装配 Store，无需用户选择 Provider。调用顺序是：
+普通 CPU／CUDA 和 Apple 原生编译入口自动装配 Store，无需用户选择 Provider。调用顺序是：
 
 1. `slots::prepare(run, queues, options)` 按真实执行源、Queue 和资源合并固定的小索引载体；CUDA 的
    `options.host_workspace` 使用同一 Context 的 pinned／managed host resource。
-   纯 Apple／Vulkan 原生路线的 `queues` 传空，复用原 ExecutionSource；混合计划只为共享 Compute lane 提供真实 Queue。
+   纯 Apple 原生路线的 `queues` 传空，复用原 ExecutionSource；混合计划只为共享 Compute lane 提供真实 Queue。
 2. `SlotBindings::create(layout, sources, destinations)` 完整检查实际租约，成功才移走
    destination writers；然后 `slots::bind(run, graph, store_node, std::move(bindings))`。
    bind 根据真实槽号设置私有索引，失败不消费事务；普通 rows 输入仍由调用者绑定。
@@ -1249,7 +1242,7 @@ auto status = graph::slots::prepare(run, logical_graph, queues, sources, options
 生成源ID，并核实际选中reader的读取资格；调用者不再自行绑定池或ID。准备／seal会重新核实际输入，
 替换池或ID不能沿用原权限执行。这个关联只描述逻辑资源，不选择Provider；尚无资格的实现会明确拒绝，
 不能以整池ReadLease代替。Apple原生Store支持精确字节范围：实际对齐时沿原blit，其余范围在原FIFO成功生产后
-精确host copy；不会扩大到padding。Vulkan原码选行及Store当前仍要求完整4字节行及对齐偏移，不符合时明确拒绝。
+精确host copy，范围限于实际字节。
 CPU默认路线自动为plain非稠密或F16／BF16
 Gather选择现有原码选行，保留stride及原始位，不要求调用者指定Provider；encoded及稠密F32／I32沿原选择。
 CUDA已接精确的`Gather → reshape → GDN → reshape → Store`冷融合：若实际选中该region，
@@ -1266,41 +1259,26 @@ K1可用原Copy物化带batch间隙的窗口。普通稠密history或别名有�
 完整引擎尚未接此路径，未证明速度收益。
 实际使用见[CPU](../../tests/graph/slots_execution_test.cc)、
 [CUDA](../../tests/graph/slots_cuda_execution_test.cc)、
-[Apple](../../tests/graph_route_apple/slot_store_test.cc)、
-[Vulkan](../../tests/graph_route_vulkan/slot_store_test.cc)Store消费者及
+[Apple](../../tests/graph_route_apple/slot_store_test.cc)Store消费者及
 [索引GDN融合](../../tests/graph_provider_ggml_cuda/indexed_state_test.cc)与
 [索引卷积融合](../../tests/graph_provider_ggml_cuda/indexed_conv_test.cc)消费者。
 
 ### 原生后端的租约绑定
 
-Vulkan 的固定纯图可先把实际端点装入普通编译环境，后续仍使用上述绑定、准备、提交和 GraphOutput：
-
-```cpp
-auto source = graph::vulkan::execution_source(native_context).value();
-const std::array domains{graph::StorageDomain{device_memory.ref()}};
-const std::array targets{graph::ExecutionTarget{source, graph::StorageDomainId{0}}};
-auto compiled = graph::compile(logical_graph,
-    graph::CompileEnvironment{.storage_domains = domains, .targets = targets});
-```
-
-这里的 Context 与 MemoryResource 按 [Vulkan Compute](vulkan-compute.md) 初始化，资源须活过所有槽与导出 lease。
-当前已接通创建时／冷绑定后可用的真实 backing、native device 上的借用常量，以及 `kMaterialize` 的 CPU→Vulkan
-常量物化。物化在 compile 内按源批量完成，复用 staging／命令资源；返回成功后可释放源 buffer，submit 不再上传。
-staging 按批中最大所需容量计入编译峰值，实际读取／原生完成失败直接返回。
-Apple同样用`graph::apple::execution_source(native_context)`装配实际端点，保留原FIFO晚生成结果；
+Apple用`graph::apple::execution_source(native_context)`装配实际端点，保留原FIFO晚生成结果；
 可传`{.custom = lowering}`接纯custom算子的冷lowering。捕获资源须活过冷编译，重放不调用lowering。
 
-两端的`graph::apple::bind`／`graph::vulkan::bind(run, input, batch, id)`保留真实WeightBatch和选中范围，
+`graph::apple::bind(run, input, batch, id)`保留真实WeightBatch和选中范围，
 绑定不等待上传；原提交在实际reader处按HostWaitPolicy处理依赖。共享Metal存储可直接供CPU读取，
 不要求CPU reader一定落在普通主机allocation；copy报告应按实际physical reader和每条搬运边解释。
 需要主机异步推进时继续使用下面的可选服务。原生私有分配与managed执行成本仍须按实际报告判断。
 
-CUDA、Apple、Vulkan还提供`bind(run, span<const graph::WeightBinding>, batch)`，一次绑定同一上传代的
+CUDA和Apple还提供`bind(run, span<const graph::WeightBinding>, batch)`，一次绑定同一上传代的
 权重、scale与显式ID映射。全部输入的tensor、owner与最终alias范围检查通过才提交绑定；失败保留原绑定与准备状态。
 用`WeightSlots::upload_slices()`可从分立tensor装配有界bank；选择哪些专家、何时换入与global/local映射由调用者决定，
 Graph只执行普通checked Gather和grouped算子。装配、字节报告与打包要求见[有界专家权重工作集](compute.md#有界专家权重工作集)。
 
-普通owned-layout分页通过`batch::prepare`／`batch::bind`绑定实际页权限；Apple／Vulkan的typed
+普通owned-layout分页通过`batch::prepare`／`batch::bind`绑定实际页权限；Apple的typed
 `submit(run, queues, std::move(update))`把原CopyBatchUpdate控制交给同一次Graph提交。
 实际退休并释放结果与Completion观察后，用相应`take_update(run)`回收；接纳前拒绝保留调用方原update，
 producer失败不发布可写页或成功结果。其余历史专用消费者仍在迁移，不代表所有原生数学域均已补齐。
@@ -1330,5 +1308,4 @@ auto result = run.result(output_id).value();
 
 使用 `init.py --trace` 开启已有 Tracy client，观察真实 compile/submit/wait 的主机范围，
 安装与运行设置见 [Obs](obs.md)。
-默认 OFF 不求值跟踪参数或创建 profiler 状态；没有逐 kernel GPU timestamp。Apple/Vulkan 的原生
-报告与 owner 执行范围见对应路线指南。跟踪开启时的运行成本不使用关闭状态的性能结论。
+默认 OFF 不求值跟踪参数或创建 profiler 状态；没有逐 kernel GPU timestamp。Apple 的原生报告与 owner 执行范围见 [Apple 指南](apple-compute.md)。跟踪开启时的运行成本不使用关闭状态的性能结论。

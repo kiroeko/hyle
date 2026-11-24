@@ -243,7 +243,7 @@ inline int run(i::BackendKind kind) {
     ~Cleanup() {
       (void)batch.recover();
       invocation.drain().IgnoreError();
-      backend.collect_retired().IgnoreError();
+
     }
   } cleanup{backend, batch, invocation};
 
@@ -345,7 +345,7 @@ inline int run(i::BackendKind kind) {
     // The next replay reuses Graph's original output writers. An escaped
     // CopyBatch source reader would reject their promotion before submission.
   }
-  q::check(backend.collect_retired());
+
   require(graph_submissions == 2 + prime_graph_submissions &&
       prime_graph_submissions == (kind == i::BackendKind::kCuda ? 1u : 0u) &&
       batch_reads == 3 && invalid_targets == 6 &&
@@ -402,7 +402,7 @@ inline int run(i::BackendKind kind) {
       }
       seam.gate.finish();
       q::check(q::take(backend.common_context())->drain());
-      q::check(backend.collect_retired());
+
       if (!abandon) {
         const auto retired = late.recover();
         require(retired.retired && retired.status == seam.failure && !late.in_flight() && destination.untouched(),
@@ -446,7 +446,7 @@ inline int run(i::BackendKind kind) {
         "late readback consumer changed its finite failure/recovery/abandonment coverage");
   }
 #endif
-  q::check(invocation.drain()); q::check(backend.collect_retired());
+  q::check(invocation.drain());
   std::cout << "{\"status\":\"PASS\",\"case\":\"readback-batch\",\"backend\":\""
       << qwen_host_image_case::backend_name(kind)
       << "\",\"models\":0,\"graphs\":1,\"graph_submissions\":" << graph_submissions

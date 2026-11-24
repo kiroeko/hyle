@@ -1,12 +1,6 @@
-#if defined(HYLE_ENCODED_APPLE)
 #include <hyle/compute/apple_batch.h>
 #include <hyle/compute/apple_memory.h>
 #include <hyle/graph/apple.h>
-#else
-#include <hyle/compute/vulkan_batch.h>
-#include <hyle/compute/vulkan_memory.h>
-#include <hyle/graph/vulkan.h>
-#endif
 #include <hyle/compute/model_ops.h>
 #include <hyle/graph/cpu.h>
 #include <hyle/graph/batch.h>
@@ -27,17 +21,10 @@
 namespace {
 namespace c = hyle::compute;
 namespace g = hyle::graph;
-#if defined(HYLE_ENCODED_APPLE)
 namespace n = c::apple;
 namespace ng = g::apple;
 using NativeTensor = mlx::core::array;
 constexpr auto route = "Apple";
-#else
-namespace n = c::vulkan;
-namespace ng = g::vulkan;
-using NativeTensor = n::Tensor;
-constexpr auto route = "Vulkan";
-#endif
 using hyle::Status;
 using hyle::Result;
 using F16 = hyle::simd::float16_t;
@@ -57,7 +44,6 @@ using encoded_page_test::CodecOracle;
 
 Result<NativeTensor> upload(n::Context &context, n::MemoryResource &device,
                             c::TensorDesc description, std::span<const std::byte> bytes) {
-#if defined(HYLE_ENCODED_APPLE)
   (void)context;
   HYLE_ASSIGN_OR_RETURN(auto pool, c::LeasePool::create(hyle::mem::system_resource(), bytes.size() + 64));
   HYLE_ASSIGN_OR_RETURN(auto writer, pool.allocate(bytes.size(), 64));
@@ -67,22 +53,11 @@ Result<NativeTensor> upload(n::Context &context, n::MemoryResource &device,
   HYLE_ASSIGN_OR_RETURN(auto tensor, device.allocate(description));
   HYLE_RETURN_IF_ERROR(device.copy_from_host(tensor, view));
   return tensor;
-#else
-  (void)device;
-  return context.upload(description, bytes);
-#endif
 }
 Status read_bytes(n::Context &context, n::MemoryResource &device,
                   const c::ReadLease &source, std::span<std::uint8_t> bytes) {
-#if defined(HYLE_ENCODED_APPLE)
   (void)context; (void)device;
   return source.view()->read(std::as_writable_bytes(bytes));
-#else
-  HYLE_ASSIGN_OR_RETURN(auto description, c::TensorDesc::dense(c::DataType::kUInt8,
-      std::array<std::int64_t, 1>{std::int64_t(bytes.size())}));
-  HYLE_ASSIGN_OR_RETURN(auto tensor, device.binding(source, description));
-  return context.download(tensor, std::as_writable_bytes(bytes));
-#endif
 }
 
 Result<g::Graph> encoder(std::span<const c::TensorDesc> inputs,
@@ -100,13 +75,8 @@ Result<g::Graph> encoder(std::span<const c::TensorDesc> inputs,
 Status episode(unsigned dk, unsigned dv, bool combined, bool invalid=false, bool paired_failure=false, bool single=false, bool bf16=false, Codec codec=Codec::kQ8) {
   const CodecOracle oracle{codec};
   HYLE_ASSIGN_OR_RETURN(auto context, n::Context::create());
-#if defined(HYLE_ENCODED_APPLE)
   HYLE_ASSIGN_OR_RETURN(auto device, n::MemoryResource::create(context));
   HYLE_ASSIGN_OR_RETURN(auto staging, n::MemoryResource::create(context));
-#else
-  HYLE_ASSIGN_OR_RETURN(auto device, n::MemoryResource::create(context, n::MemoryKind::kDevice));
-  HYLE_ASSIGN_OR_RETURN(auto staging, n::MemoryResource::create(context, n::MemoryKind::kStaging));
-#endif
   struct Close final { n::Context &context; ~Close() { context.close().IgnoreError(); } } close{context};
   const unsigned requests=single?1u:2u,query_rows=single?1u:18u;
   const auto qtype=bf16?c::DataType::kBFloat16:c::DataType::kFloat16;
@@ -166,15 +136,10 @@ Status episode(unsigned dk, unsigned dv, bool combined, bool invalid=false, bool
   HYLE_RETURN_IF_ERROR(require(!keys.acquire(kr[1]) && kr[1].valid(),"old reader allowed mutable acquisition"));
   HYLE_ASSIGN_OR_RETURN(auto query_desc,recipe.input_description(layout,0));
   std::vector<std::uint16_t> query_words(*query_desc.element_count(),bf16?0x3e00:0x3000);
-#if defined(HYLE_ENCODED_APPLE)
   HYLE_ASSIGN_OR_RETURN(auto query_pool,c::LeasePool::create(device.ref(),query_words.size()*2+64));
   HYLE_ASSIGN_OR_RETURN(auto query_writer,query_pool.allocate(query_words.size()*2,64));
   HYLE_RETURN_IF_ERROR(query_writer.view()->write(std::as_bytes(std::span(query_words))));
   HYLE_ASSIGN_OR_RETURN(auto query,query_writer.publish());
-#else
-  HYLE_ASSIGN_OR_RETURN(auto native_query,upload(context,device,query_desc,std::as_bytes(std::span(query_words))));
-  HYLE_ASSIGN_OR_RETURN(auto query,device.import_readonly(native_query));
-#endif
   HYLE_ASSIGN_OR_RETURN(auto old_slot,n::PagedBatchInvocation::create(context,recipe,device,staging,{.max_metadata_backing_bytes=4096}));
   HYLE_RETURN_IF_ERROR(old_slot.prepare_batch(old_layout));
   HYLE_RETURN_IF_ERROR(old_slot.bind(query,old_key,old_value));
@@ -273,11 +238,7 @@ Status episode(unsigned dk, unsigned dv, bool combined, bool invalid=false, bool
   const std::array versions{g::batch::NodeLayout{node,layout}};
 
   const auto numeric_failure=[](const Status&status){
-#if defined(HYLE_ENCODED_APPLE)
     constexpr auto message="Apple numeric input is outside the operation domain";
-#else
-    constexpr auto message="Vulkan numeric input is outside the operation domain";
-#endif
     return status.IsInvalidArgument() && status.message()==message;
   };
   const auto failed_update=[&](n::CopyBatchUpdate &update)->Status{
@@ -453,12 +414,8 @@ Status episode(unsigned dk, unsigned dv, bool combined, bool invalid=false, bool
       if(invalid){HYLE_RETURN_IF_ERROR(failed_result(done,receiver,update));
         std::fprintf(stderr,"%s native failed %s encoder source retains InvalidArgument/no result/no page publication PASS\n",route,paired_failure?"paired":"independent second");return Status::Ok();}
       {HYLE_ASSIGN_OR_RETURN(auto result,done.wait());std::vector<std::uint16_t> words(actual.size());
-#if defined(HYLE_ENCODED_APPLE)
         HYLE_ASSIGN_OR_RETURN(auto desc,c::TensorDesc::dense(qtype,std::array<std::int64_t,3>{query_rows,8,dv}));
         HYLE_ASSIGN_OR_RETURN(auto read,device.import_readonly(result->arrays()[0],desc));HYLE_RETURN_IF_ERROR(read.view()->read(std::as_writable_bytes(std::span(words))));
-#else
-        HYLE_RETURN_IF_ERROR(context.download(result->tensors()[0],std::as_writable_bytes(std::span(words))));
-#endif
         for(std::size_t i=0;i<words.size();++i)actual[i]=float(decode_word(words[i]));
         HYLE_RETURN_IF_ERROR(check(actual));HYLE_RETURN_IF_ERROR(require(!receiver.take_update(),"retained native result released original update"));}
       HYLE_RETURN_IF_ERROR(done.completion().wait());done={};HYLE_ASSIGN_OR_RETURN(update,receiver.take_update());
@@ -482,12 +439,8 @@ Status episode(unsigned dk, unsigned dv, bool combined, bool invalid=false, bool
   // The old frame retains its own pages across all new accepted updates.
   HYLE_ASSIGN_OR_RETURN(auto old_done,old_slot.submit());
   {HYLE_ASSIGN_OR_RETURN(auto result,old_done.wait());std::vector<std::uint16_t> words(query_rows*8*dv);
-#if defined(HYLE_ENCODED_APPLE)
     HYLE_ASSIGN_OR_RETURN(auto desc,c::TensorDesc::dense(qtype,std::array<std::int64_t,3>{query_rows,8,dv}));
     HYLE_ASSIGN_OR_RETURN(auto read,device.import_readonly(result->arrays()[0],desc));HYLE_RETURN_IF_ERROR(read.view()->read(std::as_writable_bytes(std::span(words))));
-#else
-    HYLE_RETURN_IF_ERROR(context.download(result->tensors()[0],std::as_writable_bytes(std::span(words))));
-#endif
     for(unsigned request=0;request<requests;++request){const unsigned nq=unsigned(qp[request+1]-qp[request]);
       for(unsigned row=0;row<nq;++row){const unsigned position=17-nq+row;
         const double expected=(position*oracle.decoded(.0625F,true)+oracle.decoded(request?.25F:.125F,true))/(position+1);
@@ -529,7 +482,6 @@ TEST(EncodedNativePages, SingleRequestIncrementalConsumer) {
   }
 }
 
-#if defined(HYLE_ENCODED_APPLE)
 TEST(EncodedNativePages, BFloat16IncrementalAndFailureConsumers) {
   for(bool combined:{false,true})for(bool single:{false,true})
     for(auto dimensions:{std::array{64u,128u},std::array{256u,256u}}){
@@ -544,7 +496,6 @@ TEST(EncodedNativePages, BFloat16IncrementalAndFailureConsumers) {
     ASSERT_TRUE(status.ok())<<status.message();
   }
 }
-#endif
 
 TEST(EncodedNativePages, Float8PairedPendingConsumers) {
   // The native and CPU+GPU consumers see the same pending E4 pages. Preserve

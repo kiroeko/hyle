@@ -15,10 +15,6 @@
 #include <hyle/compute/apple_memory.h>
 #include <hyle/graph/apple.h>
 #endif
-#if defined(HYLE_COMPUTE_VULKAN)
-#include <hyle/compute/vulkan_memory.h>
-#include <hyle/graph/vulkan.h>
-#endif
 
 #include <algorithm>
 #include <array>
@@ -276,62 +272,6 @@ Status common(c::Context &context, m::MemoryResourceRef host,
 }
 #endif
 
-#if defined(HYLE_COMPUTE_VULKAN)
-Status vulkan() {
-  namespace v = c::vulkan;
-  HYLE_ASSIGN_OR_RETURN(auto context, v::Context::create());
-  const auto &environment = context.environment();
-  std::printf("Vulkan device: %s; driver: %s %s; software: %s\n",
-              environment.device_name.c_str(), environment.driver_name.c_str(),
-              environment.driver_info.c_str(), environment.software_device ? "yes" : "no");
-  HYLE_ASSIGN_OR_RETURN(auto host, v::MemoryResource::create(context, v::MemoryKind::kStaging));
-  HYLE_ASSIGN_OR_RETURN(auto device, v::MemoryResource::create(context, v::MemoryKind::kDevice));
-  const auto readable = [&](const v::Tensor &tensor) -> Result<c::ReadLease> {
-    HYLE_ASSIGN_OR_RETURN(auto bytes, tensor.description().required_bytes());
-    HYLE_ASSIGN_OR_RETURN(auto host_buffer, m::Buffer::create(m::system_resource(), bytes, 64));
-    HYLE_ASSIGN_OR_RETURN(auto mapped, host_buffer.view().map_host(m::HostAccess::kWrite));
-    HYLE_ASSIGN_OR_RETURN(auto destination, mapped.writable_bytes());
-    HYLE_RETURN_IF_ERROR(context.download(tensor, destination));
-    HYLE_RETURN_IF_ERROR(mapped.close());
-    return c::ReadLease::adopt(std::move(host_buffer));
-  };
-  const auto consume_ready = [&](const std::array<c::ReadLease, 4> &ready, unsigned lane) -> Status {
-    HYLE_ASSIGN_OR_RETURN(auto desc, descriptions());
-    for (unsigned group = 0; group < 2; ++group) {
-      const auto offset = group * 2;
-      const std::array inputs{v::LeasedInput{desc[offset], ready[offset]},
-                              v::LeasedInput{desc[offset + 1], ready[offset + 1]}};
-      HYLE_ASSIGN_OR_RETURN(auto direct_program, v::prepare(context, c::MatMul{}, desc[offset], desc[offset + 1]));
-      HYLE_ASSIGN_OR_RETURN(auto direct, v::LeasedInvocation::create(direct_program, device));
-      HYLE_RETURN_IF_ERROR(direct.bind(inputs));
-      HYLE_ASSIGN_OR_RETURN(auto done, direct.submit());
-      HYLE_ASSIGN_OR_RETURN(auto result, done.wait());
-      HYLE_ASSIGN_OR_RETURN(auto output, readable(result->tensors()[0]));
-      HYLE_RETURN_IF_ERROR(check(output, desc[offset].data_type(), lane, group));
-
-      HYLE_ASSIGN_OR_RETURN(auto builder, g::GraphBuilder::create());
-      HYLE_ASSIGN_OR_RETURN(auto a, builder.input(desc[offset]));
-      HYLE_ASSIGN_OR_RETURN(auto b, builder.input(desc[offset + 1]));
-      HYLE_ASSIGN_OR_RETURN(auto y, builder.add(c::MatMul{}, a, b));
-      HYLE_RETURN_IF_ERROR(builder.publish(y));
-      HYLE_ASSIGN_OR_RETURN(auto graph, std::move(builder).finish());
-      HYLE_ASSIGN_OR_RETURN(auto program, g::vulkan::compile(context, graph));
-      HYLE_ASSIGN_OR_RETURN(auto invocation, v::LeasedInvocation::create(program, device));
-      HYLE_RETURN_IF_ERROR(invocation.bind(inputs));
-      HYLE_ASSIGN_OR_RETURN(auto graph_done, invocation.submit());
-      HYLE_ASSIGN_OR_RETURN(auto graph_result, graph_done.wait());
-      HYLE_ASSIGN_OR_RETURN(auto graph_output, readable(graph_result->tensors()[0]));
-      HYLE_RETURN_IF_ERROR(check(graph_output, desc[offset].data_type(), lane, group));
-    }
-    return Status::Ok();
-  };
-  return transfer_groups<v::CopyBatchInvocation, v::CopyBatchSubmission>(
-      host.ref(), device.ref(), kSizes,
-      [&](auto resources, auto options) { return v::CopyBatchProgram::prepare(context, resources, options); },
-      [](const auto &program, unsigned) { return v::CopyBatchInvocation::create(program); },
-      [](unsigned lane) { return Payload(lane); }, consume_ready);
-}
-#endif
 
 #if defined(HYLE_COMPUTE_APPLE)
 struct ApplePayload final {
@@ -433,15 +373,11 @@ Status run() {
       [&](const g::Graph &graph) { return g::cuda::compile(graph, cuda, device.ref()); }));
   std::puts("CUDA: staged upload/D2D/readback, BF16+Q8 Direct/Graph and three replays passed");
 #endif
-#if defined(HYLE_COMPUTE_VULKAN)
-  HYLE_RETURN_IF_ERROR(vulkan());
-  std::puts("Vulkan: staged upload/D2D/readback, BF16+Q8 Direct/Graph and three replays passed");
-#endif
 #if defined(HYLE_COMPUTE_APPLE)
   HYLE_RETURN_IF_ERROR(apple());
   std::puts("Apple: shared-resource GPU blits, BF16+original affine Q4 Direct/Graph and three replays passed");
 #endif
-#if !defined(HYLE_COMPUTE_CPU) && !defined(HYLE_COMPUTE_CUDA) && !defined(HYLE_COMPUTE_VULKAN) && !defined(HYLE_COMPUTE_APPLE)
+#if !defined(HYLE_COMPUTE_CPU) && !defined(HYLE_COMPUTE_CUDA) && !defined(HYLE_COMPUTE_APPLE)
   return Status::Unimplemented("batched transfer math sample requires a connected route");
 #endif
   return Status::Ok();

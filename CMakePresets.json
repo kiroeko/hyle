@@ -27,7 +27,7 @@
     {
       "name": "compute-cuda",
       "displayName": "CUDA Compute and Graph",
-      "description": "Standard CUDA C++ build with the route's mature providers; CPU, Apple, Vulkan, tests and benchmarks are off. Requires a supported C++ toolchain and CUDA Toolkit 13.3+. Set HYLE_COMPUTE_ROUTES=cpu;cuda explicitly for a mixed SDK.",
+      "description": "Standard CUDA C++ build with the route's mature providers; CPU, Apple, tests and benchmarks are off. Requires a supported C++ toolchain and CUDA Toolkit 13.3+. Set HYLE_COMPUTE_ROUTES=cpu;cuda explicitly for a mixed SDK.",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build-compute-cuda",
       "cacheVariables": {
@@ -58,20 +58,6 @@
       }
     },
     {
-      "name": "compute-vulkan",
-      "displayName": "Vulkan Compute and Graph",
-      "description": "Complete Vulkan route with automatic required Providers; tests and benchmarks are off.",
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build-compute-vulkan",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "HYLE_COMPONENTS": "compute;graph",
-        "HYLE_COMPUTE_ROUTES": "vulkan",
-        "HYLE_BUILD_TESTS": "OFF",
-        "HYLE_BUILD_BENCH": "OFF"
-      }
-    },
-    {
       "name": "engine-cpu",
       "displayName": "Hyle inference engine (CPU)",
       "description": "Build the Hyle application and its required CPU library closure. Tests and benchmarks are off.",
@@ -93,14 +79,6 @@
       "description": "Build the Hyle application and its required Apple library closure on Apple Silicon.",
       "inherits": "compute-apple",
       "binaryDir": "${sourceDir}/build-engine-apple",
-      "cacheVariables": { "HYLE_COMPONENTS": "engine" }
-    },
-    {
-      "name": "engine-vulkan",
-      "displayName": "Hyle inference engine (Vulkan)",
-      "description": "Build the Hyle application and its required Vulkan library closure.",
-      "inherits": "compute-vulkan",
-      "binaryDir": "${sourceDir}/build-engine-vulkan",
       "cacheVariables": { "HYLE_COMPONENTS": "engine" }
     },
     {
@@ -256,9 +234,7 @@
     { "name": "engine-cpu", "configurePreset": "engine-cpu", "configuration": "Release", "jobs": 2 },
     { "name": "engine-cuda", "configurePreset": "engine-cuda", "configuration": "Release", "jobs": 2 },
     { "name": "engine-apple", "configurePreset": "engine-apple", "configuration": "Release", "jobs": 2 },
-    { "name": "engine-vulkan", "configurePreset": "engine-vulkan", "configuration": "Release", "jobs": 2 },
     { "name": "compute-apple", "configurePreset": "compute-apple", "jobs": 2 },
-    { "name": "compute-vulkan", "configurePreset": "compute-vulkan", "jobs": 2 },
     { "name": "compute-cpu", "configurePreset": "compute-cpu", "configuration": "Release", "jobs": 2 },
     { "name": "compute-cuda", "configurePreset": "compute-cuda", "configuration": "Release", "jobs": 2 },
     { "name": "windows", "configurePreset": "windows", "configuration": "Release" },

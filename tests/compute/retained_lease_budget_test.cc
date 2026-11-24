@@ -170,8 +170,7 @@ TEST(RetainedLeaseBudget, QuotaRejectionPreservesReadonlyLeaseAndRetryChargesWho
 }
 
 // These keys describe each test's one real complete system Buffer. They do
-// not pretend that independent allocations share a native root; the actual
-// Vulkan consumer covers fresh export domains of one owned native root.
+// not pretend that independent allocations share a native root.
 const unsigned annotation_authority = 0;
 const unsigned other_annotation_authority = 0;
 

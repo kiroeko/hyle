@@ -17,7 +17,6 @@ if sys.version_info < (3, 10):
                      "see docs/developer/setup/README.md for platform prerequisites.")
 
 from hyle_environment import Environment, SetupError, discover_environment, discover_test_environment, find_openssl
-from hyle_resources import find_glslang, prepare_resources
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -135,32 +134,34 @@ def _selected_directory(args: argparse.Namespace, *, required: bool) -> Path | N
 def parse_backends(value: str, system: str, arch: str, *, complete_math: bool = True) -> tuple[str, ...]:
     requested = [part.strip().lower() for part in re.split(r"[,;]", value)]
     if not requested or any(not part for part in requested):
-        raise SetupError("--backends must be a nonempty comma-separated set: cpu,cuda,metal,vulkan or all.")
+        raise SetupError("--backends must be a nonempty comma-separated set: cpu,cuda,metal or all.")
     if "all" in requested:
         if requested != ["all"]:
             raise SetupError("Use --backends all alone, or list the backends you need.")
-        requested = ["vulkan"]
         if system in {"Windows", "Linux"} and (arch == "x86_64" or not complete_math):
-            requested = ["cpu", "cuda", "vulkan"]
+            requested = ["cpu", "cuda"]
         elif system == "Darwin" and arch == "aarch64":
-            requested = ["cpu", "metal", "vulkan"]
+            requested = ["cpu", "metal"]
+        elif not complete_math:
+            requested = ["cpu"]
+        else:
+            raise SetupError(f"No complete backend is supported on {system}/{arch}.")
     requested = ["apple" if part == "metal" else part for part in requested]
-    unknown = set(requested) - {"cpu", "cuda", "apple", "vulkan"}
+    unknown = set(requested) - {"cpu", "cuda", "apple"}
     if unknown:
-        raise SetupError(f"Unknown backend(s): {', '.join(sorted(unknown))}. Use cpu,cuda,metal,vulkan or all.")
+        raise SetupError(f"Unknown backend(s): {', '.join(sorted(unknown))}. Use cpu,cuda,metal or all.")
     if "cpu" in requested and complete_math and not (
             (system in {"Windows", "Linux"} and arch == "x86_64") or
             (system == "Darwin" and arch == "aarch64")):
-        raise SetupError("The complete CPU backend supports Windows/Linux x86_64 or macOS Apple Silicon. "
-                         "Use Vulkan on this target.")
+        raise SetupError("The complete CPU backend supports Windows/Linux x86_64 or macOS Apple Silicon.")
     if "cuda" in requested:
         if system not in {"Windows", "Linux"}:
             raise SetupError("The CUDA backend requires Windows or Linux.")
         if complete_math and arch != "x86_64":
-            raise SetupError("The complete CUDA backend supports Windows/Linux x86_64. Use Vulkan on this target.")
+            raise SetupError("The complete CUDA backend supports Windows/Linux x86_64.")
     if "apple" in requested and (system != "Darwin" or arch != "aarch64"):
-        raise SetupError("The Metal backend requires macOS on Apple Silicon. Use CUDA or Vulkan on this target.")
-    return tuple(item for item in ("cpu", "cuda", "apple", "vulkan") if item in requested)
+        raise SetupError("The Metal backend requires macOS on Apple Silicon.")
+    return tuple(item for item in ("cpu", "cuda", "apple") if item in requested)
 
 
 def _host() -> tuple[str, str]:
@@ -347,8 +348,6 @@ def initialize(args: argparse.Namespace) -> int:
                 raise SetupError(f"{key} differs from this build's CUDA toolchain. Choose another --name or --build-dir.")
     environment = discover_environment(compiler=args.compiler or "auto", cache=dict(cache, **extra),
                                        backends=selected["routes"], generator=args.generator, configuring=True)
-    if "vulkan" in selected["routes"] and cache.get("HYLE_VULKAN_GLSLANG"):
-        environment.definitions["HYLE_VULKAN_GLSLANG"] = cache["HYLE_VULKAN_GLSLANG"]
     environment.definitions.update(extra)
     if {"all", "io"}.intersection(selected["components"]) and not (
             extra.get("OPENSSL_ROOT_DIR") or cache.get("OPENSSL_ROOT_DIR")):
@@ -391,18 +390,9 @@ def initialize(args: argparse.Namespace) -> int:
                         ("offline", "FETCHCONTENT_FULLY_DISCONNECTED"),
                         ("offline", "FETCHCONTENT_UPDATES_DISCONNECTED")):
         definitions[key] = "ON" if selected[option] else "OFF"
-    if args.dry_run:
-        if "vulkan" in selected["routes"]:
-            shader = find_glslang(environment)
-            if shader:
-                definitions["HYLE_VULKAN_GLSLANG"] = str(shader)
-            else:
-                print("Vulkan: initialization will prepare the locked host glslang tool in the shared tools cache.")
-    else:
+    if not args.dry_run:
         _write_json(_current(), {"build_dir": str(directory)})
         _write_json(_state_path(directory), {"ready": False, "source_dir": str(ROOT), "config": selected["config"]})
-        if "vulkan" in selected["routes"]:
-            definitions.update(prepare_resources(environment, cache_dir, selected["offline"], args.jobs))
     command = [environment.cmake, "-S", str(ROOT), "-B", str(directory), "-G", environment.generator]
     for key in _REMOVED_CAPABILITY_OPTIONS:
         command += ["-U", key]
@@ -532,7 +522,7 @@ def parser(action: str) -> argparse.ArgumentParser:
     result.add_argument("--dry-run", action="store_true", help="discover tools and print commands without configuring/building/testing")
     result.add_argument("--verbose", action="store_true", help="also print complete CMake commands")
     if action == "init":
-        result.add_argument("--backends", help="comma-separated cpu,cuda,metal,vulkan or all; default: cpu")
+        result.add_argument("--backends", help="comma-separated cpu,cuda,metal or all; default: cpu")
         result.add_argument("--components", help="engine (new builds default), all, or comma-separated library products such as util or compute,graph; existing selection is preserved")
         result.add_argument("--compiler", choices=("auto", "msvc", "clang-cl", "gcc", "clang"), help="installed compiler family; default: auto")
         result.add_argument("--generator", help="advanced: CMake generator; defaults to available Ninja or platform make")

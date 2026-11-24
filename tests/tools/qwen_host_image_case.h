@@ -25,7 +25,6 @@ inline const char *backend_name(q::BackendKind kind) noexcept {
   case q::BackendKind::kCpu: return "cpu";
   case q::BackendKind::kCuda: return "cuda";
   case q::BackendKind::kApple: return "apple";
-  case q::BackendKind::kVulkan: return "vulkan";
   default: return "unselected";
   }
 }

@@ -25,8 +25,7 @@
 `HYLE_COMPONENTS="graph;compute_stream"` 或 `"compute;compute_stream"`，并链接两个对应的
 `hyle::` target；常驻 Compute/Graph 的依赖不含 stream 或 IO。服务包含中立流水线与所选
 `HYLE_COMPUTE_ROUTES` 的复制适配，依赖 `io_core`，不附带 TLS/HTTP 等协议。
-CPU/CUDA 适配只要求实际复制 backend，不因此选择默认数学 Provider；Apple/Vulkan
-适配复用各自原生复制 owner。它们是有实际实现和交付职责的内部组合 factor。
+CPU/CUDA 适配只要求实际复制 backend，不因此选择默认数学 Provider；Apple 适配复用原生复制 owner。它们是有实际实现和交付职责的内部组合 factor。
 
 原Invocation的异步主机推进由显式服务产品`graph_progress`提供。选择`graph;graph_progress`并链接
 `hyle::graph`与`hyle::graph_progress`，服务沿公开依赖提供Sched；单独选择服务只构建Graph核心和

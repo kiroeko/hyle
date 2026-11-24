@@ -8,7 +8,7 @@
 
 namespace hyle::compute::detail {
 
-// Optional, versioned CPU/CUDA byte-copy capability. Apple/Vulkan keep their
+// Optional, versioned CPU/CUDA byte-copy capability. Apple keeps its
 // own native programs; this table does not create another execution runtime.
 inline constexpr BackendExtensionId kCopyBatchExtensionId{
     0x48594c45434f4d50ULL, 0x434f505942415431ULL, 1};

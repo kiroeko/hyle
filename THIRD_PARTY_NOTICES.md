@@ -35,11 +35,8 @@ license files of the components they actually contain into `share/licenses/Hyle/
 | nlohmann/json | MLX implementation dependency | MIT | fetched checkout `LICENSE.MIT` |
 | fmt | MLX implementation dependency | MIT | fetched checkout `LICENSE` |
 | nghttp2 | `io` HTTP/2 protocol core | MIT | fetched checkout `COPYING` |
-| ggml (CPU, CUDA, Vulkan runtimes) | Compute metadata, CPU execution resources and native GPU regions | MIT | fetched checkout `LICENSE` |
+| ggml (CPU, CUDA and Metal runtimes) | Compute metadata, CPU execution resources and native GPU regions | MIT | fetched checkout `LICENSE` |
 | FlashInfer | CUDA paged/ragged attention provider | Apache-2.0 AND BSD-3-Clause AND MIT, by file | fetched checkout `LICENSE`, `NOTICE`, and `licenses/LICENSE.{cutlass,flashattention3,fmt,spdlog}.txt` |
-| IREE runtime | Vulkan native program runtime | Apache-2.0 WITH LLVM-exception | fetched checkout `LICENSE` |
-| flatcc | IREE runtime dependency | Apache-2.0 AND MIT AND BSD-3-Clause AND Zlib, by file | fetched checkout `LICENSE`, `NOTICE`, `include/flatcc/portable/LICENSE` and original portable header notices |
-| Vulkan-Headers | Vulkan API declarations | Apache-2.0 OR MIT, by file | fetched checkout `LICENSE.md`, `LICENSES/` |
 | LibTorch / ATen (CPU) | CPU ATen provider for selected original tensor sequences; common runtime also used by CUDA ATen | BSD-3-Clause for PyTorch; bundled components keep separate terms | `third_party/torch_sdk/` and original SDK license files |
 | PyTorch CUDA leaf runtime | CUDA ATen provider | BSD-3-Clause for PyTorch; bundled NVIDIA and other components keep separate terms | original wheel LICENSE/NOTICE and NVIDIA runtime license files, plus common CPU runtime notices |
 
@@ -64,12 +61,10 @@ the upstream license and a `NOTICE`/`NOTICE.md` that names the exact origin revi
 
 | Directory | Origin | License |
 |---|---|---|
-| `third_party/ggml_runtime`, `ggml_cpu_runtime`, `ggml_cuda_runtime`, `ggml_vulkan_runtime` | ggml resource-integration patches (IQ1 types from Unsloth llama.cpp) | MIT |
-| `third_party/ggml_vulkan_shaders` | unmodified ggml Vulkan shader subset | MIT |
+| `third_party/ggml_runtime`, `ggml_cpu_runtime`, `ggml_cuda_runtime` | ggml resource-integration patches (IQ1 types from Unsloth llama.cpp) | MIT |
 | `third_party/ggml_q4k_apple` | ggml Q4_K row decoding expressed with MLX | MIT |
 | `third_party/ggml_metal_iq1` | narrow IQ1 Metal kernels from Anemll/anemll-flash-llama.cpp | MIT |
 | `third_party/flashinfer_cache` | FlashInfer mixed FP8 cache tile patch | Apache-2.0 |
-| `third_party/iree_vulkan_runtime` | IREE Vulkan resource-integration patches and generated programs | Apache-2.0 WITH LLVM-exception, MIT, Apache-2.0 |
 | `third_party/mlx_cast` | MLX BF16 conversion and paged attention integration, plus Metal-C++ | MIT, Apache-2.0 |
 | `third_party/mlx_cpu_quant`, `mlx_cuda_quant` | MLX packed quantized equations on CPU (ATen) and CUDA | MIT |
 | `third_party/awq_cpu`, `awq_cuda`, `awq_apple` | AutoAWQ unpack/dequantization sequences | MIT |
@@ -97,8 +92,6 @@ permissions or conditions that apply to these third-party portions.
 
 - Tracy (BSD-3-Clause): compiled and redistributed only in trace builds; its `LICENSE` accompanies
   that package.
-- glslang (multiple licenses, see its `LICENSE.txt`): used only to regenerate Vulkan shaders in
-  builds that need it; not linked into or installed with HYLE.
 - GoogleTest (BSD-3-Clause) and nanobench: validation only, not part of an installed package.
 - Windows CUDA packages can include Toolkit cudart/cuBLAS/cuBLASLt DLLs; their Toolkit EULA is
   installed alongside the package. PyTorch's bundled NVIDIA libraries have their own terms.
@@ -107,8 +100,6 @@ permissions or conditions that apply to these third-party portions.
   Explicit Windows shared OpenSSL imports retain the selected supplier's LICENSE/copyright
   and optional NOTICE with staging and installation. Ambiguous UNKNOWN imports remain external;
   a DLL is not inferred from arbitrary strings in a library archive.
-- volk (MIT) remains in the central dependency lock but is not currently consumed by a product
-  target; a lock entry alone does not mean its implementation is included in a package.
 
 Highway and xsimd are consumed by product builds from centrally locked sources. Parity benchmarks
 use separate clean checkouts of the same identities so that candidate and reference code cannot

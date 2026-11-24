@@ -1,27 +1,15 @@
 #include <hyle/compute/batch_materialize.h>
 #include <hyle/graph/batch.h>
-#if defined(HYLE_COMPUTE_APPLE)
 #include <hyle/compute/apple_batch.h>
 #include <hyle/graph/apple.h>
-#elif defined(HYLE_COMPUTE_VULKAN)
-#include <hyle/compute/vulkan_batch.h>
-#include <hyle/graph/vulkan.h>
-#else
-#error public native batch consumer requires the installed Apple or Vulkan route
-#endif
 #include <array>
 #include <cstdio>
 #include <vector>
 
 namespace {
 namespace c=hyle::compute;
-#if defined(HYLE_COMPUTE_APPLE)
 namespace n=c::apple;namespace ng=hyle::graph::apple;
 constexpr const char*route="Apple";
-#else
-namespace n=c::vulkan;namespace ng=hyle::graph::vulkan;
-constexpr const char*route="Vulkan";
-#endif
 using hyle::Status;
 Status check(bool value,const char*message){return value?Status::Ok():Status::Internal(message);}
 // Fixed oracle inputs only; native-only Compute/Graph does not supply SIMD.
@@ -43,21 +31,12 @@ hyle::Result<c::ReadLease> load(n::Context&context,c::LeasePool&pool,c::LeasePoo
 }
 Status verify(n::Context&context,n::MemoryResource&memory,const n::Results&result,c::TensorDesc description,bool bf16){
   std::array<std::uint16_t,512> words{};
-#if defined(HYLE_COMPUTE_APPLE)
   (void)context;HYLE_ASSIGN_OR_RETURN(auto lease,memory.import_readonly(result.arrays()[0],description));HYLE_RETURN_IF_ERROR(lease.view()->read(std::as_writable_bytes(std::span(words))));
-#else
-  (void)memory;(void)description;HYLE_RETURN_IF_ERROR(context.download(result.tensors()[0],std::as_writable_bytes(std::span(words))));
-#endif
   for(unsigned i=0;i<256;++i)HYLE_RETURN_IF_ERROR(check(words[i]==encoded(.25f,bf16),"public native batch mean oracle differs"));return Status::Ok();
 }
 Status exercise(bool paged,bool bf16){
   HYLE_ASSIGN_OR_RETURN(auto context,n::Context::create());
-#if defined(HYLE_COMPUTE_APPLE)
   HYLE_ASSIGN_OR_RETURN(auto memory,n::MemoryResource::create(context));HYLE_ASSIGN_OR_RETURN(auto staging,n::MemoryResource::create(context));
-#else
-  HYLE_RETURN_IF_ERROR(check(!context.environment().software_device,"software Vulkan does not qualify actual native batch math"));
-  HYLE_ASSIGN_OR_RETURN(auto memory,n::MemoryResource::create(context,n::MemoryKind::kDevice));HYLE_ASSIGN_OR_RETURN(auto staging,n::MemoryResource::create(context,n::MemoryKind::kStaging));
-#endif
   struct Close{n::Context&context;~Close(){context.close().IgnoreError();}}close{context};
   c::BatchCapacity cap{.storage=paged?c::BatchStorage::kPaged:c::BatchStorage::kRagged,.query_type=bf16?c::DataType::kBFloat16:c::DataType::kFloat16,.output_type=bf16?c::DataType::kBFloat16:c::DataType::kFloat16,.key_storage=c::CacheStorage::plain(bf16?c::DataType::kBFloat16:c::DataType::kFloat16).value(),.value_storage=c::CacheStorage::plain(bf16?c::DataType::kBFloat16:c::DataType::kFloat16).value(),.max_requests=1,.max_query_rows=2,.max_kv_rows=4,.max_pages=paged?3u:0u,.max_page_refs=paged?2u:0u,.query_heads=4,.kv_heads=2,.qk_head_dim=64,.value_head_dim=64,.page_size=paged?2u:1u};
   HYLE_ASSIGN_OR_RETURN(auto schema,c::BatchSchema::create(cap));const std::array<std::int32_t,2> qptr{0,1},kvptr{0,paged?2:3},pages{2,0};const std::array<std::int32_t,1> tail{1};

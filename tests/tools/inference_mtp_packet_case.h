@@ -144,7 +144,7 @@ inline std::size_t check_width(i::Backend &backend, std::size_t m,
           {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kAllow}));
       const std::weak_ptr<Scope> lifetime = scope;
       auto completion = q::take(carrier.submit(scope)); scope.reset();
-      q::check(completion.wait()); q::check(backend.collect_retired());
+      q::check(completion.wait());
       require(!carrier.pending() && !run->in_flight() && lifetime.expired(),
           "packet completion did not actually retire its retained original input scope");
       std::vector<std::int32_t> actual(total_size);

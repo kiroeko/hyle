@@ -1,7 +1,7 @@
 hyle_ensure_module_test_target(compute_ggml_runtime)
 add_test(NAME hyle_ggml_runtime_source_contract_test
   COMMAND "${Python3_EXECUTABLE}"
-    "${HYLE_SOURCE_DIR}/tests/compute_provider_ggml_vulkan/source_contract_test.py")
+    "${HYLE_SOURCE_DIR}/tests/compute_ggml_runtime/source_contract_test.py")
 set_tests_properties(hyle_ggml_runtime_source_contract_test PROPERTIES
   LABELS "compute_ggml_runtime")
 if(_HYLE_COMPUTE_HAVE_CUDA)
@@ -24,12 +24,11 @@ if(_HYLE_COMPUTE_HAVE_CUDA)
 endif()
 if(HYLE_GGML_CPU_ENABLED)
   hyle_add_test(compute_ggml_runtime SOURCES execution_test.cc
-    ../compute_provider_ggml_vulkan/metadata_test.cc)
+    metadata_test.cc)
   if(HYLE_TARGET_PROCESSOR STREQUAL "aarch64")
     target_sources(hyle_compute_ggml_runtime_test PRIVATE arm_bf16_dot_test.cc)
   endif()
   target_include_directories(hyle_compute_ggml_runtime_test PRIVATE
-    "${HYLE_SOURCE_DIR}/src/compute_provider_ggml_vulkan"
     "${HYLE_SOURCE_DIR}/src/compute_ggml_runtime")
   target_include_directories(hyle_compute_ggml_runtime_test SYSTEM PRIVATE
     "${HYLE_GGML_SOURCE_DIR}/src")

@@ -151,7 +151,7 @@ Win32 使用 `status_from_win32`，WinSock/IOCP 的 `WSAGetLastError()` 使用
 互换。必须紧跟失败调用保存 raw code，不能先做一次日志/分配再读取 last error。
 Win32/WinSock/HRESULT 系统描述会从 UTF-16 转为 UTF-8。`status_from_errno` 会验证 locale-sensitive
 `strerror` 文本；若它不是合法 UTF-8，则退化为确定性的 ASCII `errno N`，同时完整保留 native
-errno。CUDA/Vulkan 等 SDK-specific translator 由对应模块提供，再通过 `Status::FromNative`
+errno。CUDA 等 SDK-specific translator 由对应模块提供，再通过 `Status::FromNative`
 保存稳定 domain/code。
 
 ### `std::error_code` 与 custom category
@@ -194,8 +194,8 @@ if (status.IsUnavailable()) retry_later();
 
 ```cpp
 const hyle::NativeError native = status.native_error();
-if (native.domain == hyle::NativeErrorDomain::Vulkan && native.code == -4)
-  rebuild_device();
+if (native.domain == hyle::NativeErrorDomain::CudaRuntime && native.code == cudaErrorMemoryAllocation)
+  release_unused_device_memory();
 ```
 
 message 是人读 UTF-8，不能作为机器协议或从中解析 error number。
@@ -215,7 +215,7 @@ if (!result) {
 最终文本类似：
 
 ```text
-loading model: creating tensor storage: vulkan vkAllocateMemory failed
+loading model: creating tensor storage: CUDA cudaMalloc failed
 ```
 
 正常传播用 rvalue/`std::move`，连续多层总复制是最终文本的 O(n)。对共享 lvalue 调用 context 会

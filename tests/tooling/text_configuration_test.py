@@ -11,19 +11,21 @@ ROOT = Path(__file__).resolve().parents[2]
 class TextConfigurationTest(unittest.TestCase):
     def test_hybrid_placement_reaches_the_same_worker_for_serve_and_generate(self):
         base = ['--engine', 'hyle', '--inputs', 'prepared', '--tokenizer-dir', 'tokenizer',
-                '--backend', 'vulkan', '--cpu-ffn-layers', '2', '--prefill-chunk-tokens', '32']
+                '--backend', 'cuda', '--cpu-ffn-layers', '2', '--prefill-chunk-tokens', '32']
         for suffix in (['serve'], ['generate', '--text', 'hello']):
             args = parse_arguments([suffix[0], *base, *suffix[1:]])
             for choices in (None, read_configuration(args)):
                 command = make_worker_command(args, choices)
                 self.assertEqual(command[command.index('--cpu-ffn-layers') + 1], '2')
-                self.assertEqual(command[command.index('--backend') + 1], 'vulkan')
+                self.assertEqual(command[command.index('--backend') + 1], 'cuda')
                 self.assertEqual(command[command.index('--prefill-chunk-tokens') + 1], '32')
         for value in ('-1', '18446744073709551616'):
             with self.subTest(value=value), self.assertRaises(SystemExit):
                 parse_arguments(['serve', *base, '--cpu-ffn-layers', value])
         with self.assertRaises(SystemExit):
             parse_arguments(['serve', *base, '--backend', 'cpu'])
+        with self.assertRaises(SystemExit):
+            parse_arguments(['serve', *base, '--backend', 'vulkan'])
         for value in ('0', '-1', '18446744073709551616'):
             with self.subTest(value=value), self.assertRaises(SystemExit):
                 parse_arguments(['serve', *base, '--prefill-chunk-tokens', value])

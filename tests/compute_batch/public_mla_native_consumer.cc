@@ -6,21 +6,12 @@
 #include <hyle/graph/result.h>
 #include <hyle/sched/blocking.h>
 #include <hyle/sched/scheduler.h>
-#if defined(HYLE_TEST_MLA_APPLE)
 #include <hyle/compute/apple_batch.h>
 #include <hyle/graph/apple.h>
-#else
-#include <hyle/compute/vulkan_batch.h>
-#include <hyle/graph/vulkan.h>
-#endif
 
 namespace {
 namespace c=hyle::compute;namespace g=hyle::graph;
-#if defined(HYLE_TEST_MLA_APPLE)
 namespace n=c::apple;namespace ng=g::apple;
-#else
-namespace n=c::vulkan;namespace ng=g::vulkan;
-#endif
 using hyle::Status;using hyle::Result;
 using mla_test::check;using mla_test::encode;
 Status oracle_words(c::BatchCapacity cap,c::BatchLayoutVersion layout,
@@ -46,13 +37,8 @@ Status exercise(bool bf,unsigned depth){
   HYLE_ASSIGN_OR_RETURN(auto query_description,recipe.input_description(layout,0));
   HYLE_ASSIGN_OR_RETURN(auto cache_description,recipe.input_description(layout,1));
   HYLE_ASSIGN_OR_RETURN(auto native,n::Context::create());
-#if defined(HYLE_TEST_MLA_APPLE)
   HYLE_ASSIGN_OR_RETURN(auto device,n::MemoryResource::create(native));
   HYLE_ASSIGN_OR_RETURN(auto staging,n::MemoryResource::create(native));
-#else
-  HYLE_ASSIGN_OR_RETURN(auto device,n::MemoryResource::create(native,n::MemoryKind::kDevice));
-  HYLE_ASSIGN_OR_RETURN(auto staging,n::MemoryResource::create(native,n::MemoryKind::kStaging));
-#endif
   struct Close{n::Context&c;~Close(){c.close().IgnoreError();}}close{native};
   std::vector<std::uint16_t> q(std::size_t(4)*heads*depth),cache(64*depth);
   for(std::size_t i=0;i<q.size();++i)q[i]=encode(float(int(i%29)-14)/64,bf);
@@ -87,13 +73,9 @@ Status exercise(bool bf,unsigned depth){
   HYLE_RETURN_IF_ERROR(direct.prepare_batch(layout));HYLE_RETURN_IF_ERROR(direct.bind(query,frame));
   HYLE_ASSIGN_OR_RETURN(auto done,direct.submit());HYLE_ASSIGN_OR_RETURN(auto result,done.wait());
   std::vector<std::uint16_t> words(std::size_t(4)*heads*512);
-#if defined(HYLE_TEST_MLA_APPLE)
   HYLE_ASSIGN_OR_RETURN(auto desc,c::batch_output_description(cap,4));
   HYLE_ASSIGN_OR_RETURN(auto read,device.import_readonly(result->arrays()[0],desc));
   HYLE_RETURN_IF_ERROR(read.view()->read(std::as_writable_bytes(std::span(words))));read={};
-#else
-  HYLE_RETURN_IF_ERROR(native.download(result->tensors()[0],std::as_writable_bytes(std::span(words))));
-#endif
   HYLE_RETURN_IF_ERROR(oracle_words(cap,layout,q,cache,words,bf));result={};done={};
   std::printf("Native MLA D%u H%u %s Direct single cache %zu bytes PASS\n",depth,heads,bf?"BF16":"F16",cache.size()*2);
   HYLE_ASSIGN_OR_RETURN(auto cpu,c::Context::create(c::cpu::device(),c::native::provider()));
@@ -112,11 +94,7 @@ Status exercise(bool bf,unsigned depth){
   constexpr g::StorageDomainId device_storage{0},host_storage{1};
   HYLE_ASSIGN_OR_RETURN(auto native_source,ng::execution_source(native));
   HYLE_ASSIGN_OR_RETURN(auto cpu_source,g::ExecutionSource::acquire(cpu));
-#if defined(HYLE_TEST_MLA_APPLE)
   const std::array domains{g::StorageDomain{device.ref()},g::StorageDomain{hyle::mem::system_resource()}};
-#else
-  const std::array domains{g::StorageDomain{device.ref()},g::StorageDomain{hyle::mem::system_resource()},g::StorageDomain{staging.ref()}};
-#endif
   const std::array targets{g::ExecutionTarget{native_source,device_storage},g::ExecutionTarget{cpu_source,host_storage}};
   HYLE_ASSIGN_OR_RETURN(auto neg_node,graph.node_id(1));
   const std::array placements{g::NodePlacement{node,native_target,g::PlacementStrength::kRequired},
@@ -230,21 +208,15 @@ Status exercise(bool bf,unsigned depth){
   HYLE_ASSIGN_OR_RETURN(auto negative_lease,negative_result.storage_lease());
   HYLE_ASSIGN_OR_RETURN(auto negative_description,negative_result.description());
   HYLE_ASSIGN_OR_RETURN(auto negative_tensor,device.binding(std::move(negative_lease),negative_description));
-#if defined(HYLE_TEST_MLA_APPLE)
   HYLE_ASSIGN_OR_RETURN(auto projected,graph_result.tensor());
   HYLE_ASSIGN_OR_RETURN(auto negative_projected,negative_result.tensor());
   HYLE_RETURN_IF_ERROR(projected.storage().read(std::as_writable_bytes(std::span(words))));
   HYLE_RETURN_IF_ERROR(negative_projected.storage().read(std::as_writable_bytes(std::span(negative))));
-#else
-  HYLE_RETURN_IF_ERROR(native.download(output,std::as_writable_bytes(std::span(words))));
-  HYLE_RETURN_IF_ERROR(native.download(negative_tensor,std::as_writable_bytes(std::span(negative))));
-#endif
   HYLE_RETURN_IF_ERROR(oracle_words(cap,layout,q,cache,words,bf));
-  // A Graph result always retains the original Invocation. Vulkan additionally
-  // reuses fixed backing; MLX arrays instead retain their own generated owner.
+  // A Graph result retains the original Invocation. MLX arrays also retain
+  // their own generated owner.
   HYLE_RETURN_IF_ERROR(check(!g::batch::prepare(slot,queues,layouts).ok(),"retained Graph result allowed owner resealing"));
   graph_result={};negative_result={};graph_done={};
-#if defined(HYLE_TEST_MLA_APPLE)
   HYLE_RETURN_IF_ERROR(g::batch::prepare(slot,queues,layouts));
   HYLE_RETURN_IF_ERROR(slot.bind(qi,query_description,query));
   HYLE_RETURN_IF_ERROR(g::batch::bind(slot,ci,frame));
@@ -256,9 +228,6 @@ Status exercise(bool bf,unsigned depth){
   HYLE_RETURN_IF_ERROR(old_output.view()->read(std::as_writable_bytes(std::span(old_words))));
   HYLE_RETURN_IF_ERROR(old_negative.view()->read(std::as_writable_bytes(std::span(old_neg))));
   HYLE_RETURN_IF_ERROR(check(old_words==words && old_neg==negative,"retained generated Apple output changed across replay"));
-#else
-  HYLE_RETURN_IF_ERROR(check(!g::batch::prepare(slot,queues,layouts).ok(),"escaped native output allowed owner resealing"));
-#endif
   }
   HYLE_RETURN_IF_ERROR(g::batch::prepare(slot,queues,layouts));
   HYLE_RETURN_IF_ERROR(slot.bind(qi,query_description,query));
@@ -270,9 +239,7 @@ Status exercise(bool bf,unsigned depth){
 Status run(){
   for(unsigned depth:{512u,576u}){
     HYLE_RETURN_IF_ERROR(exercise(false,depth));
-#if defined(HYLE_TEST_MLA_APPLE)
     HYLE_RETURN_IF_ERROR(exercise(true,depth));
-#endif
   }return Status::Ok();
 }
 }

@@ -22,7 +22,7 @@ public:
   hyle::Status arm() noexcept;
   hyle::Status wait_until_entered() noexcept;
   // After original Graph submission, require its native accepted owner too.
-  // Vulkan: original Runtime.pending Run; Apple: original FIFO accepted Job.
+  // Apple observes the original FIFO accepted job.
   hyle::Status wait_for_model_submission() noexcept;
   void release() noexcept;
   hyle::Status wait() noexcept;

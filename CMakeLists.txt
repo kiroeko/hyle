@@ -446,12 +446,6 @@ else()
   set(_HYLE_COMPUTE_HAVE_APPLE OFF)
 endif()
 
-if(HYLE_BUILD_COMPUTE_ROUTE_VULKAN OR HYLE_BUILD_COMPUTE_PROVIDER_GGML_VULKAN)
-  include(HyleVulkanDependencies)
-  hyle_configure_vulkan_dependencies()
-else()
-  set(_HYLE_COMPUTE_HAVE_VULKAN OFF)
-endif()
 # ---- modules (component closure + dependency order) -------------------------
 # sched fiber switching needs platform fcontext asm. Vendored build integration
 # currently covers x86_64 Windows/Linux/macOS and arm64 Linux/macOS.  The

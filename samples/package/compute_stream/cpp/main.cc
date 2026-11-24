@@ -12,10 +12,6 @@
 #include <hyle/compute/apple_file_stream.h>
 #include <hyle/compute/apple_memory.h>
 #endif
-#if defined(HYLE_COMPUTE_VULKAN)
-#include <hyle/compute/vulkan_file_stream.h>
-#include <hyle/compute/vulkan_memory.h>
-#endif
 
 #include <array>
 #include <chrono>
@@ -35,7 +31,7 @@ using hyle::Status;
 template <class T> using Result = hyle::Result<T>;
 
 #if defined(HYLE_COMPUTE_CPU) || defined(HYLE_COMPUTE_CUDA) || \
-    defined(HYLE_COMPUTE_APPLE) || defined(HYLE_COMPUTE_VULKAN)
+    defined(HYLE_COMPUTE_APPLE)
 struct TemporaryFiles final {
   std::string source, sink;
   explicit TemporaryFiles(const char *route) {
@@ -215,22 +211,8 @@ Status run() {
     HYLE_RETURN_IF_ERROR(retired);
   }
 #endif
-#if defined(HYLE_COMPUTE_VULKAN)
-  {
-    HYLE_ASSIGN_OR_RETURN(auto context, c::vulkan::Context::create());
-    HYLE_ASSIGN_OR_RETURN(auto host, c::vulkan::MemoryResource::create(context, c::vulkan::MemoryKind::kStaging));
-    HYLE_ASSIGN_OR_RETURN(auto memory, c::vulkan::MemoryResource::create(context, c::vulkan::MemoryKind::kDevice));
-    const auto result = roundtrip("Vulkan", memory.ref(),
-        [&](io::IoContext &runtime, auto targets, auto options) {
-          return c::vulkan::create_file_pipeline(runtime, context, host.ref(), targets, options);
-        });
-    const auto retired = context.close();
-    HYLE_RETURN_IF_ERROR(result);
-    HYLE_RETURN_IF_ERROR(retired);
-  }
-#endif
 #if !defined(HYLE_COMPUTE_CPU) && !defined(HYLE_COMPUTE_CUDA) && \
-    !defined(HYLE_COMPUTE_APPLE) && !defined(HYLE_COMPUTE_VULKAN)
+    !defined(HYLE_COMPUTE_APPLE)
   return Status::Unimplemented("compute_stream sample requires a selected copy route");
 #endif
   return Status::Ok();

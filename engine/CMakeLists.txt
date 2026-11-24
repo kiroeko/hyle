@@ -15,7 +15,7 @@ else()
 endif()
 
 if(NOT _hyle_engine_routes)
-  message(FATAL_ERROR "Hyle inference requires a CPU, CUDA, Apple or Vulkan Compute route")
+  message(FATAL_ERROR "Hyle inference requires a CPU, CUDA or Apple Compute route")
 endif()
 
 function(hyle_configure_engine_target target)

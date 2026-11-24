@@ -461,10 +461,7 @@ if(_HYLE_COMPUTE_HAVE_CUDA AND _HYLE_COMPUTE_REQUEST_CPU
 endif()
 
 # Only selected Qwen consumers depend on the model-owned cold inventory.
-# The Vulkan-only consumer can be selected without the application target.
-if(TARGET hyle_engine OR
-   (_HYLE_COMPUTE_HAVE_VULKAN AND TARGET hyle_graph_route_vulkan
-    AND TARGET hyle_compute_stream_vulkan AND TARGET hyle_graph_progress))
+if(TARGET hyle_engine)
   include("${HYLE_SOURCE_DIR}/engine/models/qwen35/cold_sources.cmake")
 endif()
 
@@ -514,7 +511,7 @@ if(TARGET hyle_engine)
   set_target_properties(hyle_inference_state_transfer_test PROPERTIES
     FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
   add_dependencies(hyle_tests hyle_inference_state_transfer_test)
-  foreach(_transfer_backend IN ITEMS cpu cuda apple vulkan)
+  foreach(_transfer_backend IN ITEMS cpu cuda apple)
     if(TARGET hyle_graph_route_${_transfer_backend})
       add_test(NAME hyle_inference_state_transfer_${_transfer_backend}_test
         COMMAND hyle_inference_state_transfer_test --${_transfer_backend})
@@ -576,7 +573,7 @@ if(TARGET hyle_engine)
   set_target_properties(hyle_qwen_host_image_test PROPERTIES
     FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
   add_dependencies(hyle_tests hyle_qwen_host_image_test)
-  foreach(_host_image_backend IN ITEMS cpu cuda apple vulkan)
+  foreach(_host_image_backend IN ITEMS cpu cuda apple)
     if(TARGET hyle_graph_route_${_host_image_backend})
       add_test(NAME hyle_qwen_host_image_${_host_image_backend}_test
         COMMAND hyle_qwen_host_image_test --${_host_image_backend})
@@ -797,18 +794,6 @@ if(TARGET hyle_engine AND _HYLE_COMPUTE_HAVE_CUDA)
     SKIP_RETURN_CODE 77 RUN_SERIAL TRUE)
 endif()
 
-if(_HYLE_COMPUTE_HAVE_VULKAN AND TARGET hyle_graph_route_vulkan
-   AND TARGET hyle_compute_stream_vulkan AND TARGET hyle_graph_progress)
-  hyle_add_test(graph_route_vulkan NAME qwen_resource_retirement
-    SOURCES tools/qwen_resource_retirement_test.cc
-      ${_hyle_qwen35_cold_sources}
-      "${HYLE_SOURCE_DIR}/engine/reporting/execution_report.cc"
-    DEPS hyle_compute_stream_vulkan hyle_graph_progress hyle_graph_batch
-      hyle_compute_provider_ggml_vulkan hyle_compute_ggml_runtime ggml)
-  target_include_directories(hyle_graph_route_vulkan_qwen_resource_retirement_test SYSTEM PRIVATE
-    "${HYLE_GGML_SOURCE_DIR}/src")
-  hyle_stage_runtime(hyle_graph_route_vulkan_qwen_resource_retirement_test)
-endif()
 
 # Model components stay out of SDK products and the default Qwen application.
 # Module-only validation reuses the same private sources without an engine.
@@ -838,22 +823,22 @@ foreach(_component IN LISTS HYLE_KNOWN_COMPONENTS)
       get_target_property(_hyle_module_target_type
         ${_hyle_module_target} TYPE)
       if(_hyle_module_target_type STREQUAL "EXECUTABLE")
-        if(_hyle_module_target MATCHES "^hyle_graph_route_(cpu|cuda|apple|vulkan)_test$" OR
+        if(_hyle_module_target MATCHES "^hyle_graph_route_(cpu|cuda|apple)_test$" OR
            (_hyle_module_target MATCHES "(glm|deepseek|dspark)" AND
             NOT _hyle_module_target STREQUAL "hyle_compute_state_dspark_block5_policy_test"))
           _hyle_add_glm_component(hyle_graph hyle_compute hyle_mem_vm)
           _hyle_add_deepseek_component(hyle_graph hyle_compute hyle_mem_vm)
           target_link_libraries(${_hyle_module_target} PRIVATE hyle_glm_component hyle_deepseek_component)
-        elseif(_hyle_module_target MATCHES "^hyle_graph_route_(cpu|cuda|apple|vulkan)_qwen_mtp_state_consumer_test$")
+        elseif(_hyle_module_target MATCHES "^hyle_graph_route_(cpu|cuda|apple)_qwen_mtp_state_consumer_test$")
           _hyle_add_model_components_common(hyle_graph hyle_compute hyle_mem_vm)
           target_link_libraries(${_hyle_module_target} PRIVATE hyle_model_components_common hyle_mem_vm)
-        elseif(_hyle_module_target MATCHES "^hyle_compute_route_(cpu|cuda|apple|vulkan)_test$" OR
-               _hyle_module_target MATCHES "^hyle_graph_route_(cpu|cuda|apple|vulkan)_ga_full_ffn_test$")
+        elseif(_hyle_module_target MATCHES "^hyle_compute_route_(cpu|cuda|apple)_test$" OR
+               _hyle_module_target MATCHES "^hyle_graph_route_(cpu|cuda|apple)_ga_full_ffn_test$")
           # Direct Compute fixtures use the same typed projection, without
           # acquiring a Graph dependency or the rest of a model component.
           target_sources(${_hyle_module_target} PRIVATE
             "${HYLE_SOURCE_DIR}/engine/models/deepseek/dspark_stored_projection_fragment.cc")
-          if(_hyle_module_target MATCHES "^hyle_compute_route_(cpu|cuda|apple|vulkan)_test$")
+          if(_hyle_module_target MATCHES "^hyle_compute_route_(cpu|cuda|apple)_test$")
             target_sources(${_hyle_module_target} PRIVATE
               "${HYLE_SOURCE_DIR}/engine/models/deepseek/dspark_vocabulary_fragment.cc")
           endif()

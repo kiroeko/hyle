@@ -6,16 +6,10 @@
 #include <mutex>
 #include <utility>
 
-#if defined(HYLE_NATIVE_ROW_INDEXER_APPLE)
 #include "hyle/compute/detail/apple_copy_stream_access.h"
 #include "../../src/compute_route_apple/apple_runtime_internal.h"
-#else
-#include "../compute_batch/native_vulkan_failure_fixture.h"
-#include "hyle/compute/detail/vulkan_copy_stream_access.h"
-#endif
 
 namespace {
-#if defined(HYLE_NATIVE_ROW_INDEXER_APPLE)
 // The existing original CPU FIFO gate. This does not claim a GPU stall.
 class IndexerPendingGate final : public native::detail::Job {
 public:
@@ -57,37 +51,11 @@ private:
   bool admitted_ = false, entered_ = false, open_ = false;
   bool finished_ = false, timed_out_ = false;
 };
-#else
-// Reuse the native pending fixture's retirement-observation boundary. Every
-// poll still queries the actual original fence; this proves pending owners,
-// rather than claiming that the GPU has not already executed the copy.
-struct IndexerPendingGate final {
-  hyle_f5_vk_failure_fixture::Boundary boundary;
-  static inline std::atomic<bool> held{false};
-  explicit IndexerPendingGate(const native::Context &context) : boundary(context) {}
-  hyle::Status hold() {
-    held = true;
-    boundary.device.fn.GetFenceStatus = [](VkDevice device, VkFence fence) -> VkResult {
-      auto &hook = *hyle_f5_vk_failure_fixture::Boundary::active;
-      ++hook.polls;
-      const auto actual = hook.original.GetFenceStatus(device, fence);
-      return held.load() && (actual == VK_SUCCESS || actual == VK_NOT_READY) ? VK_NOT_READY : actual;
-    };
-    return hyle::Status::Ok();
-  }
-  void release() { held = false; }
-  bool timed_out() const { return false; }
-  ~IndexerPendingGate() { release(); }
-};
-#endif
 
 TEST(NativePagedRowIndexer, PendingBankOneFeedsReadyBankZeroThroughOriginalChain) {
   for (const bool split : {false, true}) {
     SCOPED_TRACE(split ? "required scorer/gather split" : "ordinary fusion");
     Route route;
-#if !defined(HYLE_NATIVE_ROW_INDEXER_APPLE)
-    ASSERT_FALSE(route.context.environment().software_device);
-#endif
     Geometry geometry;
     const auto index = geometry.schema(c::RowCacheEncoding::float4_block32());
     const auto values = geometry.schema(c::RowCacheEncoding::float8_block64_tail64());
@@ -179,16 +147,10 @@ TEST(NativePagedRowIndexer, PendingBankOneFeedsReadyBankZeroThroughOriginalChain
       c::Completion *source;
       hyle::Result<c::CompletionPoll> result = std::unexpected(hyle::Status::Unknown());
     } observed{sources.back()};
-#if defined(HYLE_NATIVE_ROW_INDEXER_APPLE)
     native::detail::CopyStreamAccess::serialize(update, [](void *raw) noexcept {
       auto &probe = *static_cast<SourceObservation *>(raw);
       probe.result = probe.source->poll();
     }, &observed);
-#else
-    observed.result = observed.source->poll();
-    EXPECT_GT(gate.boundary.accepted, 0u);
-    EXPECT_GT(gate.boundary.polls.load(), 0u);
-#endif
     ASSERT_TRUE(observed.result) << observed.result.error().message();
     ASSERT_EQ(*observed.result, c::CompletionPoll::kPending);
     EXPECT_TRUE(update.in_flight());

@@ -5,26 +5,18 @@
 #include "native_effect_fixture.h"
 
 namespace {
-#if defined(HYLE_COMPUTE_VULKAN)
-namespace native = hyle::compute::vulkan;
-#elif defined(HYLE_COMPUTE_APPLE)
+#if defined(HYLE_COMPUTE_APPLE)
 namespace native = hyle::compute::apple;
 #endif
 
-#if defined(HYLE_COMPUTE_VULKAN) || defined(HYLE_COMPUTE_APPLE)
+#if defined(HYLE_COMPUTE_APPLE)
 TEST(FoundationEffects, CpuResourceWriteGpuMathCpuReadAndCrossFragmentAlias) {
   RegionProbe probe;
   Context cpu = make_context(probe);
   auto queue = cpu.create_queue().value();
   auto gpu = native::Context::create().value();
-#if defined(HYLE_COMPUTE_VULKAN)
-  auto device = native::MemoryResource::create(gpu, native::MemoryKind::kDevice).value();
-  auto staging = native::MemoryResource::create(gpu, native::MemoryKind::kStaging).value();
-  const auto staging_resource = staging.ref();
-#else
   auto device = native::MemoryResource::create(gpu).value();
   const auto staging_resource = device.ref();
-#endif
   hyle::sched::Scheduler scheduler(1, hyle::mem::system_allocator(), 32);
   hyle::sched::BlockingPool completion_waiters(hyle::mem::system_allocator(),1);
   struct Drain { hyle::sched::Scheduler &scheduler; ~Drain(){scheduler.drain();} } drain{scheduler};

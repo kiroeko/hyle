@@ -16,25 +16,15 @@
 #include "hyle/compute/batch_ops.h"
 #include "hyle/graph/batch.h"
 #include "hyle/graph/result.h"
-#if defined(HYLE_NATIVE_RAGGED_APPLE)
 #include "hyle/compute/apple_memory.h"
 #include "hyle/graph/apple.h"
-#else
-#include "hyle/compute/vulkan_memory.h"
-#include "hyle/graph/vulkan.h"
-#endif
 
 namespace {
 namespace c = hyle::compute;
 namespace g = hyle::graph;
 namespace gb = g::batch;
-#if defined(HYLE_NATIVE_RAGGED_APPLE)
 namespace native = c::apple;
 namespace ng = g::apple;
-#else
-namespace native = c::vulkan;
-namespace ng = g::vulkan;
-#endif
 using F16 = hyle::simd::float16_t;
 using BF16 = hyle::simd::bfloat16_t;
 constexpr unsigned heads = 8, kv_heads = 2, depth = 64;
@@ -48,13 +38,8 @@ template<class T> T take(hyle::Result<T> result, const char *what) {
 }
 struct Route final {
   native::Context context = native::Context::create().value();
-#if defined(HYLE_NATIVE_RAGGED_APPLE)
   native::MemoryResource device = native::MemoryResource::create(context).value();
   native::MemoryResource staging = native::MemoryResource::create(context).value();
-#else
-  native::MemoryResource device = native::MemoryResource::create(context, native::MemoryKind::kDevice).value();
-  native::MemoryResource staging = native::MemoryResource::create(context, native::MemoryKind::kStaging).value();
-#endif
   c::LeasePool host = c::LeasePool::create(staging.ref(), 1u << 20).value();
   c::LeasePool pool = c::LeasePool::create(device.ref(), 2u << 20).value();
   native::CopyBatchProgram copy_program = native::CopyBatchProgram::prepare(context,
@@ -81,13 +66,8 @@ struct Route final {
 std::vector<std::uint16_t> read(Route &route, const g::GraphOutput &output) {
   const auto description = output.description().value();
   std::vector<std::uint16_t> result(description.element_count().value());
-#if defined(HYLE_NATIVE_RAGGED_APPLE)
   (void)route;
   check(output.storage_lease().value().view()->read(std::as_writable_bytes(std::span(result))), "read original Apple Graph output");
-#else
-  const auto tensor = route.device.binding(output.storage_lease().value(), description).value();
-  check(route.context.download(tensor, std::as_writable_bytes(std::span(result))), "download original Vulkan Graph output");
-#endif
   return result;
 }
 template<class T> c::BatchCapacity capacity(unsigned requests, unsigned queries, unsigned keys) {
@@ -256,9 +236,6 @@ template<class T> void run(Route &route, g::Invocation &slot, const Recipe &mode
 template<class T> void unequal_requests() {
   SCOPED_TRACE((std::is_same_v<T, BF16> ? "BF16" : "F16"));
   Route route;
-#if !defined(HYLE_NATIVE_RAGGED_APPLE)
-  ASSERT_FALSE(route.context.environment().software_device);
-#endif
   const auto cap = capacity<T>(3, 6, 12);
   const auto schema = c::BatchSchema::create(cap).value();
   const std::array<std::int32_t, 4> q{0, 1, 4, 4}, kv{0, 3, 9, 9}, next_kv{0, 4, 11, 11}, next_q{0, 2, 5, 5};
@@ -294,9 +271,6 @@ TEST(NativeRaggedAttentionGraph, UnequalRequestsUpdateSlotsKeepOldOutputAndZeroC
 template<class T> void generated_payloads() {
   SCOPED_TRACE((std::is_same_v<T, BF16> ? "BF16" : "F16"));
   Route route;
-#if !defined(HYLE_NATIVE_RAGGED_APPLE)
-  ASSERT_FALSE(route.context.environment().software_device);
-#endif
   const auto cap = capacity<T>(8, 12, 28);
   const auto schema = c::BatchSchema::create(cap).value();
   const std::array<std::int32_t, 9> q{0, 1, 3, 3, 4, 6, 7, 8, 9}, kv{0, 2, 6, 6, 9, 14, 16, 20, 23};
@@ -320,9 +294,6 @@ TEST(NativeRaggedAttentionGraph, EightRequestsUseGraphProducedPayloadsAndSharedO
 template<class T> void exact_query_extent() {
   SCOPED_TRACE((std::is_same_v<T, BF16> ? "BF16" : "F16"));
   Route route;
-#if !defined(HYLE_NATIVE_RAGGED_APPLE)
-  ASSERT_FALSE(route.context.environment().software_device);
-#endif
   // The immutable schema admits C=128. This concrete Graph and its real Q
   // backing have R=1; the owned layout runs A=1 with no 127-row output tail.
   const auto cap = capacity<T>(1, 128, 4);

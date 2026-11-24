@@ -13,9 +13,7 @@ namespace {
 namespace c=hyle::compute;
 namespace g=hyle::graph;
 namespace m=hyle::mem;
-#if defined(HYLE_COMPUTE_VULKAN)
-namespace n=c::vulkan;
-#elif defined(HYLE_COMPUTE_APPLE)
+#if defined(HYLE_COMPUTE_APPLE)
 namespace n=c::apple;
 #endif
 using hyle::Status;
@@ -88,14 +86,8 @@ Status run(){
   HYLE_ASSIGN_OR_RETURN(auto cpu,c::Context::create(c::cpu::device(),provider));
   HYLE_ASSIGN_OR_RETURN(auto queue,cpu.create_queue());
   HYLE_ASSIGN_OR_RETURN(auto gpu,n::Context::create());
-#if defined(HYLE_COMPUTE_VULKAN)
-  HYLE_ASSIGN_OR_RETURN(auto device,n::MemoryResource::create(gpu,n::MemoryKind::kDevice));
-  HYLE_ASSIGN_OR_RETURN(auto staging,n::MemoryResource::create(gpu,n::MemoryKind::kStaging));
-  const auto staging_resource=staging.ref();
-#else
   HYLE_ASSIGN_OR_RETURN(auto device,n::MemoryResource::create(gpu));
   const auto staging_resource=device.ref();
-#endif
   hyle::sched::Scheduler scheduler(1,m::system_allocator(),32);
   hyle::sched::BlockingPool completion_waiters(m::system_allocator(),1);
   HYLE_ASSIGN_OR_RETURN(auto state,m::Buffer::create(m::system_resource(),4,64));

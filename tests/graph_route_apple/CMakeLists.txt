@@ -15,11 +15,11 @@ if(_HYLE_COMPUTE_HAVE_APPLE)
   hyle_stage_runtime(hyle_graph_route_apple_retained_output_budget_test)
   hyle_add_test(graph_route_apple NAME ragged_attention
     SOURCES ../graph_batch/native_ragged_attention_test.cc
-    DEFINES HYLE_NATIVE_RAGGED_APPLE=1 DEPS hyle_graph_batch hyle_simd)
+    DEPS hyle_graph_batch hyle_simd)
   hyle_stage_runtime(hyle_graph_route_apple_ragged_attention_test)
   hyle_add_test(graph_route_apple NAME paged_row_indexer
     SOURCES ../graph_batch/native_row_cache_indexer_test.cc
-    DEFINES HYLE_NATIVE_ROW_INDEXER_APPLE=1 DEPS hyle_graph_batch)
+    DEPS hyle_graph_batch)
   hyle_stage_runtime(hyle_graph_route_apple_paged_row_indexer_test)
   hyle_add_test(graph_route_apple NAME row_pending_projection
     SOURCES row_cache_pending_projection_test.cc DEPS hyle_graph_batch)
@@ -117,12 +117,10 @@ if(_HYLE_COMPUTE_REQUEST_CPU AND TARGET hyle_graph_route_cpu AND TARGET hyle_gra
   hyle_stage_runtime(hyle_graph_route_apple_mixed_finite_test)
   hyle_add_test(graph_route_apple NAME completion_publication
     SOURCES ../graph/cpu_completion_publication.cc
-    DEFINES HYLE_COMPLETION_PUBLICATION_APPLE=1
     DEPS hyle_graph_route_cpu hyle_graph_progress)
   hyle_stage_runtime(hyle_graph_route_apple_completion_publication_test)
   hyle_add_test(graph_route_apple NAME mixed_pipeline
     SOURCES ../graph/native_joint_pipeline.cc
-    DEFINES HYLE_G09_APPLE=1
     DEPS hyle_graph_route_cpu hyle_graph_progress)
   hyle_stage_runtime(hyle_graph_route_apple_mixed_pipeline_test)
   set_tests_properties(hyle_graph_route_apple_mixed_pipeline_test PROPERTIES TIMEOUT 600)

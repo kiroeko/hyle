@@ -3,9 +3,7 @@
 #include "hyle/graph/executable.h"
 #include "hyle/graph/progress.h"
 #include "hyle/graph/result.h"
-#if defined(HYLE_COMPUTE_VULKAN)
-#include "hyle/graph/vulkan.h"
-#elif defined(HYLE_COMPUTE_APPLE)
+#if defined(HYLE_COMPUTE_APPLE)
 #include "hyle/graph/apple.h"
 #endif
 #include "hyle/sched/blocking.h"
@@ -18,10 +16,7 @@
 namespace effect_test {
 namespace c = hyle::compute;
 namespace g = hyle::graph;
-#if defined(HYLE_COMPUTE_VULKAN)
-namespace n = c::vulkan;
-namespace ng = g::vulkan;
-#elif defined(HYLE_COMPUTE_APPLE)
+#if defined(HYLE_COMPUTE_APPLE)
 namespace n = c::apple;
 namespace ng = g::apple;
 #endif
@@ -59,13 +54,7 @@ inline hyle::Result<float> read(const g::GraphOutput &output,
     const c::TensorDesc &description) {
   HYLE_ASSIGN_OR_RETURN(auto owner, output.storage_lease());
   HYLE_ASSIGN_OR_RETURN(auto actual, memory.binding(std::move(owner), description));
-#if defined(HYLE_COMPUTE_VULKAN)
-  std::array<float, 1> value;
-  HYLE_RETURN_IF_ERROR(native.download(actual, std::as_writable_bytes(std::span(value))));
-  return value[0];
-#else
   (void)native;
   return actual.template data<float>()[0];
-#endif
 }
 } // namespace effect_test

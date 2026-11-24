@@ -37,7 +37,7 @@ double half(std::uint16_t bits){
       std::ldexp(1.+double(mantissa)/1024.,int(exponent)-15):std::ldexp(double(mantissa),-24));
 }
 // The same independent physical Q8_0 bytes and FP64 attention oracle as the
-// CPU/Vulkan mathematical consumer; neither uses a provider's encoder/output.
+// CPU mathematical consumer; neither uses a provider's encoder/output.
 std::vector<std::byte> bank(bool values){
   constexpr unsigned blocks=depth/32,row_bytes=kv_heads*blocks*34;
   std::vector<std::byte> bytes(page_count*page_size*row_bytes);

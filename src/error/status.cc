@@ -41,7 +41,6 @@ std::string_view native_error_domain_name(NativeErrorDomain domain) noexcept {
     case NativeErrorDomain::None: return "None";
     case NativeErrorDomain::PosixErrno: return "PosixErrno";
     case NativeErrorDomain::Win32: return "Win32";
-    case NativeErrorDomain::Vulkan: return "Vulkan";
     case NativeErrorDomain::CudaRuntime: return "CudaRuntime";
     case NativeErrorDomain::CudaDriver: return "CudaDriver";
     case NativeErrorDomain::Nvrtc: return "Nvrtc";

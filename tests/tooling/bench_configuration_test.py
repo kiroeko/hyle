@@ -35,12 +35,11 @@ set(HYLE_STATIC ON)
 set(HYLE_D5_CUDA_FRAGMENT_BENCH ON)
 set(_HYLE_COMPUTE_HAVE_CUDA "${ENABLE_ROUTES}")
 set(_HYLE_COMPUTE_HAVE_APPLE "${ENABLE_ROUTES}")
-set(_HYLE_COMPUTE_HAVE_VULKAN "${ENABLE_ROUTES}")
 set(_HYLE_COMPUTE_HAVE_ONEDNN "${ENABLE_ROUTES}")
 set(HYLE_KNOWN_COMPONENTS
-  compute_ops compute graph compute_route_apple compute_route_vulkan
+  compute_ops compute graph compute_route_apple
   compute_provider_onednn graph_provider_onednn
-  graph_route_cuda graph_route_apple graph_route_vulkan)
+  graph_route_cuda graph_route_apple)
 if(MOCK_IO_PEERS)
   list(APPEND HYLE_KNOWN_COMPONENTS io_watch io_transfer)
   set(HYLE_IO_WATCH_P1_BENCH ON)
@@ -70,11 +69,6 @@ foreach(_target IN ITEMS hyle_core hyle_build_contract hyle_compute_backend_cpu
 endforeach()
 add_library(GTest::gtest INTERFACE IMPORTED)
 set_property(TARGET mlx PROPERTY HYLE_DEP_SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/mlx")
-set(HYLE_VULKAN_REFERENCE_SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/reference")
-file(MAKE_DIRECTORY "${HYLE_VULKAN_REFERENCE_SOURCE_DIR}/src/ggml-vulkan")
-file(WRITE "${HYLE_VULKAN_REFERENCE_SOURCE_DIR}/src/ggml-vulkan/ggml-vulkan.cpp" "")
-set(HYLE_VULKAN_PYTHON "${CMAKE_COMMAND}")
-set(HYLE_VULKAN_GLSLANG "${CMAKE_COMMAND}")
 function(hyle_apply_warnings target)
 endfunction()
 include("${HYLE_SOURCE_DIR}/cmake/HyleModule.cmake")
@@ -83,10 +77,9 @@ if(NOT PROJECT_NAME STREQUAL "BenchMetadata" OR DEFINED HYLE_G08_ROUTE)
   message(FATAL_ERROR "normal benchmarks entered the standalone G08 project")
 endif()
 foreach(_target IN ITEMS hyle_compute_cuda_runtime_bench hyle_graph_cuda_pipeline_bench
-    hyle_compute_route_apple_bench hyle_compute_route_vulkan_bench
+    hyle_compute_route_apple_bench
     hyle_compute_onednn_provider_bench hyle_onednn_normalization_bench
-    hyle_graph_route_cuda_bench hyle_graph_route_apple_bench
-    hyle_graph_route_vulkan_bench hyle_graph_route_vulkan_d5_bench)
+    hyle_graph_route_cuda_bench hyle_graph_route_apple_bench)
   if(ENABLE_ROUTES AND NOT TARGET ${_target})
     message(FATAL_ERROR "enabled benchmark was silently omitted: ${_target}")
   elseif(NOT ENABLE_ROUTES AND TARGET ${_target})

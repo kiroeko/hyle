@@ -30,7 +30,6 @@ xcrun -sdk macosx metal --version
 xcrun -sdk macosx metallib --version
 ```
 
-Vulkan 源码构建还需要宿主 shader 编译器；在线初始化可按 lock 准备缺少的 glslang。
 `io` 产品包含 TLS 与 HTTP/2。`init.py --components io` 自动查找已安装的 OpenSSL 3 开发包，
 非标准位置可用高级参数 `-D OPENSSL_ROOT_DIR=<prefix>` 指定。
 nghttp2 按 lock 自动准备；缺少 OpenSSL 时明确报错，不裁剪 TLS 能力。

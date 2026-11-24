@@ -1,8 +1,6 @@
 #include <hyle/compute/batch_transfer.h>
 #if defined(HYLE_COPY_UPDATE_APPLE)
 #include <hyle/compute/apple_memory.h>
-#elif defined(HYLE_COPY_UPDATE_VULKAN)
-#include <hyle/compute/vulkan_memory.h>
 #elif defined(HYLE_COPY_UPDATE_CUDA)
 #include <hyle/compute/backends/cuda.h>
 #else
@@ -19,8 +17,6 @@ namespace c = hyle::compute;
 namespace m = hyle::mem;
 #if defined(HYLE_COPY_UPDATE_APPLE)
 namespace n = c::apple;
-#elif defined(HYLE_COPY_UPDATE_VULKAN)
-namespace n = c::vulkan;
 #else
 namespace n = c;
 #endif
@@ -37,12 +33,6 @@ Status run() {
   HYLE_ASSIGN_OR_RETURN(auto device, n::MemoryResource::create(context));
   HYLE_ASSIGN_OR_RETURN(auto host, n::MemoryResource::create(context));
   const auto destination_resource = device.ref(), source_resource = host.ref();
-#elif defined(HYLE_COPY_UPDATE_VULKAN)
-  HYLE_ASSIGN_OR_RETURN(auto context, n::Context::create());
-  HYLE_RETURN_IF_ERROR(require(!context.environment().software_device, "actual Vulkan device required"));
-  HYLE_ASSIGN_OR_RETURN(auto device, n::MemoryResource::create(context, n::MemoryKind::kDevice));
-  HYLE_ASSIGN_OR_RETURN(auto host, n::MemoryResource::create(context, n::MemoryKind::kStaging));
-  const auto destination_resource = device.ref(), source_resource = host.ref();
 #elif defined(HYLE_COPY_UPDATE_CUDA)
   HYLE_ASSIGN_OR_RETURN(auto device_id, c::cuda::device(0));
   HYLE_ASSIGN_OR_RETURN(auto context, c::Context::create(device_id));
@@ -53,7 +43,7 @@ Status run() {
   HYLE_ASSIGN_OR_RETURN(auto context, c::Context::create(c::cpu::device()));
   const auto destination_resource = m::system_resource(), source_resource = m::system_resource();
 #endif
-#if !defined(HYLE_COPY_UPDATE_APPLE) && !defined(HYLE_COPY_UPDATE_VULKAN)
+#if !defined(HYLE_COPY_UPDATE_APPLE)
   HYLE_ASSIGN_OR_RETURN(auto queue, context.create_queue());
   struct Drain final { c::Queue &queue; ~Drain() { queue.drain().IgnoreError(); } } drain{queue};
 #endif
@@ -68,7 +58,7 @@ Status run() {
   const std::array specs{c::CopyResourceSpec{source_resource, page_bytes},
                          c::CopyResourceSpec{destination_resource, page_bytes}};
   HYLE_ASSIGN_OR_RETURN(auto program, n::CopyBatchProgram::prepare(context, specs));
-#if defined(HYLE_COPY_UPDATE_APPLE) || defined(HYLE_COPY_UPDATE_VULKAN)
+#if defined(HYLE_COPY_UPDATE_APPLE)
   HYLE_ASSIGN_OR_RETURN(auto copy, n::CopyBatchInvocation::create(program));
   HYLE_ASSIGN_OR_RETURN(auto foreign, n::CopyBatchInvocation::create(program));
 #else
@@ -79,7 +69,7 @@ Status run() {
   const std::array down_specs{c::CopyResourceSpec{destination_resource, page_bytes},
                               c::CopyResourceSpec{source_resource, page_bytes}};
   HYLE_ASSIGN_OR_RETURN(auto down_program, n::CopyBatchProgram::prepare(context, down_specs));
-#if defined(HYLE_COPY_UPDATE_APPLE) || defined(HYLE_COPY_UPDATE_VULKAN)
+#if defined(HYLE_COPY_UPDATE_APPLE)
   HYLE_ASSIGN_OR_RETURN(auto down, n::CopyBatchInvocation::create(down_program));
 #else
   HYLE_ASSIGN_OR_RETURN(auto down, n::CopyBatchInvocation::create(down_program, queue));

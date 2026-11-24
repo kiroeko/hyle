@@ -19,12 +19,8 @@
 #include "hyle/compute/backends/cuda.h"
 #include "hyle/compute/providers/ggml_cuda.h"
 #endif
-#elif defined(HYLE_GDN_SCALE_APPLE)
-#include "hyle/compute/apple.h"
-#elif defined(HYLE_GDN_SCALE_VULKAN)
-#include "../compute_route_vulkan/tensor_test_support.h"
 #else
-#error Select the focused GDN scale backend
+#include "hyle/compute/apple.h"
 #endif
 
 namespace {
@@ -143,18 +139,12 @@ TEST(GdnOutputScale, ColdParameterIdentityRetainsPresenceAndSignedFloatBits) {
 }
 #else
 TEST(GdnOutputScale, RawDefaultAndFusedGatesKeepStateSnapshots) {
-#if defined(HYLE_GDN_SCALE_APPLE)
   namespace mx=mlx::core;namespace a=c::apple;
   auto context=a::Context::create();ASSERT_TRUE(context)<<context.error().message();
-#else
-  namespace v=c::vulkan;
-  auto context=vulkan_test::context().value();
-#endif
   for(int mode=0;mode!=3;++mode) {
     const Fixture f(mode==1,mode==2);
     for(const std::optional<float> scale:{std::optional<float>{},std::optional<float>{1.F}}) {
       SCOPED_TRACE(::testing::Message()<<"mode="<<mode<<" explicit="<<scale.has_value());
-#if defined(HYLE_GDN_SCALE_APPLE)
       std::vector<mx::array> inputs;std::vector<a::InputSpec> specs;
       for(std::size_t port=0;port<f.inputs.size();++port) {
         mx::Shape shape;for(auto d:f.inputs[port].dimensions())shape.push_back(int(d));
@@ -170,21 +160,6 @@ TEST(GdnOutputScale, RawDefaultAndFusedGatesKeepStateSnapshots) {
       const auto result=done->get()->arrays();ASSERT_EQ(result.size(),2U);
       f.check({result[0].data<float>(),result[0].size()},{result[1].data<float>(),result[1].size()},scale);
       EXPECT_EQ(std::memcmp(inputs.back().data<float>(),f.data.back().data(),f.data.back().size()*sizeof(float)),0);
-#else
-      std::vector<v::Argument> specs;std::vector<v::Tensor> inputs;
-      for(std::size_t port=0;port<f.inputs.size();++port) {
-        specs.emplace_back(f.inputs[port]);inputs.push_back(vulkan_test::upload(context,f.inputs[port],f.data[port]).value());
-      }
-      auto prepared=v::prepare(context,f.operation(scale),specs);
-      ASSERT_TRUE(prepared)<<prepared.error().message();
-      auto invocation=prepared->create_invocation();ASSERT_TRUE(invocation);
-      ASSERT_TRUE(invocation->bind(inputs).ok());
-      auto work=invocation->submit();ASSERT_TRUE(work)<<work.error().message();
-      auto done=work->wait();ASSERT_TRUE(done)<<done.error().message();
-      const auto result=done->get()->tensors();ASSERT_EQ(result.size(),2U);
-      auto y=vulkan_test::read(context,result[0]).value(),s=vulkan_test::read(context,result[1]).value();
-      f.check(y,s,scale);EXPECT_EQ(vulkan_test::read(context,inputs.back()).value(),f.data.back());
-#endif
     }
   }
 }

@@ -29,7 +29,7 @@ python scripts/init.py --backends cpu --components compute,graph --tests --cache
 共享 cache 的源码部分也可由 `cmake -DHYLE_DEP_ACTION=sync -P cmake/HyleDependencyCacheTool.cmake`
 预取，但该命令不替代各后端的平台 SDK 或宿主工具准备。需要 ATen 的 CPU/CUDA 产品闭包会
 自动装配其 SDK，离线介质须提前包含匹配目标平台/架构的资产；独立模块和不依赖 ATen 的其它
-后端不额外要求该 SDK。Vulkan 的宿主 glslang 也须提前准备。准备机与目标机不匹配时，
+后端不额外要求该 SDK。准备机与目标机不匹配时，
 使用目标平台的联网准备环境或经过核实的相应 SDK 介质。
 
 搬运完整共享 cache 时保留根 marker、身份 metadata、archives、sources 和所需平台 SDK 资产。

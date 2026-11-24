@@ -18,7 +18,6 @@ Visual Studio 的安装步骤见 [Microsoft C++ 安装说明](https://learn.micr
 切换 MSVC 与 clang-cl 应重新初始化相应配置，不在原 CMake cache 中原地换编译器。
 
 CPU 与 CUDA 完整产品当前支持 Windows x86_64；CUDA 另需 CUDA Toolkit 13.3+ 和可用驱动。
-Vulkan 源码构建需要宿主 shader 编译器；缺少时初始化可从中央 lock 准备它。
 脚本不会替用户安装 CUDA Toolkit 或显卡驱动。
 
 ## 平台注意事项

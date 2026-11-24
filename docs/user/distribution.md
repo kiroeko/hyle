@@ -88,7 +88,7 @@ Linux 静态 SDK 要链接进 shared library 时，制作 SDK 前设置
 
 ## Compute / Graph 后端
 
-初始化脚本使用 `--backends cpu,cuda,metal,vulkan` 的所需子集。直接 CMake 或源码嵌入使用：
+初始化脚本使用 `--backends` 选择平台支持的 `cpu`、`cuda`、`metal` 或其组合。直接 CMake 或源码嵌入使用：
 
 ```cmake
 set(HYLE_COMPONENTS "compute;graph")
@@ -97,7 +97,7 @@ add_subdirectory(path/to/hyle hyle-build)
 target_link_libraries(my_app PRIVATE hyle::compute hyle::graph)
 ```
 
-CMake 值为 `cpu`、`cuda`、`apple`、`vulkan`；CLI 的 `metal` 对应 `apple`。
+CMake 值为 `cpu`、`cuda`、`apple`；CLI 的 `metal` 对应 `apple`。
 默认 CPU，集合顺序不是运行时偏好。后端所需数学实现自动接入，不需要选择 oneDNN、ATen、ggml
 等内部 Provider，也不需要手写其存在性宏。CPU/GPU 混合 SDK 与混合图的实际执行策略分开：
 后者见 [Graph](graph.md#cpu-与-gpu-组合)。HIP/ROCm 当前没有产品配置项。
@@ -111,7 +111,6 @@ CMake 值为 `cpu`、`cuda`、`apple`、`vulkan`；CLI 的 `metal` 对应 `apple
 | CPU | 自动装配所选产品闭包的数学依赖；ATen 使用外部 shared runtime，静态 HYLE 也须携带匹配的依赖资产 |
 | CUDA | 完整产品支持 Windows/Linux x86_64；制作与消费 SDK 都需要匹配的系统 CUDA Toolkit，运行需要驱动 |
 | Metal | macOS Apple Silicon；原生资源随 SDK 交付，具体布局与设备限制见 [Apple](apple-compute.md) |
-| Vulkan | 运行机器需要 loader 与适用设备；SDK 内带已编译 shader，二进制消费者不需要 glslang；见 [Vulkan](vulkan-compute.md) |
 
 系统工具链、Toolkit 版本和缓存准备统一见[依赖说明](../developer/setup/dependencies.md)。
 macOS 每个构建目录只选择一个 `CMAKE_OSX_ARCHITECTURES` 架构，不支持同一树制作 universal 库。

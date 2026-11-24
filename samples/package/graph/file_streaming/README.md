@@ -4,7 +4,7 @@ This independent C++ project uses the ordinary Graph product, the explicit `comp
 service and selected Compute routes.
 The small consumer streams two BF16/encoded-weight groups through fixed staging, calls existing
 Direct and Graph mathematics as each group becomes ready, writes the resources to a new temporary
-file, reloads, and checks the mathematics again. CPU/CUDA/Vulkan use existing GGUF Q8 bytes;
+file, reloads, and checks the mathematics again. CPU and CUDA use existing GGUF Q8 bytes;
 Apple uses its original affine Q4 representation. These fixtures do not claim full model inference.
 
 Use `HYLE_SAMPLE_SOURCE` for `add_subdirectory` consumption, or the installed Hyle package through
@@ -19,7 +19,7 @@ hyle_stage_runtime(app)
 
 The service uses the original IO core and each selected route's copy owner; it does not require
 the complete IO protocol product. Factory declarations live in `hyle/compute/cpu_file_stream.h`,
-`cuda_file_stream.h`, `apple_file_stream.h` and `vulkan_file_stream.h`. Ordinary Compute/Graph
+`cuda_file_stream.h`, and `apple_file_stream.h`. Ordinary Compute/Graph
 headers do not include file streaming.
 The program owns its temporary files and leaves the source model unchanged.
 

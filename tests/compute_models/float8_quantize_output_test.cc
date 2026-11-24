@@ -32,11 +32,6 @@
 #include "hyle/compute/apple_memory.h"
 #include "hyle/graph/apple.h"
 #endif
-#if defined(HYLE_TEST_FP8_QUANT_VULKAN)
-#include "../compute_route_vulkan/fixture.h"
-#include "../../src/compute_route_vulkan/vulkan_memory_internal.h"
-#include "hyle/graph/vulkan.h"
-#endif
 
 namespace {
 namespace c = hyle::compute;
@@ -513,41 +508,6 @@ TEST(Float8QuantizeOutput, AppleCodesScalesAndLifetimes) {
       [&](const g::Graph &graph) { return g::compile(graph, {.storage_domains = domains, .targets = targets}); },
       [](m::BufferView to, std::span<const std::byte> from) { return to.write(from); },
       [](m::ConstBufferView from, std::span<std::byte> to) { return from.read(to); },
-      [](g::Invocation &invocation, std::span<const g::QueueBinding> bindings) { return invocation.prepare_replay(bindings); });
-}
-#endif
-#if defined(HYLE_TEST_FP8_QUANT_VULKAN)
-TEST(Float8QuantizeOutput, VulkanCodesScalesAndLifetimes) {
-  namespace v = c::vulkan;
-  auto context = take(vulkan_test::context(), "ordinary Vulkan context");
-  auto device = take(v::MemoryResource::create(context, v::MemoryKind::kDevice), "Vulkan device memory");
-  auto staging = take(v::MemoryResource::create(context, v::MemoryKind::kStaging), "Vulkan staging memory");
-  constexpr std::size_t capacity = 4096;
-  auto transfer = take(v::TransferSlot::create(context, staging, capacity), "Vulkan transfer slot");
-  auto host = take(m::Buffer::create(m::system_resource(), capacity, 64), "Vulkan host bytes");
-  const auto description = [](std::size_t size) { return c::TensorDesc::dense(Type::kUInt8, std::array{std::int64_t(size)}); };
-  const auto write = [&](m::BufferView destination, std::span<const std::byte> source) -> hyle::Status {
-    HYLE_ASSIGN_OR_RETURN(auto desc, description(source.size()));
-    HYLE_ASSIGN_OR_RETURN(auto host_bytes, host.view().subview(0, source.size()));
-    HYLE_RETURN_IF_ERROR(host_bytes.write(source));
-    HYLE_ASSIGN_OR_RETURN(auto view, c::ConstTensorView::create(desc, destination));
-    HYLE_ASSIGN_OR_RETURN(auto native, v::detail::MemoryAccess::tensor_view(v::detail::Access::runtime(context), view, m::system_allocator()));
-    HYLE_ASSIGN_OR_RETURN(auto uploaded, c::ConstTensorView::create(desc, host_bytes));
-    HYLE_ASSIGN_OR_RETURN(auto done, transfer.upload(native, uploaded)); return done.wait();
-  };
-  const auto read = [&](m::ConstBufferView source, std::span<std::byte> destination) -> hyle::Status {
-    HYLE_ASSIGN_OR_RETURN(auto desc, description(destination.size()));
-    HYLE_ASSIGN_OR_RETURN(auto view, c::ConstTensorView::create(desc, source));
-    HYLE_ASSIGN_OR_RETURN(auto native, v::detail::MemoryAccess::tensor_view(v::detail::Access::runtime(context), view, m::system_allocator()));
-    HYLE_ASSIGN_OR_RETURN(auto done, transfer.download(native)); HYLE_RETURN_IF_ERROR(done.wait());
-    HYLE_ASSIGN_OR_RETURN(auto host_bytes, host.view().subview(0, destination.size()));
-    HYLE_ASSIGN_OR_RETURN(auto target, c::TensorView::create(desc, host_bytes));
-    HYLE_RETURN_IF_ERROR(transfer.read(target)); return host_bytes.read(destination);
-  };
-  const std::array domains{g::StorageDomain{device.ref()}};
-  const std::array targets{g::ExecutionTarget{take(g::vulkan::execution_source(context), "Vulkan execution source"), g::StorageDomainId{0}}};
-  run(device.ref(), {},
-      [&](const g::Graph &graph) { return g::compile(graph, {.storage_domains = domains, .targets = targets}); }, write, read,
       [](g::Invocation &invocation, std::span<const g::QueueBinding> bindings) { return invocation.prepare_replay(bindings); });
 }
 #endif

@@ -322,7 +322,7 @@ TEST(RoutePolicy, MalformedAndDuplicateSelectorsAreRejected) {
 
 TEST(RoutePolicy, FourNativeRoutesRemainIndependentColdFacts) {
   for (const auto route : {NativeRoute::kCpu, NativeRoute::kCuda,
-                           NativeRoute::kApple, NativeRoute::kVulkan}) {
+                           NativeRoute::kApple}) {
     RouteSelector selector{.route = route};
     RouteMatchInput input{.route = route};
     EXPECT_TRUE(match_route_selector(selector, input).matched());

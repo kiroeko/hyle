@@ -2,7 +2,7 @@
 
 namespace hyle::compute::shader {
 
-// Private numerical source shared by the Vulkan and Metal NVFP4 reference
+// Private numerical source used by the Metal NVFP4 reference
 // kernels. Inputs/results are IEEE binary32 bits. Each dialect supplies only
 // hyle_mul_hi(uint,uint) and hyle_clz(uint); no native division, float64,
 // denormal capability or fast-math assumption is needed for these boundaries.

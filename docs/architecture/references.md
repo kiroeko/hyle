@@ -25,7 +25,6 @@
 | CUDA | CUDA/cuBLAS、FlashInfer等 | capture、workspace、dynamic planning、partial acceptance与终态 |
 | 设备侧编排与整段decode融合 | TPU Megakernels | 冷期布局、显式预取、循环缓冲、scratch复用及设备侧起草／验证／接受循环；区分整层kernel融合与跨轮设备控制流 |
 | Apple | Metal、MLX | array/stream/compiled region、输出owner及跨runtime边界 |
-| Vulkan | Khronos规范、ggml Vulkan、IREE | execution/memory可见性、descriptor/command寿命与portability |
 
 引擎通常不是可直接借入的小型C++机制库。借其算法或kernel时仍要用窄接入保留来源、资源与交付边界；
 Python包装、整模型runtime、服务cache和进程政策不会因提供参考而成为Hyle依赖。

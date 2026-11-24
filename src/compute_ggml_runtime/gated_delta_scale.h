@@ -42,4 +42,3 @@ inline float gdn_output_scale(const ggml_tensor *node,
 extern "C" std::int32_t ggml_hyle_cpu_gdn_output_scale_contract();
 extern "C" std::int32_t ggml_hyle_cuda_gdn_output_scale_contract();
 extern "C" std::int32_t ggml_hyle_metal_gdn_output_scale_contract();
-extern "C" std::int32_t ggml_hyle_vulkan_gdn_output_scale_contract();

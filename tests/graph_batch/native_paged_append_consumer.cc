@@ -1,9 +1,5 @@
 #include <hyle/graph/batch.h>
-#if defined(HYLE_JOINT_PAGE_APPLE)
 #include <hyle/graph/apple.h>
-#else
-#include <hyle/graph/vulkan.h>
-#endif
 #include <hyle/graph/progress.h>
 #include <hyle/graph/result.h>
 #include <hyle/sched/blocking.h>
@@ -22,13 +18,8 @@ namespace {
 namespace c = hyle::compute;
 namespace g = hyle::graph;
 namespace gb = g::batch;
-#if defined(HYLE_JOINT_PAGE_APPLE)
 namespace n = c::apple;
 namespace route = g::apple;
-#else
-namespace n = c::vulkan;
-namespace route = g::vulkan;
-#endif
 using hyle::Result;
 using hyle::Status;
 constexpr g::ExecutionTargetId target{0};
@@ -304,13 +295,8 @@ Status exercise(n::Context &context, n::MemoryResource &device, n::MemoryResourc
 
 Status run() {
   HYLE_ASSIGN_OR_RETURN(auto context, n::Context::create());
-#if defined(HYLE_JOINT_PAGE_APPLE)
   HYLE_ASSIGN_OR_RETURN(auto device, n::MemoryResource::create(context));
   HYLE_ASSIGN_OR_RETURN(auto staging, n::MemoryResource::create(context));
-#else
-  HYLE_ASSIGN_OR_RETURN(auto device, n::MemoryResource::create(context, n::MemoryKind::kDevice));
-  HYLE_ASSIGN_OR_RETURN(auto staging, n::MemoryResource::create(context, n::MemoryKind::kStaging));
-#endif
   HYLE_RETURN_IF_ERROR(exercise(context, device, staging, false, true));
   HYLE_RETURN_IF_ERROR(exercise(context, device, staging, true, false));
   HYLE_RETURN_IF_ERROR(exercise(context, device, staging, false, false));

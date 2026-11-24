@@ -84,7 +84,7 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
     common.add_argument('--model-name', default='hyle')
     common.add_argument('--config', type=Path, help='cold execution/sampling and session policy TOML')
     common.add_argument('--asset-cache', type=Path, help='immutable store for configured automatic asset recipes')
-    common.add_argument('--backend', choices=('auto', 'cpu', 'cuda', 'apple', 'vulkan'), default='auto')
+    common.add_argument('--backend', choices=('auto', 'cpu', 'cuda', 'apple'), default='auto')
     common.add_argument('--cpu-ffn-layers', type=int, default=0,
                         help='place the first N target FFNs on CPU at cold loading; requires CPU+GPU')
     common.add_argument('--capacity', type=int, default=4096)

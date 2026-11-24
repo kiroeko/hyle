@@ -10,7 +10,7 @@ constexpr bool valid_platform(RoutePlatform value) noexcept {
 }
 
 constexpr bool valid_route(NativeRoute value) noexcept {
-  return value >= NativeRoute::kUnknown && value <= NativeRoute::kVulkan;
+  return value >= NativeRoute::kUnknown && value <= NativeRoute::kApple;
 }
 
 constexpr bool valid_phase(WorkloadPhase value) noexcept {

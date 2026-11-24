@@ -13,10 +13,6 @@
 #include <hyle/compute/apple_memory.h>
 #include <hyle/graph/apple.h>
 #endif
-#if defined(HYLE_COMPUTE_VULKAN)
-#include <hyle/compute/vulkan_memory.h>
-#include <hyle/graph/vulkan.h>
-#endif
 
 #include <algorithm>
 #include <array>
@@ -260,69 +256,6 @@ Status apple() {
 }
 #endif
 
-#if defined(HYLE_COMPUTE_VULKAN)
-Status vulkan() {
-  namespace v = c::vulkan;
-  HYLE_ASSIGN_OR_RETURN(auto context, v::Context::create());
-  HYLE_ASSIGN_OR_RETURN(
-      auto memory, v::MemoryResource::create(context, v::MemoryKind::kDevice));
-  HYLE_ASSIGN_OR_RETURN(auto desc, description());
-  HYLE_ASSIGN_OR_RETURN(auto native_left,
-                        context.upload(desc, std::as_bytes(std::span(kLeft))));
-  HYLE_ASSIGN_OR_RETURN(auto native_right,
-                        context.upload(desc, std::as_bytes(std::span(kRight))));
-  HYLE_ASSIGN_OR_RETURN(auto left, memory.import_readonly(native_left));
-  HYLE_ASSIGN_OR_RETURN(auto right, memory.import_readonly(native_right));
-  HYLE_ASSIGN_OR_RETURN(auto program,
-                        v::prepare(context, c::MatMul{}, desc, desc));
-  HYLE_ASSIGN_OR_RETURN(auto direct,
-                        v::LeasedInvocation::create(program, memory));
-  std::array inputs{v::LeasedInput{desc, left}, v::LeasedInput{desc, right}};
-  HYLE_RETURN_IF_ERROR(direct.bind(inputs));
-  HYLE_ASSIGN_OR_RETURN(auto direct_done, direct.submit());
-  HYLE_RETURN_IF_ERROR(direct.drain());
-  HYLE_ASSIGN_OR_RETURN(auto direct_result, direct_done.wait());
-  std::array<float, 4> actual{};
-  HYLE_RETURN_IF_ERROR(context.download(
-      direct_result->tensors()[0], std::as_writable_bytes(std::span(actual))));
-  HYLE_RETURN_IF_ERROR(check(actual));
-  HYLE_ASSIGN_OR_RETURN(auto graph, definition(desc));
-  HYLE_ASSIGN_OR_RETURN(auto compiled,
-                        g::vulkan::compile(context, graph.graph));
-  HYLE_ASSIGN_OR_RETURN(auto run,
-                        v::LeasedInvocation::create(compiled, memory));
-  HYLE_RETURN_IF_ERROR(run.bind(inputs));
-  left.reset();
-  right.reset();
-  native_left = {};
-  native_right = {};
-  for (auto &input : inputs)
-    input.source.reset();
-  HYLE_ASSIGN_OR_RETURN(auto done, run.submit());
-  HYLE_RETURN_IF_ERROR(run.drain());
-  HYLE_ASSIGN_OR_RETURN(auto result, done.wait());
-  HYLE_RETURN_IF_ERROR(context.download(
-      result->tensors()[0], std::as_writable_bytes(std::span(actual))));
-  HYLE_RETURN_IF_ERROR(check(actual));
-  HYLE_ASSIGN_OR_RETURN(auto alias,
-                        memory.import_readonly(result->tensors()[1]));
-  HYLE_ASSIGN_OR_RETURN(auto retained, memory.binding(alias, desc));
-  if (alias.try_write() || run.submit())
-    return Status::Internal("native Vulkan readonly/close contract");
-  result = {};
-  done = {};
-  run = {};
-  compiled = {};
-  alias.reset();
-  direct_result = {};
-  direct_done = {};
-  direct = {};
-  program = {};
-  HYLE_RETURN_IF_ERROR(
-      context.download(retained, std::as_writable_bytes(std::span(actual))));
-  return check(actual, kLeft);
-}
-#endif
 
 Status run() {
 #if defined(HYLE_COMPUTE_CPU)
@@ -346,11 +279,6 @@ Status run() {
 #if defined(HYLE_COMPUTE_APPLE)
   HYLE_RETURN_IF_ERROR(apple());
   std::puts("Apple native leased Direct+Graph math, held drain and source "
-            "alias passed");
-#endif
-#if defined(HYLE_COMPUTE_VULKAN)
-  HYLE_RETURN_IF_ERROR(vulkan());
-  std::puts("Vulkan native leased Direct+Graph math, held drain and source "
             "alias passed");
 #endif
   return Status::Ok();

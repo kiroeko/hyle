@@ -90,7 +90,7 @@ inline Result<CpuOptionsFacts> cpu_options_case() {
       }
     }
     HYLE_RETURN_IF_ERROR(run.drain());
-    return backend.collect_retired();
+    return {};
   };
   HYLE_RETURN_IF_ERROR(execute(configured, facts.configured_provider));
   facts.executor_calls = probe.calls.load(std::memory_order_relaxed);

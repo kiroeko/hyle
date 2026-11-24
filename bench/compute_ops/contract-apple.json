@@ -194,7 +194,7 @@
       "charged_phases": [
         "public submit/admission and original queue/worker/dispatch",
         "all selected reduction or complete original sorting and intermediate runtime work",
-        "actual checked native completion and both values/indices host readback including Vulkan staging/fences",
+        "actual checked native completion and both values/indices host readback",
         "step-local Completion/OwnedResult/lease release and previous invocation-native result replacement in steady replay"
       ],
       "pair": {
@@ -268,7 +268,7 @@
       "charged_phases": [
         "public submit/admission and original queue/worker/dispatch",
         "all selected reduction or complete original sorting and intermediate runtime work",
-        "actual checked native completion and both values/indices host readback including Vulkan staging/fences",
+        "actual checked native completion and both values/indices host readback",
         "step-local Completion/OwnedResult/lease release and previous invocation-native result replacement in steady replay"
       ],
       "pair": {
@@ -342,7 +342,7 @@
       "charged_phases": [
         "public submit/admission and original queue/worker/dispatch",
         "all selected reduction or complete original sorting and intermediate runtime work",
-        "actual checked native completion and both values/indices host readback including Vulkan staging/fences",
+        "actual checked native completion and both values/indices host readback",
         "step-local Completion/OwnedResult/lease release and previous invocation-native result replacement in steady replay"
       ],
       "pair": {

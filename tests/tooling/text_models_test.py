@@ -30,9 +30,9 @@ class ModelFactsTest(unittest.TestCase):
     def test_discovery_reports_actual_prepared_placement_and_unknown_remains_unknown(self):
         actual = engine()
         self.assertIsNone(actual.describe_capabilities()['placement'])
-        actual.worker.placement = ExecutionPlacementFacts('vulkan', 2)
+        actual.worker.placement = ExecutionPlacementFacts('apple', 2)
         self.assertEqual(actual.describe_capabilities()['placement'],
-                         {'primary_backend': 'vulkan', 'cpu_ffn_layers': 2})
+                         {'primary_backend': 'apple', 'cpu_ffn_layers': 2})
 
     def test_declared_assets_and_draft_preferences_never_claim_native_capabilities(self):
         value=engine().describe_capabilities()

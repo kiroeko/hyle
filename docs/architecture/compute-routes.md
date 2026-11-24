@@ -5,7 +5,7 @@
 
 ## 后端、模式和 Provider
 
-CPU、CUDA、Apple MLX/Metal、Vulkan是构建能力；CPU、GPU、CPU＋一个GPU是应用执行模式。
+CPU、CUDA、Apple MLX/Metal是构建能力；CPU、GPU、CPU＋一个GPU是应用执行模式。
 SDK含多种后端，不表示单次运行自动跨设备。Provider是后端内的实现来源，不是普通用户选择项。
 同一家库的CPU和GPU实现需要不同资源接入，不能因名称相同就视为一个互换executor。
 
@@ -137,52 +137,6 @@ Metal pipeline的static threadgroup memory上限与全局GPU buffer容量是不�
 Metal feature、SDK、部署版本、dtype和设备限制共同决定可用路径。GPU矩阵加速与独立Neural Engine
 是不同硬件能力；某代芯片的结果不代表另一代。公开Python互操作也不自动成为独立C++ interop承诺。
 
-## Vulkan
-
-Vulkan提供跨厂商计算路径；macOS的portability部署与Apple原生路径仍有不同能力和成本。
-准备时固定device/queue family、memory type、pipeline/SPIR-V、descriptor与每槽command资源，
-按实际feature/limits选择specialized程序，而非强制所有设备使用最弱通用shader。
-
-execution顺序与memory availability/visibility分别成立。transfer/compute、跨queue/family及
-non-coherent host memory需要真实的stage/access、ownership和flush/invalidate处理。
-recorded push constants不会随host变量自动变化，pending command/pool/buffer不得reset或释放。
-
-ggml-Vulkan可能每次编码并分批提交，IREE与原生程序也有各自runtime状态；它们不因都返回Program
-就具有相同replay成本。同一VkDevice或同一GPU仍不自动保证跨Provider对象可以共享。
-取消、OOM、提交失败和device lost分别处理；缺feature明确拒绝，不虚构同成本fallback。
-
-原生区域在原执行槽空闲时准备依赖容量；提交仍逐项核对原Runtime与有序端点，Graph保留上游Source到真实完成。
-容量不授予就绪或访问权限。ggml Work在首个原命令缓冲区建立外部写入的访存可见性，录制回放保留该依赖；
-已有perf／RMS初始化屏障不重复插入，只有View的程序不为此新建计算上下文。
-
-外部不可变权重的无控制前驱View留在Graph元数据路径，保留常量身份、偏移和原读租约；
-整条无控制的常量View链是冷期可独立准备的区域入口，不因它与计算节点交错排列而拆开原生计算区域。
-带控制前驱的常量View与区域内部计算View保留原生执行语义。已通过实际分页读取资格的F16／BF16 KV缓冲区
-直接使用原缓冲区，原生绑定仍检查真实范围与权限，不为对齐默认复制整个物理容量。
-
-按U32读取的Copy／Cast遇到元素不足4字节的内部计算View时，冷期提案将闭合View前缀与原消费区域一起准备，
-保留原Tensor的实际范围；已经与计算根同区的View不移入另一消费区域。备用候选遵守相同规则，仍由Graph核对
-原数据边和控制边的收缩合法性。公开或共享的外部计算根View不借此并入消费区域；原范围检查、输入别名输出
-的固定载体和真实退休要求不变，不借底层allocation扩大调用方的读租约。
-
-原生packed GDN目前接纳F32 Q/K/V、深度不超过256的状态行；准备时检查实际descriptor、buffer与workgroup限制。
-每次执行先通过原checked-dispatch机制核对整组序列偏移和快照长度，再写两个输出；空序列逐位保留状态，
-不读取padding。错误结果仍等待原生完成与退休，不由设备错误字授权提前复用资源。
-
-设备长度分页注意力使用原Vulkan Runtime／Invocation，冷期固定schema、物理Q形状、pipeline和F32分段工作区。
-`supports_device_lengths_paged`在原Context上复用实际lowering的形状、索引、descriptor和设备限制检查，
-只查询元数据，不创建pipeline、分配设备载荷或提交工作。严格预算不允许未归因的原生私有存储时返回不支持；
-无效输入、已关闭或失败的Context仍返回原错误，查询通过不授予Graph、Source或整模型的执行资格。
-目前接纳普通F16／BF16 KV、偶数QK深度和不超过256的偶数V深度。每次先检查整组设备Q／KV长度和实际使用的页索引，
-再计算注意力并将非活动输出置零；不将实际长度回读到主机重新准备程序。
-公共布局身份和页权限仍归原Graph所有；原生程序接收其只读I32物理视图，同schema的新容量版本仅更新槽内元数据。
-非法控制不改写输出，失败的Invocation保持终止；实际退休后，同一Context可从原Program准备新槽。
-设备长度分页追加沿原CopyRecording／Run／完成通知执行，Graph保留原COW目标页、旧前缀和完整退休权限。
-原生程序先检查整组Q／KV、页映射和上游原始错误字，再逐字节追加；失败不写目标页，取消不回滚已经接受的私有写入。
-同图注意力读者绑定原追加程序的设备错误字，并使用同一个原始KV控制值；独立Q1读者可以读取多行追加的最后一行。
-原始错误字可沿实际原生区域的输入依赖传递，不把映射到主机的错误载体冒充设备Source，也不由错误字授予就绪或提前复用权限。
-这些原生操作与Graph接线不代表整模型MTP设备闭环已接通；模型能力、后继Source和默认性能仍须单独验收。
-
 ## CPU与GPU组合
 
 先区分存放与计算：host保存权重、分批送GPU，不等于CPU承担模型数学；只有CPU与GPU各执行片段，
@@ -190,11 +144,11 @@ ggml-Vulkan可能每次编码并分批提交，IREE与原生程序也有各自ru
 
 组合编译复用同一typed DAG，将粗粒度片段交给原生compiler。它拥有node coverage、canonical边界、
 依赖、liveness和whole-plan预算，不建立万能Queue、第二套调度器或逐kernel抽象。
-CPU＋CUDA、CPU＋Apple、CPU＋Vulkan保留各自native endpoint和绑定类型。
+CPU＋CUDA、CPU＋Apple保留各自native endpoint和绑定类型。
 
 每条跨片段边保留完整descriptor、物理编码/layout、owner、ready/完成及转换方式。
 同格式才可byte-copy；不同时使用真实转换或拒绝。host staging、repack、上传下载、等待与融合损失
-进入整体成本。pinned/pageable、MLX owner、Vulkan queue family与semaphore条件不能被统一接口抹掉。
+进入整体成本。pinned/pageable 内存和 MLX owner 条件不能被统一接口抹掉。
 
 固定容量staging/device槽在上次真实终态后复用；流式权重作为受绑定输入，不在warmup偷偷完整驻留。
 独立搬运可与计算重叠，但返回pending或换线程阻塞不等于设备copy/compute overlap。

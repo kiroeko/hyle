@@ -173,7 +173,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
   for (std::size_t member = 0; member != 2; ++member) {
     window.retire_active(keys[member]); h::retire(requests[member].session); window.release(keys[member]);
   }
-  q::check(model.execution.collect_retired());
+
   require(!model.snapshot_versions.live && !storage->live_images() && window.active().empty() && !window.waiting_front() &&
       model.page_inventory.free_ids.size() == plan.max_pages,
       "commit failure retained a native state, original request or image after actual retirement");

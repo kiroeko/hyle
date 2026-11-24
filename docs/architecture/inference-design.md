@@ -147,10 +147,9 @@ context容量配置决定资源上界，不能为每个实际KV长度录一张�
 
 `DeviceLengthsPagedAttention`接收Q／K／V和dense I32[R]的query／KV长度。
 `prepare_lengths`保留完整R容量布局和原页权限。Queue路线沿原Queue更新私有metadata和整数调度表；
-原生路线使用所属Runtime的原Invocation，不制造公共Queue。Metal与Vulkan的F16／BF16 GQA注意力直接消费设备I32长度和只读容量metadata；
+原生路线使用所属Runtime的原Invocation，不制造公共Queue。Metal的F16／BF16 GQA注意力直接消费设备I32长度和只读容量metadata；
 程序按原schema和物理形状冷准备，同一schema的新容量版本只替换槽内metadata绑定，不扩大页权限。
-槽内metadata、输入保活和程序仍受原最后读者退休约束。Vulkan同图设备长度Append与注意力复用原追加槽和原生程序，
-沿真实输入依赖保留上游错误，并在读取写入银行前检查原writer的设备错误字。原生操作的资格与整模型MTP设备闭环分别验收。
+槽内metadata、输入保活和程序仍受原最后读者退休约束。原生操作的资格与整模型MTP设备闭环分别验收。
 4070上的BF16 Graph测试覆盖R1／2／4、每请求Q2／4／8、C1K／4K／32K、非均匀长度、空批次、非法值和固定地址捕获重放。
 非零Q／K另对照FP64 softmax；BF16绝对容差0.016，未活动输出逐bit为零。
 非2次幂容量另验R1／3、每请求Q3／5／7、C31／257：同一捕获、相同地址下改变有效长度，
@@ -261,7 +260,7 @@ PrefixDirectory／SessionCache维护token键、LRU与pin；模型提供可恢复
 shape相似或编码名称相同不授权替换数学、舍入、状态布局或原生能力。
 
 Graph可表达多个资源域、端点与聚合完成；当前引擎Backend装配仍以一个主端点及可选CPU辅助端点为主，
-不代表多GPU分片、跨Context等待或多机已实现。CPU／CUDA／Apple／Vulkan保留实际interop与同步条件，
+不代表多GPU分片、跨Context等待或多机已实现。CPU／CUDA／Apple保留实际interop与同步条件，
 不因统一内存、同GPU或同Provider名称假定零拷贝或相同执行成本。
 
 ## 新模型接入与实施边界

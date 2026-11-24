@@ -32,7 +32,7 @@ python scripts/build.py --name utility --jobs 2
 ```
 
 CPU＋CUDA 能力将上例的 `--backends cuda` 改为 `--backends cpu,cuda`；Apple Silicon 用 `metal`，
-Vulkan 用 `vulkan`，混合能力用 `cpu,metal` 或 `cpu,vulkan`。这些选择表示编译能力，
+混合能力用 `cpu,metal`。这些选择表示编译能力，
 实际设备与 CPU/GPU 分置仍由应用决定。只构建或安装基础库 SDK 时，可选择 `--components mem,container`
 或 `compute,graph`；C++ 链接方式见[使用指南](../../user/usage-guide.md)。
 
@@ -68,7 +68,7 @@ build/test 遇到旧开关会提示重新初始化，不暗中重配或运行旧
 
 | 参数 | 含义 |
 |---|---|
-| `--backends cpu` | `cpu`、`cuda`、`metal`、`vulkan` 或逗号组合，默认 CPU |
+| `--backends cpu` | `cpu`、`cuda`、`metal` 或逗号组合，默认 CPU |
 | `--backends all` | 本平台支持的全部完整后端；所需系统 SDK 缺少时明确失败 |
 | `--components engine` | 默认选择引擎，自动带出所需基础模块；可构建 `hyle_engine`，输出 `hyle` |
 | `--components util` | 只选择既有工具模块及其依赖；也可传 `mem,container`、`compute,graph` 等产品集合 |
@@ -84,8 +84,7 @@ build/test 遇到旧开关会提示重新初始化，不暗中重配或运行旧
 | `--offline` | 禁止联网，使用已准备好的依赖与 SDK |
 | `--dry-run` | 检查并打印计划，不配置或取得依赖 |
 
-系统自动检测。Windows/Linux x86_64 的 `all` 包含 CPU、CUDA、Vulkan；macOS ARM64 包含
-CPU、Metal、Vulkan。其它架构只接受实际支持的后端。`metal` 对应 Apple MLX/Metal 实现。
+系统自动检测。Windows/Linux x86_64 的 `all` 包含 CPU 和 CUDA，macOS ARM64 包含 CPU 和 Metal。其它架构只接受实际支持的后端。`metal` 对应 Apple MLX/Metal 实现。
 这些参数选择编译进库的可用能力；引擎运行时使用 CPU、GPU 或混合执行，由具体 Context 和引擎策略决定。
 请求能力缺少系统 SDK 时明确失败，不静默裁剪。
 

@@ -75,7 +75,7 @@ def main():
     parser.add_argument('--tokenizer-dir', type=Path, required=True)
     parser.add_argument('--port', type=int, default=2048)
     parser.add_argument('--metrics', action=argparse.BooleanOptionalAction, default=True)
-    parser.add_argument('--backend', choices=('cpu', 'cuda', 'apple', 'vulkan'), default='cuda')
+    parser.add_argument('--backend', choices=('cpu', 'cuda', 'apple'), default='cuda')
     parser.add_argument('--cpu-ffn-layers', type=int, default=0)
     parser.add_argument('--prefill-chunk-tokens', type=int)
     args = parser.parse_args()

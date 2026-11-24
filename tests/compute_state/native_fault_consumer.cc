@@ -11,10 +11,6 @@
 #if defined(HYLE_COMPUTE_CUDA)
 #include <hyle/compute/backends/cuda.h>
 #endif
-#if defined(HYLE_COMPUTE_VULKAN)
-#include <hyle/compute/vulkan_memory.h>
-#include "../../src/compute_route_vulkan/vulkan_internal.h"
-#endif
 #include <array>
 #include <atomic>
 #include <chrono>
@@ -217,66 +213,6 @@ Status cuda_pending(bool abandon,bool concurrent) {
   std::printf("F4 CUDA native pending %s/%s PASS\n",abandon?"abandon":"cancel",concurrent?"concurrent-close":"serial-close");return Status::Ok();
 }
 #endif
-#if defined(HYLE_COMPUTE_VULKAN)
-namespace v=c::vulkan;namespace vd=v::detail;
-Status vulkan_clone_lifetime() {
-  HYLE_ASSIGN_OR_RETURN(auto context,v::Context::create());HYLE_RETURN_IF_ERROR(require(!context.environment().software_device,"Vulkan clone requires actual GPU"));
-  HYLE_ASSIGN_OR_RETURN(auto memory,v::MemoryResource::create(context,v::MemoryKind::kDevice));
-  HYLE_ASSIGN_OR_RETURN(auto staging,v::MemoryResource::create(context,v::MemoryKind::kStaging));
-  HYLE_ASSIGN_OR_RETURN(auto desc,c::TensorDesc::dense(c::DataType::kFloat32,std::array<std::int64_t,1>{64}));
-  std::array<std::byte,256> initial;initial.fill(std::byte{37});HYLE_ASSIGN_OR_RETURN(auto tensor,context.upload(desc,initial));
-  HYLE_ASSIGN_OR_RETURN(auto source,memory.import_readonly(tensor));
-  const std::array specs{c::CopyResourceSpec{memory.ref(),256},c::CopyResourceSpec{memory.ref(),256}};
-  HYLE_ASSIGN_OR_RETURN(auto program,v::CopyBatchProgram::prepare(context,specs));
-  return clone_reuse(memory.ref(),program,[](const v::CopyBatchProgram &p)noexcept{return v::CopyBatchInvocation::create(p);},source,
-    [&](c::StateWriter &output,std::byte pattern)->Status{
-      HYLE_ASSIGN_OR_RETURN(auto buffer,m::Buffer::create(staging.ref(),256,256));HYLE_RETURN_IF_ERROR(buffer.view().fill(pattern));HYLE_ASSIGN_OR_RETURN(auto host,c::ReadLease::adopt(std::move(buffer)));
-      const std::array transfer_specs{c::CopyResourceSpec{staging.ref(),256},c::CopyResourceSpec{memory.ref(),256}};
-      HYLE_ASSIGN_OR_RETURN(auto transfer,v::CopyBatchProgram::prepare(context,transfer_specs));HYLE_ASSIGN_OR_RETURN(auto invocation,v::CopyBatchInvocation::create(transfer));
-      HYLE_RETURN_IF_ERROR(invocation.bind_source({0},host));HYLE_RETURN_IF_ERROR(invocation.bind_mutable({1},std::move(output.lease())));
-      const std::array<c::CopyPhase,1> phases{{{}}};const std::array<c::CopyRange,1> ranges{{{{0},{1},{0},0,0,256}}};
-      HYLE_RETURN_IF_ERROR(invocation.prepare_replay(phases,ranges));HYLE_ASSIGN_OR_RETURN(auto submitted,invocation.submit());HYLE_RETURN_IF_ERROR(submitted.wait());
-      HYLE_ASSIGN_OR_RETURN(auto ready,submitted.output({0},{1},0,256));submitted={};HYLE_RETURN_IF_ERROR(invocation.reset());return output.complete(ready);
-    },
-    [&](const c::ReadLease &value,std::byte expected)->Status{HYLE_ASSIGN_OR_RETURN(auto view,memory.binding(value,desc));std::array<std::byte,256> bytes;HYLE_RETURN_IF_ERROR(context.download(view,bytes));for(auto b:bytes)HYLE_RETURN_IF_ERROR(require(b==expected,"Vulkan clone reader bytes differ"));return Status::Ok();},"Vulkan");
-}
-struct UnknownObservation {
-  vd::Device &device;vd::DeviceFunctions original;std::atomic<bool> armed{true};
-  static inline UnknownObservation *active=nullptr;
-  explicit UnknownObservation(const v::Context &context):device(*vd::Access::runtime(context)->device),original(device.fn){active=this;device.fn.GetFenceStatus=poll;device.fn.WaitForFences=wait;device.fn.QueueWaitIdle=drain;}
-  ~UnknownObservation(){armed=false;device.fn=original;active=nullptr;}
-  static VKAPI_ATTR VkResult VKAPI_CALL poll(VkDevice device,VkFence fence){return active->armed?VK_ERROR_OUT_OF_HOST_MEMORY:active->original.GetFenceStatus(device,fence);}
-  static VKAPI_ATTR VkResult VKAPI_CALL wait(VkDevice device,std::uint32_t n,const VkFence *f,VkBool32 all,std::uint64_t timeout){return active->armed?VK_ERROR_OUT_OF_HOST_MEMORY:active->original.WaitForFences(device,n,f,all,timeout);}
-  static VKAPI_ATTR VkResult VKAPI_CALL drain(VkQueue queue){return active->armed?VK_ERROR_OUT_OF_HOST_MEMORY:active->original.QueueWaitIdle(queue);}
-};
-Status vulkan_unknown(bool abandon) {
-  HYLE_ASSIGN_OR_RETURN(auto context,v::Context::create());HYLE_RETURN_IF_ERROR(require(!context.environment().software_device,"Vulkan fault requires actual GPU"));
-  HYLE_ASSIGN_OR_RETURN(auto memory,v::MemoryResource::create(context,v::MemoryKind::kDevice));
-  HYLE_ASSIGN_OR_RETURN(auto contract,schema());HYLE_ASSIGN_OR_RETURN(auto id,contract.entry(0));HYLE_ASSIGN_OR_RETURN(auto desc,contract.specification(id));
-  std::array<float,64> values;values.fill(3.5f);HYLE_ASSIGN_OR_RETURN(auto tensor,context.upload(desc.description,std::as_bytes(std::span(values))));
-  HYLE_ASSIGN_OR_RETURN(auto source,memory.import_readonly(tensor));HYLE_ASSIGN_OR_RETURN(auto store,c::StateStore::create(contract));
-  HYLE_ASSIGN_OR_RETURN(auto base,store.import(std::array{c::StateMember{id,source}}));
-  const std::array specs{c::CopyResourceSpec{memory.ref(),256},c::CopyResourceSpec{memory.ref(),256}};
-  HYLE_ASSIGN_OR_RETURN(auto program,v::CopyBatchProgram::prepare(context,specs));
-  HYLE_ASSIGN_OR_RETURN(auto route,c::StateCloneRoute::prepare(store,{.resource=memory.ref(),.capacity_bytes=4096},program,
-      [](const v::CopyBatchProgram &p)noexcept{return v::CopyBatchInvocation::create(p);}));
-  HYLE_ASSIGN_OR_RETURN(auto draft,store.begin(base));UnknownObservation boundary(context);
-  struct Restore{UnknownObservation &boundary;v::Context &context;~Restore(){boundary.armed=false;context.close().IgnoreError();}} restore{boundary,context};
-  HYLE_ASSIGN_OR_RETURN(auto ticket,draft.clone_for_write(id,route));
-  auto first=ticket.poll();HYLE_RETURN_IF_ERROR(require(!first && first.error().IsUnavailable(),"unknown Vulkan copy returned a writer"));
-  HYLE_RETURN_IF_ERROR(require(!draft.finalize(),"unknown Vulkan candidate published"));
-  ticket.request_cancel().IgnoreError();HYLE_RETURN_IF_ERROR(require(route.rearm().IsUnavailable(),"unproven Vulkan retirement admitted cold rearm"));
-  HYLE_RETURN_IF_ERROR(require(!store.close().ok(),"unknown Vulkan close claimed retirement"));
-  HYLE_RETURN_IF_ERROR(require(store.stats().active_clones>0,"unknown Vulkan clone record was reclaimed"));
-  HYLE_RETURN_IF_ERROR(require(route.rearm().IsFailedPrecondition(),"closed Vulkan route admitted cold rearm"));
-  if(abandon){ticket={};draft={};base.reset();route={};store={};}
-  boundary.armed=false;
-  if(!abandon){ticket.wait().error().IgnoreError();store.drain().IgnoreError();ticket={};draft={};base.reset();route={};store={};}
-  std::array<float,64> output;HYLE_RETURN_IF_ERROR(context.download(tensor,std::as_writable_bytes(std::span(output))));
-  HYLE_RETURN_IF_ERROR(require(output==values,"unknown/abandoned Vulkan clone changed source"));
-  std::printf("F4 Vulkan unknown actual retirement/%s PASS\n",abandon?"abandon":"cancel");return Status::Ok();
-}
-#endif
 #if defined(HYLE_COMPUTE_APPLE)
 namespace a=c::apple;namespace mx=mlx::core;
 Status apple_clone_lifetime() {
@@ -362,10 +298,6 @@ Status run() {
 #if defined(HYLE_COMPUTE_CUDA)
   HYLE_RETURN_IF_ERROR(cuda_clone_lifetime());
   HYLE_RETURN_IF_ERROR(cuda_pending(false,false));HYLE_RETURN_IF_ERROR(cuda_pending(true,false));HYLE_RETURN_IF_ERROR(cuda_pending(false,true));
-#endif
-#if defined(HYLE_COMPUTE_VULKAN)
-  HYLE_RETURN_IF_ERROR(vulkan_clone_lifetime());
-  HYLE_RETURN_IF_ERROR(vulkan_unknown(false));HYLE_RETURN_IF_ERROR(vulkan_unknown(true));
 #endif
 #if defined(HYLE_COMPUTE_APPLE)
   HYLE_RETURN_IF_ERROR(apple_clone_lifetime());

@@ -55,7 +55,7 @@ def main(argv=None):
                         help='automatic, tokenizer-only, model-calibrated, or no draft subset')
     parser.add_argument('--draft-rows', type=int, help='selected original token rows; defaults to half the vocabulary')
     parser.add_argument('--hyle', type=Path, help='local Hyle token-worker executable for model calibration')
-    parser.add_argument('--backend', choices=('cpu', 'cuda', 'apple', 'vulkan'), help='calibration backend')
+    parser.add_argument('--backend', choices=('cpu', 'cuda', 'apple'), help='calibration backend')
     parser.add_argument('--calibration-run', type=Path, action='append', default=[],
                         help='reuse source-bound calibration records; repeat to combine')
     parser.add_argument('--draft-head-q4', type=Path, metavar='GGML_LIBRARY',

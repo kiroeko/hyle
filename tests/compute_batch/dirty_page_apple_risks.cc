@@ -1,4 +1,3 @@
-#define HYLE_G01_PAGE_RISK_APPLE 1
 #include "dirty_page_native_risk_fixture.h"
 #include "native_apple_failure_fixture.h"
 namespace {

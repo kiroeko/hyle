@@ -249,7 +249,7 @@ template<class Program, class Factory> struct TypedStateCopy final {
 };
 } // namespace detail
 
-// Program/Invocation/Submission are the original CPU/CUDA, Apple or Vulkan
+// Program/Invocation/Submission are the original CPU, CUDA or Apple
 // F2 types. The cold factory's captures, resource and original Queue/Context
 // stay alive at stable addresses through the route and actual native uses.
 template<class Program, class Factory>

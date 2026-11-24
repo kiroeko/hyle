@@ -53,12 +53,12 @@ Compute/Graph 路线样例仅在源码消费者未指定 `HYLE_COMPUTE_ROUTES` �
 | [`package/math/cpp/`](package/math/cpp/) | math | source/static/shared 中的 checked/fail-fast integer ceil/round 与 header-only target 闭包 |
 | [`package/simd/cpp/`](package/simd/cpp/) | simd | source/static/shared 同一 `hyle::simd_expert`、fixed-target direct Highway/xsimd 与 custom fat kernel |
 | [`package/process/cpp/`](package/process/cpp/) | process | source/static/shared 中启动当前 probe、取得 typed exit，并验证 runtime shutdown 与传递依赖 |
-| [`package/compute/cpp/`](package/compute/cpp/) | compute | CPU RMSNorm；CUDA/Apple 原生 FFN；Vulkan typed MatMul、完整 F32 FFN 与自定义 SPIR-V、变化输入 |
-| [`package/graph/cpp/`](package/graph/cpp/) | graph | CPU 多节点图；CUDA capture；Apple 完整 region；Vulkan 冷规划 FFN + custom SPIR-V，独立结果与变化输入重放 |
+| [`package/compute/cpp/`](package/compute/cpp/) | compute | CPU RMSNorm；CUDA/Apple 原生 FFN |
+| [`package/graph/cpp/`](package/graph/cpp/) | graph | CPU 多节点图；CUDA capture；Apple 完整 region |
 | [`package/compute/apple_weights/`](package/compute/apple_weights/) | compute / Apple | 两槽原生Metal迁移、原编码和native MatMul |
 | [`package/graph/cpu_apple/`](package/graph/cpu_apple/) | graph / CPU+Apple | 普通CPU主存、完整Q4 FFN、粗片段与独立结果 |
-| [`package/graph/resource_leases/`](package/graph/resource_leases/) | compute + graph | 四路线公开租约 Direct/Graph 数学、held completion drain、旧结果与 source alias；源码/安装使用相同入口 |
-| [`package/graph/batched_transfers/`](package/graph/batched_transfers/) | compute + graph | 四路线 F2 批量搬运两组/两槽、BF16 与原编码量化的 Direct/Graph 数学消费；CPU/CUDA/Vulkan 用 GGUF Q8，Apple 用 MLX affine Q4，格式和设备限制见对应用户指南 |
+| [`package/graph/resource_leases/`](package/graph/resource_leases/) | compute + graph | 公开租约 Direct/Graph 数学、held completion drain、旧结果与 source alias；源码/安装使用相同入口 |
+| [`package/graph/batched_transfers/`](package/graph/batched_transfers/) | compute + graph | F2 批量搬运两组/两槽、BF16 与原编码量化的 Direct/Graph 数学消费；CPU/CUDA 用 GGUF Q8，Apple 用 MLX affine Q4，格式和设备限制见对应用户指南 |
 | [`package/graph/file_streaming/`](package/graph/file_streaming/) | compute + graph + IO | F3 有界文件读入、逐组数学、资源回写与重读；官方工具核验本地 Qwen BF16/F32 范围，范围和限制见样例说明 |
 
 > 01-03 用源码 `add_subdirectory` 集成；04 及之后的编号示例与 `package/*/cpp` 用安装包集成。

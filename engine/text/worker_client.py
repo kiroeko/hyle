@@ -417,7 +417,7 @@ class WorkerClient:
                         raise WorkerError("protocol", "invalid model worker handshake")
                     if placed:
                         backend, layers = fields[7:]
-                        if (backend not in ('-', 'cpu', 'cuda', 'apple', 'vulkan') or
+                        if (backend not in ('-', 'cpu', 'cuda', 'apple') or
                                 not layers.isascii() or not layers.isdecimal() or not 0 <= int(layers) < 1 << 64 or
                                 (int(layers) and backend in ('-', 'cpu'))):
                             raise WorkerError('protocol', 'invalid actual worker placement')

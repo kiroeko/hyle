@@ -43,7 +43,7 @@ constexpr std::uint64_t kGraphChecksum =
 constexpr std::string_view kMediumMessage =
     "resource not found in shard 7";
 constexpr std::string_view kShortFormatMessage =
-    "vulkan vkQueueSubmit failed: VK_ERROR_DEVICE_LOST (-4)";
+    "cuda cudaLaunchKernel failed: cudaErrorLaunchFailure (719)";
 static_assert(kMediumMessage.size() == 29);
 static_assert(kShortFormatMessage.size() == 54);
 

@@ -1,10 +1,5 @@
 #pragma once
-#if defined(HYLE_JOINT_PAGE_APPLE)
-#define HYLE_G01_PAGE_RISK_APPLE 1
 #include <hyle/graph/apple.h>
-#else
-#include <hyle/graph/vulkan.h>
-#endif
 #include <hyle/graph/cpu.h>
 #include <hyle/graph/batch.h>
 #include <hyle/graph/progress.h>
@@ -18,11 +13,7 @@ namespace r=hyle_g01_page_risk;
 namespace c=hyle::compute;
 namespace g=hyle::graph;
 namespace n=r::n;
-#if defined(HYLE_JOINT_PAGE_APPLE)
 namespace route=g::apple;
-#else
-namespace route=g::vulkan;
-#endif
 using hyle::Status;using hyle::Result;
 using r::require;
 inline constexpr g::ExecutionTargetId cpu_target{0},native_target{1};

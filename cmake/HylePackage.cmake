@@ -71,7 +71,7 @@ function(hyle_install_package)
     "|relwithdebinfo=${CMAKE_CXX_FLAGS_RELWITHDEBINFO}"
     "|cuda-compiler=${CMAKE_CUDA_COMPILER_VERSION}"
     "|cuda-flags=${CMAKE_CUDA_FLAGS}/${CMAKE_CUDA_FLAGS_RELEASE}"
-    "|metal=${HYLE_APPLE_METAL_COMPILER}|vulkan=${HYLE_VULKAN_SHADER_COMPILER}"
+    "|metal=${HYLE_APPLE_METAL_COMPILER}"
     "|trace=${HYLE_TRACE}|sanitizer=${HYLE_SANITIZER}")
   get_directory_property(_directory_options COMPILE_OPTIONS)
   get_directory_property(_directory_definitions COMPILE_DEFINITIONS)

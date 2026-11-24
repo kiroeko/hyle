@@ -168,7 +168,7 @@ cmake --build .scratch/qwen35-build --config Release --target hyle_engine
 - `--session-schedules FILE`：执行多会话manifest，与`--schedule`互斥；普通／MTP的prompt-only自然请求可配合`--steps`。同一manifest的所有会话必须使用一致的自然生成或固定重放语法，在读取token文件前检查。每行`SESSION_ID SCHEDULE_FILE`，路径相对manifest，支持双引号和整行`#`注释；Windows清单中的路径使用`/`，例如`user1 "C:/inputs/user one.txt"`，避免双引号中的反斜杠被当成转义。ID为ASCII字母／数字开头，后续可含`_`／`-`且不能重复。`--capacity`是每会话上下文上限，所有会话和ID均先校验再加载模型。
 - `--max-sessions auto|N`：保留的设备缓存会话上限；默认auto取本次输入会话数。普通文本和MTP都可淘汰空闲head；MTP生成中的head不淘汰，轮次间可淘汰并在下轮恢复。共享backing按解析后的容量预留，不为各会话复制权重或执行载体。
 - `--active-sequences auto|R`：活跃请求和一次真实Graph批次的序列上限，批宽不超过R；不是同时提交R个独立Invocation。自然请求按角色、完成方式、采样和可用容量组合，支持有效行的载体可合批不同长度，其余按exact形状分组。默认auto随输入、缓存数量和预算解析，满足`1≤R≤N`；显式值受输入数量和缓存容量约束。
-- `--cache-bytes auto|N`：KV页池、状态池及保留原生结果backing的请求字节额度。CUDA的auto按实际N／R、草稿候选边界及在途深度规划；显式额度不足时缩小可驻留数量，不能容纳活动请求则在加载前报错。CPU／Apple／Vulkan的auto不设字节额度，仍受N／R和版本数约束。显式额度包含各自实际资源计费，原生结果在完成后、发布前准入；失败保留旧快照。淘汰归还页／版本，仍有读者和Model池的材料继续计费。该参数不是全进程或物理显存上限。
+- `--cache-bytes auto|N`：KV页池、状态池及保留原生结果backing的请求字节额度。CUDA的auto按实际N／R、草稿候选边界及在途深度规划；显式额度不足时缩小可驻留数量，不能容纳活动请求则在加载前报错。CPU／Apple的auto不设字节额度，仍受N／R和版本数约束。显式额度包含各自实际资源计费，原生结果在完成后、发布前准入；失败保留旧快照。淘汰归还页／版本，仍有读者和Model池的材料继续计费。该参数不是全进程或物理显存上限。
 - `--prefix-cache off|auto`：多会话manifest默认auto，单会话schedule及普通生成默认off；显式auto须使用schedule。在prompt／轮次恢复边界借用同Model和数学政策下真实保存的完整Snapshot，再计算后缀。完整prompt命中跳过主模型；无modifier的默认greedy可直接使用已保存ID，其它须重新选择的政策走frontier采样。恢复同一请求保留历史pending／RNG。目录最多N项，与会话head共用N份完整版本预算，在途候选材料另按实际深度准备；decode直接使用Session。
 - `--progress direct|scheduler`：默认direct；scheduler在原槽上准备进度驱动，复用同一提交机制。
 - `--replay auto|commands|prefer-capture`：默认auto，按冷计划中各批宽／child／槽的使用上界选择；一次使用走Commands，预计复用才PreferCapture。辅助NextN没有可靠使用次数提示，Auto仍按一次处理。随机采样可使用Graph支持的捕获路径；history罚分、NextN带head的history分支，以及接受采样和frontier程序仍使用Commands。捕获范围由原生能力和实际绑定决定。`planned_replay`记录冷选择，逐步日志记录实际录制／复用；用户不逐步选择Provider或另设流水开关。
@@ -179,7 +179,7 @@ cmake --build .scratch/qwen35-build --config Release --target hyle_engine
 
 各执行模式的JSON均报告同一`cache_budget_scope`、固定池`cache_shared_backing_bytes`、当前额外保留结果`cache_retained_output_backing_bytes`及额度内live／peak；未设字节额度时`cache_requested_byte_limit`为null。它们是同一个Model的全局统计，多会话子结果中的值不能相加。`native_execution_private_bytes_unknown`单列原生执行私有成本未知，`physical_vram_limit_known=false`；这些预算统计不能替代实际内存／显存旁采。
 
-Apple／Vulkan提供按需构建的`hyle_qwen35_retained_budget_probe`目标，使用`--inputs <已准备的MTP输入> --out <尚不存在的结果目录>`。它在真实计算完成后施加纯额度压力，核旧完整状态、失败回收及原槽重试；不分配对应压力的设备内存，不用于测速。实际命令与结果见[保留状态预算记录](../../../docs/evidence/correctness/qwen-retained-budget-2026-10-22.json)。
+Apple提供按需构建的`hyle_qwen35_retained_budget_probe`目标，使用`--inputs <已准备的MTP输入> --out <尚不存在的结果目录>`。它在真实计算完成后施加纯额度压力，核旧完整状态、失败回收及原槽重试；不分配对应压力的设备内存，不用于测速。实际命令与结果见[保留状态预算记录](../../../docs/evidence/correctness/qwen-retained-budget-2026-10-22.json)。
 
 普通文本和MTP均已接真实多请求批次。[本批MTP证据](../../../docs/evidence/correctness/qwen-mtp-batch-2026-10-22.json)包含B2的不同接受边界、lag1新输入、整批取消／原槽重试、有界重建及0Graph完整命中。R1／R2续文确有分歧，跨批宽质量未收口；本批为诊断运行，不作吞吐或显存收益结论。
 
@@ -250,7 +250,7 @@ Session独占自己的尾权，同页续写只写未提交后缀；前缀命中�
 
 下列日期记录保留当时冻结代码、命令与结果；其数值、状态布局及未运行项不自动更新为当前版本的结论。
 
-`hyle_qwen35_retirement_probe`与`hyle_qwen35_mtp_session_probe`已登记CUDA／Apple／Vulkan构建；原生会话探针当前仅开放`--scenario prefix`，退休探针的三平台有限T2检查已通过列明范围。`hyle_qwen35_batch_probe`仍仅在CUDA SDK下提供。普通模型数学与状态通过公共Compute／Graph接口执行；这些按需诊断可借用原生私有状态来检查在途寿命，结果按各证据实际后端分别说明。
+`hyle_qwen35_retirement_probe`与`hyle_qwen35_mtp_session_probe`已登记CUDA／Apple构建。原生会话探针当前仅开放`--scenario prefix`。`hyle_qwen35_batch_probe`仍仅在CUDA SDK下提供。普通模型数学与状态通过公共Compute／Graph接口执行；这些按需诊断可借用原生私有状态来检查在途寿命，结果按各证据实际后端分别说明。
 CUDA 测试目标 `hyle_qwen_request_lifecycle_test INPUT_DIR` 使用原 P154 BF16 输入检查普通随机 R2 的取消、存活请求续跑、有界输出及增量续轮；不用于测速。也可设置 `HYLE_QWEN_REQUEST_INPUTS` 后运行同名 CTest；未提供输入时跳过，显式不存在的目录按失败处理。[原生结果](../../../docs/evidence/correctness/qwen-live-request-lifecycle-2026-10-25.json)来自归档消费者。正式入口严格编译、链接及主机错误合并检查已通过；新增 `--retirement-status-only` 仅检查主机状态分类，未注入设备错误，正式入口未重跑 GPU。
 
 同一目标的 `--chunked-prefill [INPUT_DIR]` 检查普通 P154／Q64 的无输出中间块、decode 穿插、部分恢复及取消重试；对应 CTest 为 `hyle_qwen_chunked_prefill_test`，输入规则相同。[已测结果](../../../docs/evidence/correctness/qwen-ordinary-chunked-prefill-2026-10-25.json)来自冻结消费者；正式入口仅完成严格语法检查，未再运行 GPU，也不用于吞吐对比。

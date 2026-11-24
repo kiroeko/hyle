@@ -131,10 +131,8 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &outpu
   hyle::inference::BackendSelection selection;
 #if defined(HYLE_COMPUTE_APPLE) && defined(__APPLE__)
   selection.primary = hyle::inference::BackendKind::kApple;
-#elif defined(HYLE_COMPUTE_VULKAN)
-  selection.primary = hyle::inference::BackendKind::kVulkan;
 #else
-  throw std::runtime_error("retained-budget probe requires an Apple/Vulkan backend");
+  throw std::runtime_error("retained-budget probe requires the Apple backend");
 #endif
   auto prompt = q::read_ids(inputs / "prompt.ids");
   require(prompt.size() >= 15, "retained-budget probe needs the original first15 prompt IDs");

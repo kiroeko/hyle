@@ -194,7 +194,7 @@ inline Result<GraphBindingsFacts> graph_bindings_case() {
     }
     HYLE_RETURN_IF_ERROR(run.drain());
   }
-  HYLE_RETURN_IF_ERROR(backend.collect_retired()); ++facts.retired_scopes;
+   ++facts.retired_scopes;
   {
     HYLE_ASSIGN_OR_RETURN(auto builder, g::GraphBuilder::create());
     HYLE_ASSIGN_OR_RETURN(auto input, builder.input(description));
@@ -259,7 +259,7 @@ inline Result<GraphBindingsFacts> graph_bindings_case() {
     }
     HYLE_RETURN_IF_ERROR(run.drain());
   }
-  HYLE_RETURN_IF_ERROR(backend.collect_retired()); ++facts.retired_scopes;
+   ++facts.retired_scopes;
   return facts;
 }
 

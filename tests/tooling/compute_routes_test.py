@@ -36,8 +36,7 @@ class ComputeRoutesTest(unittest.TestCase):
             f'include("{(ROOT / "cmake/HyleComputeRoutes.cmake").as_posix()}")\n'
             + body + '\n'
             + f'file(WRITE "{output.as_posix()}" "${{HYLE_COMPUTE_ROUTE_LIST}}|'
-              '${_HYLE_COMPUTE_REQUEST_CPU}|${_HYLE_COMPUTE_REQUEST_CUDA}|${_HYLE_COMPUTE_REQUEST_APPLE}|'
-              '${_HYLE_COMPUTE_REQUEST_VULKAN}")\n',
+              '${_HYLE_COMPUTE_REQUEST_CPU}|${_HYLE_COMPUTE_REQUEST_CUDA}|${_HYLE_COMPUTE_REQUEST_APPLE}")\n',
             encoding="utf-8")
         result = subprocess.run(["cmake", "-P", str(script)], capture_output=True,
                                 text=True, timeout=15, **NO_WINDOW)
@@ -46,18 +45,18 @@ class ComputeRoutesTest(unittest.TestCase):
 
     def test_complete_cpu_default_and_gpu_only_isolation(self):
         self.assertEqual(self.resolve('hyle_resolve_compute_product_routes("graph")'),
-                         "cpu|ON|OFF|OFF|OFF")
+                         "cpu|ON|OFF|OFF")
         self.assertEqual(self.resolve('set(HYLE_COMPUTE_ROUTES cuda)\n'
                                      'hyle_resolve_compute_product_routes("graph")'),
-                         "cuda|OFF|ON|OFF|OFF")
+                         "cuda|OFF|ON|OFF")
 
     def test_set_canonicalization_is_not_priority(self):
-        self.assertEqual(self.resolve('set(HYLE_COMPUTE_ROUTES " CUDA ;cpu;CUDA;vulkan")\n'
+        self.assertEqual(self.resolve('set(HYLE_COMPUTE_ROUTES " CUDA ;cpu;CUDA")\n'
                                      'hyle_resolve_compute_product_routes("compute;graph")'),
-                         "cpu;cuda;vulkan|ON|ON|OFF|ON")
+                         "cpu;cuda|ON|ON|OFF")
 
     def test_invalid_set_and_old_cache_or_parent_variables(self):
-        for value in ("", "AUTO", "gpu", "cpu;;cuda", ";cpu", "cpu;"):
+        for value in ("", "AUTO", "gpu", "vulkan", "cpu;vulkan", "cpu;;cuda", ";cpu", "cpu;"):
             with self.subTest(value=value):
                 message = self.resolve(f'set(HYLE_COMPUTE_ROUTES "{value}")\n'
                                        'hyle_resolve_compute_product_routes("graph")', success=False)
@@ -74,7 +73,7 @@ class ComputeRoutesTest(unittest.TestCase):
         self.assertEqual(self.resolve('set(HYLE_COMPUTE_ROUTES "apple;cpu")\n'
                                      'hyle_resolve_compute_product_routes("graph")',
                                      system="Darwin", processor="aarch64"),
-                         "cpu;apple|ON|OFF|ON|OFF")
+                         "cpu;apple|ON|OFF|ON")
         self.resolve('set(HYLE_COMPUTE_ROUTES apple)\n'
                      'hyle_resolve_compute_product_routes("graph")', success=False)
         self.resolve('set(HYLE_COMPUTE_ROUTES cuda)\n'
@@ -86,7 +85,7 @@ class ComputeRoutesTest(unittest.TestCase):
 
     def test_unrelated_products_do_not_acquire_compute(self):
         self.assertEqual(self.resolve('hyle_resolve_compute_product_routes("core;mem")'),
-                         "|OFF|OFF|OFF|OFF")
+                         "|OFF|OFF|OFF")
 
     def test_complete_cuda_requires_locked_host_sdk_architecture(self):
         product = ('set(HYLE_COMPUTE_ROUTES cuda)\n'
@@ -94,7 +93,7 @@ class ComputeRoutesTest(unittest.TestCase):
         for system in ("Windows", "Linux"):
             with self.subTest(system=system):
                 self.assertEqual(self.resolve(product, system=system),
-                                 "cuda|OFF|ON|OFF|OFF")
+                                 "cuda|OFF|ON|OFF")
                 message = self.resolve(product, system=system,
                                        processor="aarch64", success=False)
                 self.assertIn("complete CUDA route requires Windows/Linux x86_64", message)
@@ -104,16 +103,16 @@ class ComputeRoutesTest(unittest.TestCase):
                     'set(HYLE_BUILD_COMPUTE_BACKEND_CUDA ON)\n'
                     'hyle_resolve_compute_factor_routes()',
                     system=system, processor="aarch64"),
-                    "cuda|OFF|ON|OFF|OFF")
+                    "cuda|OFF|ON|OFF")
 
     def test_developer_factor_closure_and_platform_off_headers(self):
         body = ('set(HYLE_BUILD_COMPUTE_BACKEND_CPU ON)\n'
                 'set(HYLE_BUILD_COMPUTE_BACKEND_CUDA ON)\n'
                 'set(HYLE_BUILD_COMPUTE_ROUTE_APPLE ON)\n'
                 'hyle_resolve_compute_factor_routes()')
-        self.assertEqual(self.resolve(body), "cpu;cuda|ON|ON|OFF|OFF")
+        self.assertEqual(self.resolve(body), "cpu;cuda|ON|ON|OFF")
         self.assertEqual(self.resolve(body, system="Darwin", processor="aarch64"),
-                         "cpu;apple|ON|OFF|ON|OFF")
+                         "cpu;apple|ON|OFF|ON")
         self.resolve('set(HYLE_COMPUTE_ROUTES cpu)\n'
                      'hyle_resolve_compute_factor_routes()', success=False)
 
@@ -121,15 +120,11 @@ class ComputeRoutesTest(unittest.TestCase):
         # Actual manifest/configure path, no SDK stubs and no provider mock.
         for routes, expected, absent in (
             ("cpu", "compute_route_cpu;graph_route_cpu;compute_provider_native",
-             "compute_backend_cuda;compute_route_vulkan;compute_route_apple;graph_route_cpu_cuda"),
-            ("cuda", "compute_backend_cuda;compute_route_cuda;graph_route_cuda",
-             "compute_backend_cpu;compute_provider_native;compute_route_vulkan;graph_route_cpu_cuda"),
-            ("vulkan", "compute_route_vulkan;graph_route_vulkan;compute_provider_iree_vulkan",
-             "compute_backend_cpu;compute_backend_cuda;compute_route_apple;graph_route_cpu_cuda"),
-            ("cpu;cuda", "graph_route_cpu_cuda;graph_route_cpu;graph_route_cuda;compute_provider_onednn",
-             "compute_route_vulkan;compute_route_apple;graph_progress"),
-            ("cpu;vulkan", "graph_route_cpu;graph_route_vulkan",
              "compute_backend_cuda;compute_route_apple;graph_route_cpu_cuda"),
+            ("cuda", "compute_backend_cuda;compute_route_cuda;graph_route_cuda",
+             "compute_backend_cpu;compute_provider_native;compute_route_apple;graph_route_cpu_cuda"),
+            ("cpu;cuda", "graph_route_cpu_cuda;graph_route_cpu;graph_route_cuda;compute_provider_onednn",
+             "compute_route_apple;graph_progress"),
         ):
             with self.subTest(routes=routes):
                 source = self.directory / routes.replace(";", "-")
@@ -156,9 +151,9 @@ class ComputeRoutesTest(unittest.TestCase):
         cases = (
             ("compute", "cpu", "Windows", "x86_64",
              "compute_route_cpu", "compute_stream;io_core;sched"),
-            ("graph;compute_stream", "vulkan", "Windows", "x86_64",
-             "graph_route_vulkan;compute_stream;compute_stream_vulkan;io_core",
-             "compute_stream_cpu;compute_stream_cuda;compute_stream_apple;compute_backend_cpu;io_tls;io_http;graph_progress"),
+            ("graph;compute_stream", "cuda", "Windows", "x86_64",
+             "graph_route_cuda;compute_stream;compute_stream_cuda;io_core",
+             "compute_stream_cpu;compute_stream_apple;compute_backend_cpu;io_tls;io_http;graph_progress"),
             ("compute_stream", "cpu", "Linux", "aarch64",
              "compute_stream;compute_stream_cpu;compute_backend_cpu;io_core",
              "compute_route_cpu;compute_provider_native;compute_provider_onednn;compute_provider_ggml;graph;io_tls;io_http"),
@@ -206,7 +201,7 @@ endif()
                 if products == "graph_progress":
                     checks += '''
 if(HYLE_COMPUTE_ROUTE_LIST OR HYLE_BUILD_GRAPH_BATCH OR
-   HYLE_BUILD_COMPUTE_ROUTE_CPU OR HYLE_BUILD_COMPUTE_ROUTE_VULKAN OR
+   HYLE_BUILD_COMPUTE_ROUTE_CPU OR HYLE_BUILD_COMPUTE_ROUTE_CUDA OR
    HYLE_BUILD_COMPUTE_PROVIDER_NATIVE OR HYLE_BUILD_IO_CORE)
   message(FATAL_ERROR "standalone progress acquired a default route or IO")
 endif()
@@ -215,7 +210,7 @@ endif()
                     'cmake_minimum_required(VERSION 3.25)\nproject(progress_metadata LANGUAGES NONE)\n'
                     f'set(HYLE_SOURCE_DIR "{ROOT.as_posix()}")\n'
                     'set(HYLE_TARGET_PROCESSOR x86_64)\nset(HYLE_FCONTEXT_SUPPORTED TRUE)\n'
-                    'set(HYLE_BUILD_TESTS OFF)\nset(HYLE_COMPUTE_ROUTES vulkan)\n'
+                    'set(HYLE_BUILD_TESTS OFF)\nset(HYLE_COMPUTE_ROUTES cuda)\n'
                     f'set(HYLE_COMPONENTS "{products}")\n'
                     f'include("{(ROOT / "cmake/HyleComponents.cmake").as_posix()}")\n'
                     + checks, encoding="utf-8")
@@ -223,11 +218,11 @@ endif()
                                         capture_output=True, text=True, timeout=20, **NO_WINDOW)
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
-    def test_four_presets_share_one_input_and_bounded_parallelism(self):
+    def test_supported_presets_share_one_input_and_bounded_parallelism(self):
         presets = json.loads((ROOT / "CMakePresets.json").read_text())
         configure = {row["name"]: row for row in presets["configurePresets"]}
         builds = {row["name"]: row for row in presets["buildPresets"]}
-        for route in ("cpu", "cuda", "apple", "vulkan"):
+        for route in ("cpu", "cuda", "apple"):
             name = "compute-" + route
             cache = configure[name]["cacheVariables"]
             self.assertEqual(cache["HYLE_COMPUTE_ROUTES"], route)
@@ -295,6 +290,9 @@ endif()
             'message(FATAL_ERROR "SDK metadata changed")\nendif()\n', encoding="utf-8")
         cases = [([], True), (["-DHYLE_COMPUTE_ROUTES=CPU"], True),
                  (["-DHYLE_COMPUTE_ROUTES=cpu;cuda"], False),
+                 (["-DHYLE_COMPUTE_ROUTES=vulkan"], False),
+                 (["-DHYLE_COMPUTE_ROUTES=cpu;vulkan"], False),
+                 (["-DHYLE_COMPUTE_VULKAN=ON"], False),
                  (["-DHYLE_COMPUTE_ROUTES="], False),
                  (["-DHYLE_COMPUTE_ROUTES=cpu;;cpu"], False),
                  (["-DHYLE_COMPUTE_TORCH_CPU=OFF"], False),
@@ -316,7 +314,7 @@ endif()
         start = driver.index("function(_hyle_selected_run label)")
         end = driver.index("endfunction()", start) + len("endfunction()")
         wrapper = driver[start:end]
-        for routes in ("cpu", "cpu;cuda", "cpu;apple", "cpu;vulkan"):
+        for routes in ("cpu", "cpu;cuda", "cpu;apple"):
             with self.subTest(routes=routes):
                 check = self.directory / "child.cmake"
                 check.write_text(
@@ -343,9 +341,9 @@ endif()
         end = driver.index("endfunction()", start) + len("endfunction()")
         guard = driver[start:end]
         cases = [(value, value, True) for value in
-                 ("cpu", "cuda", "apple", "vulkan", "cpu;cuda", "cpu;apple", "cpu;vulkan")]
+                 ("cpu", "cuda", "apple", "cpu;cuda", "cpu;apple")]
         cases += [("cpu", "cpu;cuda", False), ("cpu", "cpu;apple", False),
-                  ("cpu", "cpu;vulkan", False), ("cpu;cuda", "cpu", False),
+                  ("cpu;cuda", "cpu", False),
                   (None, "cpu", False)]
         for actual, expected, success in cases:
             with self.subTest(actual=actual, expected=expected):

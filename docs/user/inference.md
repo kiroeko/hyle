@@ -29,8 +29,8 @@ python scripts/init.py --name qwen-cuda --components engine --backends cuda
 python scripts/build.py --name qwen-cuda --target hyle_engine --jobs 2
 ```
 
-`engine` 是顶层新配置的默认组件。后端可选 `cpu`、`cuda`、`metal`、`vulkan` 或平台支持的组合，
-它们表示编译能力。运行时用 `--backend cpu|cuda|apple|vulkan` 选择实际主后端，
+`engine` 是顶层新配置的默认组件。后端可选 `cpu`、`cuda`、`metal` 或平台支持的组合，
+它们表示编译能力。运行时用 `--backend cpu|cuda|apple` 选择实际主后端，
 其中构建选项 `metal` 对应运行时名称 `apple`。只有一个 GPU 路线时默认选它；
 只有 CPU 时默认选 CPU；同时编入多个 GPU 路线时必须显式选择。
 选择失败会报错，不自动切换后端；编入 CPU 路线后可在同一程序中显式选 CPU。
@@ -108,7 +108,7 @@ hyle generate --inputs .scratch/qwen-q4-head --tokens .scratch/qwen-q4-head/prom
 | 用途 | 参数与合同 |
 | --- | --- |
 | token 输入与额度 | CLI 要求 `--tokens FILE` 或 `--tokens -`，`--max-output-tokens` 默认 64，包含首 token；EOS 可提前停止。worker 的请求、输入与额度来自管道帧，不能混用这些 CLI 请求参数。 |
-| 端点与执行容量 | `--backend auto\|cpu\|cuda\|apple\|vulkan`；`--capacity` 默认 4096。CLI 默认一个常驻／活动会话，worker 默认两个，分别用 `--max-sessions` 与 `--active-sequences` 配置。它们不是草稿数或流水深度。 |
+| 端点与执行容量 | `--backend auto\|cpu\|cuda\|apple`；`--capacity` 默认 4096。CLI 默认一个常驻／活动会话，worker 默认两个，分别用 `--max-sessions` 与 `--active-sequences` 配置。它们不是草稿数或流水深度。 |
 | prefill | `--prefill-chunk-tokens N` 控制块长；当前 Qwen 冷准备还按模型容量与 512 行上限裁剪，不查看未来轮次。 |
 | 采样 | 默认 greedy；`--sampling random --temperature 0.8 --top-k 40 --top-p 0.95 --seed 42`。额外采样程序可用 `--additional-sampling random,0.8,40,0.95`，CLI 用 `--sampling-index N` 选择，请求 RNG 独立。 |
 | MTP | 不传 `--draft-count` 时由 Qwen 冷策略按来源制品和能力选择。`--draft-count 0` 准备普通生成，正数显式准备对应 MTP 上限；未指定草稿文件的显式正数使用原头与全词表。 |
@@ -149,17 +149,16 @@ Windows PowerShell 将运行路径改为实际 `hyle.exe`；上面的 `<build-di
 ### 连续接力
 
 普通 CUDA 自然生成在符合执行条件时自动使用连续接力，无需额外参数；greedy 已有限检查单活动请求及双活动请求，随机采样已有限检查单活动请求。
-普通 Metal／Vulkan 的 GPU-only 单活动请求在 greedy 和随机采样下均可使用原生 Source 接力。准备好的 Graph 在原端点导入完整前驱依赖时启用接力。冷期日志 `native_decode_source` 给出实际选择和回落原因。普通路线已在 macOS M4 Metal，以及 Windows、WSL 和 macOS Vulkan 上检查设备前驱、完整状态发布和取消后复用。
+普通 Metal 的 GPU-only 单活动请求在贪心和随机采样下均可使用原生 Source 接力。准备好的 Graph 在原端点导入完整前驱依赖时启用接力。冷期日志 `native_decode_source` 给出实际选择和回落原因。普通路线已在 macOS M4 Metal 上检查设备前驱、完整状态发布和取消后复用。
 decode 接力和 prefill capture 分别查询冷能力；前者可用不意味着需要准备后者的私有载体。
 CUDA greedy单会话K1—K3已接入自然接力。固定K2／K3把起草、验证及draft KV修复放入同一张轮图，
 中间token和下一轮接受位置留在设备。冷期只按配置容量和已到达首轮准备，后续长度与配额不参与规划。
 CUDA 单活动请求的随机 K1／K2／K3 也可使用设备接力：显式设置 `--draft-count 1`、`2` 或 `3`，配合 `--sampling random` 和已准备的采样参数。起草和验证共享每个提案的实际概率与接受位；K 个提案固定保留 `2K+1` 个请求 RNG 地址，拒绝和配额截断也不另取游标。Windows／WSL 已检查完整状态、逻辑 RNG、停止、取消及失败后的复用。相同采样方案与物理程序内可复现；不同草稿 GEMM 形状可能改变提案和随机轨迹，不保证逐 token 相同。
 Metal 上已验证 Qwen3.5-2B BF16 的 GPU-only 单驻留、单活动请求。符合条件的内置图前缀会自动减少冷准备中的样例计算。指定草稿深度 K1、K2 或 K3 并传 `--overlap on`，可请求原生 MTP 后继接力。是否提交后继还取决于实际原生前驱和输出额度。Metal MTP 默认采用串行执行。在 M4 的完整词表 K2 同程序三组交错对照中，开启接力使后七轮 decode 和完整进程耗时的配对中位数增加 6.89% 和 4.42%。
-Vulkan 的 BF16 GPU-only 单驻留、单活动请求可用 `--draft-count` 和 `--overlap on` 请求原生接力。Windows RTX 4070、macOS M4 MoltenVK 和 WSL Mesa Dozen 均已验证 K1、K2、K3，覆盖容量 128 下的贪心与随机双轮生成和进程正常退出。Vulkan 的 MTP 默认串行。
 符合条件的 MTP 根据来源绑定的草稿制品读取推荐草稿数；没有推荐时默认为 K1。K3 的收益与资源边界见性能表。
 单会话有界生成按配置容量准备接力；其它有限日程在有多于一个输出额度且执行能力允许时准备两层候选。
 需要强制只使用不依赖未来请求形状的路径时，可设置 `--require-bounded-generation on`；不符合该条件的配置会报错。
-CUDA 后继复用已捕获的执行图，Metal 和 Vulkan 后继复用已准备的原生 Source。
+CUDA 后继复用已捕获的执行图，Metal 后继复用已准备的原生 Source。
 完整同形、同序的活动请求组可持续接力；异形分组保留原同步执行。输出额度不足时先完成已接纳工作，再暂停等待额度。
 其它后端、上述范围外的 MTP、混合执行、scheduler 或显式 commands 保留原来的串行执行；显式缓存预算容不下额外候选时也使用串行执行。串行 MTP 仍执行所选的起草、验证与修复，不等于关闭 MTP。
 遇到当前物理绑定缺少捕获时，先完成已提交工作，再沿原路径准备捕获并恢复接力；设备及清理错误继续报告。
@@ -301,8 +300,8 @@ CPU分置、prefix、多会话、scheduler和随机采样不自动启用。`--re
 
 ### CPU 与 GPU 分置
 
-需要明确的 CPU＋GPU 分置时，用 `scripts/init.py` 的 `--backends cpu,cuda`、`cpu,metal` 或
-`cpu,vulkan` 分别准备对应构建，运行时选择 GPU 主后端并添加 `--cpu-ffn-layers 2`，将前两层 target FFN 及其
+需要明确的 CPU＋GPU 分置时，用 `scripts/init.py` 的 `--backends cpu,cuda` 或 `--backends cpu,metal`
+准备对应构建，运行时选择 GPU 主后端并添加 `--cpu-ffn-layers 2`，将前两层 target FFN 及其
 原始权重放到 CPU；注意力、缓存和 MTP 留在所选 GPU。默认值 0 保持 GPU 放置。
 该参数在正式 token CLI、worker 和 `engine.text.app serve|generate` 使用同一冷装载路径；
 加载后不按请求改变放置。超过模型层数、缺少 CPU 路线或以 CPU 为主后端时明确报错。
@@ -332,16 +331,14 @@ worker 和 `/v1/models` 的 `hyle.placement` 报告实际 `primary_backend` 与 
 | 范围 | 当前边界 |
 |---|---|
 | Qwen3.5-2B完整入口 | 官方BF16及固定GPTQ、NVFP4、GGUF Q4等制品有列明范围的完整短旅程；不代表任意量化目录可直接加载。 |
-| 已实测的普通推理平台 | Qwen3.5-2B 原始 HF BF16 普通文本 prefill／decode 已在 Windows CPU／CUDA／Vulkan 和 MacBook Air M4 CPU／Metal 跑通；Windows 与 Mac 使用的原始权重逐字节相同。Windows CPU／Vulkan及WSL Linux CPU／CUDA另有2B Q4普通请求检查；WSL CUDA通过双活跃请求、状态搬运和关闭后恢复检查。Mac CPU／Metal另有多会话续接，Metal另通过取消后复用。双活跃会话的检查仍有列明的计算形状和容量范围，CUDA 的 MTP、图片及吞吐结论须分别验证。普通 BF16 速度见[性能记录](../developer/performance/decode.md)。 |
-| BF16 普通与显式 MTP | Windows 与 WSL 均覆盖 CPU／CUDA／Vulkan／CPU＋CUDA／CPU＋Vulkan，MacBook Air M4 覆盖 CPU／Metal／Vulkan／CPU＋Metal／CPU＋Vulkan。15 条路线均已完成普通、K1／K2／K3，各含贪心和随机采样，共 120 个双轮短请求检查；容量为 128，每轮输出额度 16、8，单活跃会话。混合放置使用前两层 target FFN；每个请求只选择已准备的方案，正式入口以 `--draft-count` 指定 0、1、2、3。这些功能检查不代表设备侧闭环、长上下文、并发或完整服务验收。自动默认由独立的冷策略选择。 |
-| GGUF 量化有限交叉 | Windows CPU／CUDA／Vulkan 和 MacBook Air M4 Metal 已完成 Q8_0／Q4_K_M 的普通与显式 K1 贪心两轮请求，容量为 128、单活跃会话。它验证本地准备制品的实际执行，不代表其它格式、长上下文、随机采样或吞吐已经验收。 |
+| 已实测的普通推理平台 | Qwen3.5-2B 原始 HF BF16 普通文本 prefill／decode 已在 Windows CPU／CUDA 和 MacBook Air M4 CPU／Metal 跑通。Windows 与 Mac 使用的原始权重逐字节相同。Windows CPU 及 WSL Linux CPU／CUDA 另有 2B Q4 普通请求检查。WSL CUDA 通过有限形状和容量的双活跃请求、状态搬运和关闭后恢复检查。Mac CPU／Metal 另有多会话续接，Metal 另通过取消后复用。普通 BF16 速度见[性能记录](../developer/performance/decode.md)。 |
+| BF16 普通与显式 MTP | Windows 和 WSL 均覆盖 CPU／CUDA／CPU＋CUDA，MacBook Air M4 覆盖 CPU／Metal／CPU＋Metal。9 条路线均已完成普通、K1／K2／K3，各含贪心和随机采样，共 72 个双轮短请求检查。容量为 128，单活跃会话，每轮输出额度为 16、8。混合放置使用前两层 target FFN。正式入口以 `--draft-count` 指定 0、1、2、3，只选择已准备的方案。设备侧闭环、长上下文、并发和完整服务各有独立验收范围。 |
+| GGUF 量化有限交叉 | Windows CPU／CUDA 和 MacBook Air M4 Metal 已完成 Q8_0／Q4_K_M 的普通与显式 K1 贪心两轮请求，容量为 128、单活跃会话。 |
 | 较大Qwen制品 | Qwen3.8-27B有特定CPU／混合配置的完整短旅程；不能推广到全部制品或纯GPU常驻。 |
 | NF4、CT asymmetric INT4、MLX affine4／8 | 有压缩权重及有限状态链／原组件接入；完整对应大模型、质量和吞吐未交付。 |
 | GLM、DeepSeek、Kimi | 组件级实现与检查，没有完整引擎入口。 |
 
-WSL Vulkan 的 GPU 验收使用 Mesa Dozen 25.2.8，经 D3D12 在 RTX 4070 上执行，需要配置对应的 ICD 及其依赖。llvmpipe 属于 CPU 软件实现。Dozen 驱动仍标记为测试用途。显式频率 RoPE 通过了含 ±1,048,576 位置的精度检查。整模型支持范围以已验收的负载为准。
-
-公共引擎共用请求、会话、完整状态、RNG 和 MTP 起草／验证／修复合同。CUDA 支持普通和 MTP 接力，Metal 和 Vulkan 的 MTP 接力适用范围见上文。引擎向实际 CPU／CUDA／Metal／Vulkan 端点查询设备长度批资格。原编码草稿行复制资格只对 CUDA 声明。Metal／Vulkan 的变长 packed convolution 和 GDN 前缀状态实现见[计算合同](compute.md)。Windows 和 Mac 的 Vulkan／CPU＋Vulkan 已通过普通随机、K1、K3 三方案共存、兼容 K1 双请求合批、续轮、独立 RNG、取消后复用和两种方案装载顺序检查，覆盖容量 128、三个驻留会话和两个活跃序列。
+公共引擎共用请求、会话、完整状态、RNG 和 MTP 起草／验证／修复合同。CUDA 和 Metal 的 MTP 接力适用范围见上文。引擎向实际 CPU／CUDA／Metal 端点查询设备长度批资格。原编码草稿行复制资格只对 CUDA 声明。Metal 的变长 packed convolution 和 GDN 前缀状态实现见[计算合同](compute.md)。
 
 模型、格式、后端与原始检查统一查[模型与算子覆盖](../implementation/model-operators.md)。
 加载器不会预先展开整库，但实际计划可能分解计算并使用workspace；4bit文件大小不是运行内存上限。

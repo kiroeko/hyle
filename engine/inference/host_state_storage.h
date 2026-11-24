@@ -40,7 +40,7 @@ public:
       return std::unexpected(Status::InvalidArgument("host-state storage requires positive image and byte bounds"));
     HYLE_ASSIGN_OR_RETURN(auto storage, backend.create_host_storage());
     const auto resource = storage.ref();
-    // Pinned CUDA and mapped Vulkan storage do not promise concurrent
+    // Pinned CUDA storage do not promise concurrent
     // host/device coherence. Original typed/common CopyBatch completion
     // establishes visibility; host reads use the resource's own read/map API.
     if (!resource.properties().has(mem::MemoryProperty::kHostAccessible))

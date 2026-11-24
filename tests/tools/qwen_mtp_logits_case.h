@@ -72,39 +72,21 @@ inline std::vector<double> normalized(std::span<const float> raw, std::span<cons
 struct DrawReference final { std::int32_t selected = -1; double margin = 0; };
 
 // Independent host equations, not calls to a provider's sampling helper.
-// CUDA/Metal use F32 log1p; Vulkan's F32 upper half uses its eight-term
-// small-tail polynomial or corrected log(1-small). None uses the CPU CDF.
-inline float gumbel(std::uint32_t hi, std::uint32_t lo, q::BackendKind kind) {
+// CUDA and Metal use F32 log1p for the upper half.
+inline float gumbel(std::uint32_t hi, std::uint32_t lo) {
   const bool upper = (hi & 0x80000000u) != 0;
   if (upper) { hi = ~hi; lo = ~lo; }
   const float high = static_cast<float>(hi) * 0x1p-32F;
   const float low = (static_cast<float>(lo) + .5F) * 0x1p-64F;
   const float small = high + low;
-  float exponential;
-  if (!upper) exponential = -std::log(small);
-  else if (kind != q::BackendKind::kVulkan) exponential = -std::log1p(-small);
-  else if (small < .125F) {
-    // Evaluate the shader's positive terms in F32, without silently replacing
-    // its tail recipe by a double-precision CUDA/Gumbel model.
-    float series = .125F;
-    for (const float coefficient : {1.F / 7.F, 1.F / 6.F, .2F, .25F, 1.F / 3.F, .5F, 1.F}) {
-      const float product = small * series;
-      series = coefficient + product;
-    }
-    exponential = small * series;
-  } else {
-    const float complement = 1.F - small;
-    const float delta = complement - 1.F;
-    const float correction = std::log(complement) / delta;
-    exponential = small * correction;
-  }
+  const float exponential = upper ? -std::log1p(-small) : -std::log(small);
   return -std::log(exponential);
 }
 
 inline DrawReference draw_reference(std::span<const double> weights,
     sampling_test::Words identity, q::BackendKind kind) {
   require(kind == q::BackendKind::kCpu || kind == q::BackendKind::kCuda ||
-      kind == q::BackendKind::kApple || kind == q::BackendKind::kVulkan,
+      kind == q::BackendKind::kApple,
       "categorical reference requires an explicit native backend");
   double mass = 0;
   float maximum = -(std::numeric_limits<float>::infinity)();
@@ -132,7 +114,7 @@ inline DrawReference draw_reference(std::span<const double> weights,
   for (std::size_t at = 0; at != weights.size(); ++at) if (weights[at] > 0) {
     const auto words = sampling_test::philox({static_cast<std::uint32_t>(at / 2), 0, identity[2], identity[3]}, {identity[0], identity[1]});
     const float shifted = static_cast<float>(std::log(weights[at])) - maximum;
-    const float score = shifted + gumbel(words[(at % 2) * 2], words[(at % 2) * 2 + 1], kind);
+    const float score = shifted + gumbel(words[(at % 2) * 2], words[(at % 2) * 2 + 1]);
     require(std::isfinite(score), "independent native F32 Gumbel produced a nonfinite score");
     // Native reductions resolve equal scores in favour of the lower column.
     if (score > best) { runner = best; best = score; selected = static_cast<std::int32_t>(at); }

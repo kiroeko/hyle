@@ -222,12 +222,12 @@ TEST(Status, WithContextPrefixesWithoutMutatingLvalue) {
 }
 
 TEST(Status, WithContextNestsOutermostFirst) {
-  Status s = Status::Internal("VK_ERROR_DEVICE_LOST (-4)")
-                 .WithContext("vulkan vkQueueSubmit failed")
+  Status s = Status::Internal("cudaErrorLaunchFailure (719)")
+                 .WithContext("cuda cudaLaunchKernel failed")
                  .WithContext("launching compute kernel");
   EXPECT_EQ(s.message(),
-            "launching compute kernel: vulkan vkQueueSubmit failed: "
-            "VK_ERROR_DEVICE_LOST (-4)");
+            "launching compute kernel: cuda cudaLaunchKernel failed: "
+            "cudaErrorLaunchFailure (719)");
 }
 
 TEST(Status, RvalueContextChainReusesGeometricPrefixStorage) {
@@ -275,7 +275,7 @@ TEST(Status, RvalueContextMayAliasExistingMessage) {
 }
 
 TEST(Status, NativeDetailSurvivesInPlaceContextAndGrowth) {
-  const NativeError native{NativeErrorDomain::Vulkan, -4};
+  const NativeError native{NativeErrorDomain::CudaRuntime, -4};
   Status status =
       Status::FromNative(StatusCode::Unavailable, native, "device lost")
           .WithContext("submitting kernel");
@@ -307,7 +307,6 @@ TEST(Status, NativeErrorDomainNamesAreStable) {
   EXPECT_EQ(hyle::native_error_domain_name(NativeErrorDomain::PosixErrno),
             "PosixErrno");
   EXPECT_EQ(hyle::native_error_domain_name(NativeErrorDomain::Win32), "Win32");
-  EXPECT_EQ(hyle::native_error_domain_name(NativeErrorDomain::Vulkan), "Vulkan");
   EXPECT_EQ(hyle::native_error_domain_name(NativeErrorDomain::CudaRuntime),
             "CudaRuntime");
   EXPECT_EQ(hyle::native_error_domain_name(NativeErrorDomain::CudaDriver),
@@ -324,11 +323,11 @@ TEST(Status, NativeErrorDomainNamesAreStable) {
 
 TEST(Status, NativeErrorIsOptionalStructuredDetail) {
   Status status = Status::FromNative(
-      StatusCode::Unavailable, {NativeErrorDomain::Vulkan, -4}, "device lost");
+      StatusCode::Unavailable, {NativeErrorDomain::CudaRuntime, -4}, "device lost");
   EXPECT_TRUE(status.IsUnavailable());
   EXPECT_EQ(status.message(), "device lost");
   EXPECT_EQ(status.native_error(),
-            (NativeError{NativeErrorDomain::Vulkan, -4}));
+            (NativeError{NativeErrorDomain::CudaRuntime, -4}));
   EXPECT_TRUE(status.has_native_error());
   Status copy = status;
   Status contextual = status.WithContext("submitting kernel");
@@ -336,7 +335,7 @@ TEST(Status, NativeErrorIsOptionalStructuredDetail) {
   EXPECT_EQ(contextual.native_error(), status.native_error());
   EXPECT_EQ(contextual.message(), "submitting kernel: device lost");
   EXPECT_NE(Status::FromNative(StatusCode::Unavailable,
-                              {NativeErrorDomain::Vulkan, -5}, "device lost"),
+                              {NativeErrorDomain::CudaRuntime, -5}, "device lost"),
             status);
 }
 
@@ -351,7 +350,7 @@ TEST(Status, NativeErrorDoesNotGrowTheCarrierOrFakeAMessage) {
                                    {NativeErrorDomain::None, 99}, "message");
   EXPECT_EQ(none.native_error(), NativeError{});
   EXPECT_TRUE(Status::FromNative(StatusCode::Ok,
-                                {NativeErrorDomain::Vulkan, -1}, "ignored")
+                                {NativeErrorDomain::CudaRuntime, -1}, "ignored")
                   .ok());
 }
 
@@ -684,7 +683,7 @@ TEST(Status, ToStringNullBufferWithCapacityIsSizeQuery) {
 
 TEST(Status, PreservesUtf8AndEmbeddedNullBytesAcrossThePublicJourney) {
   const std::string message{"GPU \xE5\xA4\xB1\xE8\xB4\xA5\0lost", 15};
-  const hyle::NativeError native{hyle::NativeErrorDomain::Vulkan, -4};
+  const hyle::NativeError native{hyle::NativeErrorDomain::CudaRuntime, -4};
   Status status =
       Status::FromNative(StatusCode::Unavailable, native, message)
           .WithContext("graph");
@@ -1088,7 +1087,7 @@ TEST(ReturnIfError, DoesNotCollideWithCallerLocalNames) {
 TEST(ReturnIfError, PreservesLvaluesAndTransfersExplicitRvalues) {
   Status preserved = Status::FromNative(
       StatusCode::Unavailable,
-      {hyle::NativeErrorDomain::Vulkan, -4}, "device lost");
+      {hyle::NativeErrorDomain::CudaRuntime, -4}, "device lost");
   Status copied = chain_status_from_lvalue(preserved);
   EXPECT_TRUE(copied.IsUnavailable());
   EXPECT_EQ(copied.message(), "device lost");
@@ -1278,7 +1277,7 @@ TEST(Status, WithContextNeedsNoAllocationWhilePrefixCapacityRemains) {
 TEST(Status, NativeErrorOomPreservesCanonicalCode) {
   hyle::detail::status_test_force_oom(true);
   Status status = Status::FromNative(
-      StatusCode::Unavailable, {NativeErrorDomain::Vulkan, -4}, "device lost");
+      StatusCode::Unavailable, {NativeErrorDomain::CudaRuntime, -4}, "device lost");
   hyle::detail::status_test_force_oom(false);
   EXPECT_TRUE(status.IsUnavailable());
   EXPECT_FALSE(status.has_message());

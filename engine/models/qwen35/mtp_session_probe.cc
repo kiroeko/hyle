@@ -1451,13 +1451,12 @@ int main(int argc, char **argv) {
         if (value == "cpu") selection.primary = q::BackendKind::kCpu;
         else if (value == "cuda") selection.primary = q::BackendKind::kCuda;
         else if (value == "apple") selection.primary = q::BackendKind::kApple;
-        else if (value == "vulkan") selection.primary = q::BackendKind::kVulkan;
-        else throw std::runtime_error("--backend requires cpu, cuda, apple or vulkan");
+        else throw std::runtime_error("--backend requires cpu, cuda or apple");
       }
       else throw std::runtime_error("unknown MTP Session probe option");
     }
     if (inputs.empty() || output.empty() || (scenario != "sessions" && scenario != "prefix" && scenario != "resume" && scenario != "batch" && scenario != "numerics"))
-      throw std::runtime_error("usage: hyle_qwen35_mtp_session_probe --inputs DIR --output FRESH_DIR [--backend cpu|cuda|apple|vulkan] [--scenario sessions|prefix|resume|batch|numerics]");
+      throw std::runtime_error("usage: hyle_qwen35_mtp_session_probe --inputs DIR --output FRESH_DIR [--backend cpu|cuda|apple] [--scenario sessions|prefix|resume|batch|numerics]");
     selection = q::select_execution(selection, 0);
     if (selection.primary != q::BackendKind::kCuda && scenario != "prefix")
       throw std::runtime_error("non-CUDA MTP Session probe currently supports --scenario prefix only");

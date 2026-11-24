@@ -111,8 +111,7 @@ inline ApplicationOptions parse_application_options(int argc, char **argv) {
       else if (value == "cpu") config.execution.backend = Kind::kCpu;
       else if (value == "cuda") config.execution.backend = Kind::kCuda;
       else if (value == "apple") config.execution.backend = Kind::kApple;
-      else if (value == "vulkan") config.execution.backend = Kind::kVulkan;
-      else throw std::invalid_argument("backend must be auto, cpu, cuda, apple or vulkan");
+      else throw std::invalid_argument("backend must be auto, cpu, cuda or apple");
     } else if (option == "--capacity") config.execution.context = application_number<std::size_t>(option, value);
     else if (option == "--cpu-ffn-layers") config.execution.cpu_ffn_layers = application_number<std::size_t>(option, value);
     else if (option == "--max-sessions") config.execution.resident_sessions = application_number<std::size_t>(option, value);
@@ -167,7 +166,7 @@ inline int run_application(std::span<const inference::ModelProvider> providers, 
     const auto options = parse_application_options(argc, argv);
     if (options.help) {
       output << "Hyle text inference\nUsage: hyle generate --inputs SOURCE --tokens FILE|- [options]\n"
-          "  --backend auto|cpu|cuda|apple|vulkan  --capacity N\n"
+          "  --backend auto|cpu|cuda|apple  --capacity N\n"
           "  --cpu-ffn-layers N  (cold target FFN placement; requires CPU and GPU)\n"
           "  --max-sessions N  --active-sequences N  --max-output-tokens N\n"
           "  --sampling greedy|random  --temperature T  --top-k N  --top-p P  --seed N\n"

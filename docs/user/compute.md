@@ -4,8 +4,7 @@
 需要编译多节点拓扑、规划中间存储或组合 CPU/GPU 片段时使用 [Graph](graph.md)。
 
 普通入口负责组装所需实现，用户不排列 Provider 或第三方库。通用 CPU/CUDA 接口使用
-Context、Queue、PreparedOperation 和 OperationInvocation；[Apple](apple-compute.md) 与
-[Vulkan](vulkan-compute.md) 还提供各自的原生 Program/Invocation，遵守对应资源与完成合同。
+Context、Queue、PreparedOperation 和 OperationInvocation；[Apple](apple-compute.md) 还提供原生 Program/Invocation，遵守对应资源与完成合同。
 构建后端的方法见[使用指南](usage-guide.md#开始使用-compute--graph)。
 
 需要 ATen 的 CPU/CUDA 产品闭包会自动装配其数学适配器和 SDK，无需选择 ATen 开关。
@@ -21,7 +20,7 @@ Context、Queue、PreparedOperation 和 OperationInvocation；[Apple](apple-comp
 | 资源组合 | 复用外部资源、批量搬运或流式装权重 | [租约](#外部资源租约与-direct-提交)、[批量搬运](#准备批量范围搬运)、[文件管线](#有界文件与资源管线) |
 | 模型专题 | 编码权重、FP8／FP4／GGUF／专家 | [格式入口](#cpu-与模型格式接入)、[非GGUF原格式](#cpu-非-gguf-原格式与压缩专家)、[专家工作集](#有界专家权重工作集) |
 | 推理状态 | KV、attention或状态分支 | [批次attention](batch-attention.md)、[状态版本](state-versions.md) |
-| 后端与扩展 | CUDA、原生后端、实现约束或自定义kernel | [CUDA](#普通-cuda-入口)、[Apple](apple-compute.md)、[Vulkan](vulkan-compute.md)、[实现绑定](#准备时绑定实现)、[自定义执行](#自定义执行接入-direct-与-graph) |
+| 后端与扩展 | CUDA、原生后端、实现约束或自定义kernel | [CUDA](#普通-cuda-入口)、[Apple](apple-compute.md)、[实现绑定](#准备时绑定实现)、[自定义执行](#自定义执行接入-direct-与-graph) |
 
 
 ## 第一次 Direct 计算
@@ -69,7 +68,7 @@ HYLE_RETURN_IF_ERROR(output.view().read(std::as_writable_bytes(std::span(result)
 
 保持描述和 resource identity 不变时，复用 `operation`、`workspace` 和 `slot`，更新输入后再次 submit。
 等上一轮完成后再覆盖它使用的存储；并发请求各有独立 slot 和工作区。共享计划不保证共享可变槽安全。
-完整工程与 CPU/CUDA/Metal/Vulkan 示例见 [Direct sample](../../samples/package/compute/cpp/)。
+完整工程与 CPU/CUDA/Metal 示例见 [Direct sample](../../samples/package/compute/cpp/)。
 
 ## CPU 与模型格式接入
 
@@ -81,8 +80,7 @@ CPU 数学依赖自动装配，按实际请求选择合法实现；不要求传�
 F16／BF16／F32 权重 `[N,K]`，以 F32 乘积、累加与输出产生 `[T,N]`。
 F32 激活保持来源精度，权重在读取时扩宽，不展开整份 F32 权重；具体类型组合与形状由各 Provider 冷准备检查。
 它也接受同批数的 `[B,T,K]`、`[B,N,K]`，输出 `[B,T,N]`，不隐式广播批维。
-CUDA多批权重目前要求`N<=512`、偶数`K`。Vulkan的ggml设备路径暂不承载批量BF16激活域，
-会在prepare时明确拒绝；其它Provider以各自冷准备结果为准。
+CUDA多批权重目前要求`N<=512`、偶数`K`。其它Provider以各自冷准备结果为准。
 cuBLAS接受相同输入类型，混合类型由其它实际支持的Provider承接。
 普通 `MatMul` 继续遵守其原有类型规则。
 
@@ -107,7 +105,7 @@ AArch64 的 ggml BF16 点积使用基线 NEON，保留原实现的 F32 乘积和
 ## 当前能力
 
 按任务选择 descriptor；完整字段和 shape 推导见[公开 operation 头](../../include/hyle/compute/operation.h)。
-这张表是接口导航，具体请求还要通过 `prepare()` 检查，不是四后端通用支持矩阵。
+这张表用于查找接口。以 `prepare()` 检查具体请求的资格。
 
 | 任务 | descriptor / 入口 | 先确定什么 |
 |---|---|---|
@@ -149,10 +147,8 @@ K=1的空成员逐位保留初态；K>1要求每个实际长度≥K，返回各�
 `sequence_ops::packed_causal_conv1d()`的输入依次为x `[R,C]`、权重 `[C,K]`、
 history `[B,K-1,C]`及相同offsets，输出y及各成员真实输入更新后的history，不读取填充行。
 这些操作先检查全部offsets再写任何结果，输入不被覆盖。CPU／CUDA原默认路由支持F32／F16／BF16；
-Metal原生卷积和packed GDN／前缀状态支持这三种浮点输入，Vulkan原生卷积支持三种类型，
-packed GDN／前缀状态当前要求F32 Q/K/V。CUDA、Metal和Vulkan的packed GDN key depth上限为256；
-其它布局、索引、存储和工作组资格仍在冷期按实际设备检查。Vulkan的16位卷积使用精确半字存取，
-需要已启用的storage16；借用视图的非零字节起点与空history遵守同一检查和保活合同。
+Metal原生卷积和packed GDN／前缀状态支持这三种浮点输入。CUDA和Metal的packed GDN key depth上限为256。
+其它布局、索引、存储、工作组资格和借用视图在冷期按实际设备检查。
 失败Invocation退休后须从原prepared对象或executable创建新Invocation，失败writer不能重新发布。
 这些是底层数学与Graph能力；完整模型的后端和并发范围另见[推理运行说明](inference.md#制品与验证范围)。
 
@@ -162,7 +158,7 @@ packed GDN／前缀状态当前要求F32 Q/K/V。CUDA、Metal和Vulkan的packed 
 
 ## 有界专家权重工作集
 
-CUDA、Apple、Vulkan的`WeightSlots`提供两个预分配槽。catalog注册本地bank的ID与原始`TensorDesc`，
+CUDA和Apple的`WeightSlots`提供两个预分配槽。catalog注册本地bank的ID与原始`TensorDesc`，
 `upload_slices(slot, slices, ...)`把分立host tensor的原字节放入bank；每个`WeightSlice`指定bank ID和字节偏移，
 选中的bank须完整覆盖，不能重叠或留洞。来源须具有`HostAccessible`和`HostAddressIdentity`，并在同步staging期间保持就绪、不可变。
 每次最多接受`WeightSlotOptions::max_fragments`份切片，默认64；容量与元数据在创建时准备，上传不扩容。
@@ -323,8 +319,7 @@ INT32_MAX 合法舍入为 2^31，INT32_MIN 可精确表示，连续及 plain byt
 相关 Native 转换仍返回 `Unimplemented`；
 Bool 与 FP8 的直接转换也不在上述双向范围内。
 
-Apple 另提供 E4M3FN 与 F32/F16/BF16 的 storage Cast 桥；Vulkan 直接接 F32↔E4M3FN，
-F16/BF16 可以显式经过 F32 组合。这些入口保留 SATFINITE RNE、有符号零与 NaN 类别，
+Apple 另提供 E4M3FN 与 F32/F16/BF16 的 storage Cast 桥。这些入口保留 SATFINITE RNE、有符号零与 NaN 类别，
 不开放任意 FP8 算术；绑定、布局和容量仍遵守各后端的实际合同。
 
 这四个单输出 operation 提供会自动推导输出 descriptor 的 typed prepare，Fill 也有自然的零输入 submit：
@@ -537,7 +532,7 @@ Y = CastOutput((D * SA) * SW)
 也不计算 per-token absmax。这是存储 scale 的软件参考，与动态 block128、CT channel/token QDQ
 或硬件 `scaled_mm` 不自动等价。SA/SW 按普通 F32 的 IEEE 语义处理，包括零、负数、NaN/Inf 和子正规数。
 
-CPU、CUDA、Apple、Vulkan 已接通该普通图及闭合子图的有界冷候选；中间值未发布、单读且无控制逃逸的
+CPU、CUDA、Apple 已接通该普通图及闭合子图的有界冷候选；中间值未发布、单读且无控制逃逸的
 精确链可直接读取原 FP8 权重，避免整份 `N*K` F32 权重展开。发布中间结果时保留原分解与真实物化；
 实际选择、workspace、capture 和设备范围仍以准备结果为准，没有新增公开线性算子。
 [数值与资源寿命记录](../evidence/correctness/static-fp8-reference-2026-10-20.json)不代表所选制品 payload、
@@ -554,7 +549,7 @@ CPU、CUDA、Apple、Vulkan 已接通该普通图及闭合子图的有界冷候�
 这是同步 host 导入：三个 buffer 都须支持 `HostAccessible` 和 `HostAddressIdentity`，输出不能与任一输入重叠。
 设备上传、同步与后续常量发布由调用者完成。scale 码0为 `2^-127`，255保留为 F32 原始 NaN 位
 `0x7f800001`；后续算子的合法输入域仍按各自合同检查。映射、flush、unmap 错误会返回；写入后的错误不保证回滚，
-失败输出不能发布为就绪常量。[四后端消费与导入单测](../evidence/correctness/e8m0-block128-import-reference-2026-10-21.json)
+失败输出不能发布为就绪常量。[消费与导入单测](../evidence/correctness/e8m0-block128-import-reference-2026-10-21.json)
 保留已测数值和寿命范围。
 
 同一入口也接受上述二维grid的原始F32 scale，逐位复制而不再扩宽，保signed zero、tiny与NaN位。
@@ -633,7 +628,7 @@ E4 SATFINITE Cast 和 BF16 乘法。权重先 Cast BF16，再与原 BF16 scale �
 最后用 F32 累加、BF16 输出的普通 MatMul。
 
 选专家时先用受检 Gather 选择原 E4 权重及 BF16 scale，再还原选中行；共享激活使用 batch
-广播，每 token 只做一次 QDQ。引擎沿同一语义图调用，无需选择 Provider。四后端的可执行
+广播，每 token 只做一次 QDQ。引擎沿同一语义图调用，无需选择 Provider。各后端的可执行
 组合见[参考图](../../tests/compute_models/ct_block128_qdq_fixture.h)，
 [数值与寿命检查](../evidence/correctness/ct-bf16-block128-reference-2026-10-21.json)覆盖有限源激活、
 N/K整128、有界专家 bank；整制品工作集绑定、Linux及吞吐另行验证。
@@ -667,20 +662,20 @@ FP4格式固定D128：按group32量化，共68B/行；Indexer的Hadamard与BF16�
 不支持负索引回绕；输入含NaN/Inf时编码失败。实际字节格式与符号零规则见公共头。
 
 这是Hyle显式定义的行内格式；官方DeepSeek参考实际保存BF16 QAT结果，没有规定此packed ABI。
-CPU、CUDA、Apple、Vulkan均提供两项操作，可通过普通Direct/Graph入口使用。Apple当前单输入仍受
-原INT_MAX字节承载限制；Vulkan仍检查设备单descriptor、U32字节寻址及dispatch限制。U8 carrier沿原
+CPU、CUDA和Apple均提供两项操作，可通过普通Direct/Graph入口使用。Apple当前单输入仍受
+原INT_MAX字节承载限制。U8 carrier沿原
 StateStore与F2的区间权限和发布使用，不会隐式更新可见长度、取得整arena权限或转换为原生分页attention布局；
 `CacheStorage`原合同保持不变。独立页存储使用[typed行布局](batch-attention.md#逐行压缩历史的页存储)，
-四后端均有ready frame的跨页选中行读取入口；CPU/CUDA Graph另可消费原CopyBatchUpdate正在
-追加的行页。Apple/Vulkan使用各自native Context入口，详见同一指南；普通bank操作不能直接借用整arena权限。
+CPU、CUDA和Apple均有ready frame的跨页选中行读取入口；CPU/CUDA Graph另可消费原CopyBatchUpdate正在
+追加的行页。Apple使用native Context入口，详见同一指南；普通bank操作不能直接借用整arena权限。
 
-CPU、CUDA、Apple、Vulkan另提供 `model_ops::row_cache_indexer_scores()`，四个输入依次为BF16 query `[T,64,128]`、
+CPU、CUDA和Apple另提供 `model_ops::row_cache_indexer_scores()`，四个输入依次为BF16 query `[T,64,128]`、
 上述FP4 U8 bank `[L,68]`、已预缩放的BF16权重 `[T,64]` 和I32范围 `[T,2]`。
 每个范围是bank中的半开区间 `[begin,end)`；所有范围在读取bank前检查，非法范围不发布成功结果。
 区外score为负无穷。
 输出F32 `[T,L]` 保留BF16 dot→ReLU→BF16乘权→BF16 head sum的边界，F32只承载累加及最终宽化；
 上游仍显式执行Hadamard、query QAT和权重缩放。各路线不展开完整BF16 bank，仍需完整score输出；
-CPU/CUDA/Apple按块共享历史解码，Vulkan直接计算可见的query/key对。
+CPU/CUDA/Apple按块共享历史解码。
 CUDA的caller workspace由原prepared operation报告并按slot独占；Apple还保留分块score与最终拼接结果。
 上述四输入入口使用普通contiguous bank；typed分页评分有独立承载要求，跨页选中行读取不能代替TopK之前的评分。
 
@@ -702,7 +697,7 @@ typed Graph宏会一并生成该mask，见[页存储指南](batch-attention.md#�
 默认使用 `Float8ScalePolicy::kDivide` 与 floor `1e-10`。需要 GA power2 规则时调用
 `model_ops::grouped_float8_linear(model_ops::Float8ScalePolicy::kPowerOfTwo, 1e-4F)`，
 参数顺序与 dense 版本相同。BF16 输入先扩为 F32，按组求 absmax／floor，乘 F32 的 `1/448`，
-再向上取二次幂；量化器中间不转 BF16。CPU、CUDA、Apple、Vulkan 均有该 BF16 路径的
+再向上取二次幂；量化器中间不转 BF16。CPU、CUDA和Apple均有该 BF16 路径的
 [数值与寿命参考](../evidence/correctness/grouped-fp8-power2-reference-2026-10-21.json)。
 CUDA 当前 power2 原生程序仅接受 BF16；F32 形状推导可以成功，但 prepare 会明确拒绝。
 存储为 E8M0 的 macroblock128 scale 仍须准确导入原 F32 carrier。
@@ -717,10 +712,6 @@ host 调度、ID读回或权重解码。负数及越界 ID 安全返回失败 Co
 预乘scale会溢出并把本应为零的点积变成NaN。此顺序不保证所有有限输入的非零结果都不会溢出。
 单expert的 `N*K` 仍受原生I32寻址约束，完整bank的专家基址使用I64，不将 `E*N*K`
 误限为I32。完整bank仍须满足真实buffer与设备内存限制；不自动转为按需换入。
-
-Vulkan的官方grouped FP8/FP4也沿相同公开权重描述，完整压缩bank不再因超过2GB而一概拒绝；
-仍受实际 `maxStorageBufferRange`、算子寻址及工作区限制。GLM的完整3.22GB FP8 bank已有
-定向消费验证，不能外推为所有模型或更大FP4 bank均可驻留。用实际descriptor执行prepare检查资格。
 
 ### 执行前检查具体请求
 
@@ -744,8 +735,7 @@ python scripts/init.py --backends cuda --components compute,graph
 python scripts/build.py --jobs 2
 ```
 
-同时编入 CPU 与 CUDA 使用 `--backends cpu,cuda`，只编入 Vulkan 使用 `--backends vulkan`；
-Windows/Linux x86_64 的 `--backends all` 同时提供 CPU、CUDA 和 Vulkan。
+同时编入 CPU 与 CUDA 使用 `--backends cpu,cuda`。Windows/Linux x86_64 的 `--backends all` 包含 CPU 和 CUDA。
 编译可用集合不替代引擎运行时的 CPU/GPU/混合执行选择。
 静态库用 `init.py --static`，安装用 `build.py --install <prefix>`，无需内部 Provider flags 或排序。
 源码与安装包均链接 `hyle::compute`，
@@ -851,10 +841,10 @@ backing 必须活到最后一个画像/程序释放。`program.workload()` 返�
 公共描述器包含 Q4_0/Q4_1/Q2_K、IQ2_XXS/XS/S、IQ1_S/M 及 IQ1_XXXS/XXS/XS 等编码。
 最后三种使用固定 Unsloth IQ1 narrow 扩展，不能从文件名中的 UD 档位猜编码。
 描述器存在不代表每个后端的 MatMul、expert 和 embedding 均支持该格式；各操作分别检查原生实现。
-CUDA/Vulkan 的原生选行 embedding 当前接通 19 种 GGUF 编码，尚不含这三个 IQ1 narrow 变体。
+CUDA 的原生选行 embedding 当前接通 19 种 GGUF 编码，尚不含这三个 IQ1 narrow 变体。
 CUDA 的 IQ4_NL/MXFP4 embedding 还要求行宽为 256 的倍数；这与其 32 值物理 block 是不同限制。
 `kNvfp4` 是独立的 GGUF 编码：每 64 个值占 36 字节，含四组内嵌 scale；K 必须为 64 的倍数。
-CPU/CUDA/Vulkan/Apple 已接原编码 MatMul、GroupedMatMul 和所选行解码，不建立常驻浮点权重副本。
+CPU/CUDA/Apple 已接原编码 MatMul、GroupedMatMul 和所选行解码，不建立常驻浮点权重副本。
 Apple NVFP4 的激活、累加和输出采用 F32，准备时检查实际设备与原生 pipeline 资源。
 它与 GGUF MXFP4、HF ModelOpt/Quark 的 NVFP4 W4A4 不是同一存储和激活合同。
 
@@ -889,7 +879,6 @@ F32 `[T,S,N]`。`A=1` 让同一 token 的专家共享激活，`A=S` 保留各分
 默认路线接 dense 输入及 K 连续的共享 View；具体行步幅仍由 prepare 检查，CUDA 多 token 的行间距须为
 完整 K 行的倍数。普通 BF16 权重仍以原 F32 激活、F32 累加计算；CPU 会扩宽权重，Graph 的不可变常量可冷准备。
 CUDA 保留原 BF16 bank，合资格小 T 域直接在寄存器中精确扩宽，不留整库 F32 副本；实际存储仍为 BF16。
-Vulkan 非密集共享 View 还须满足原生缓冲地址对齐，偏移不合法时在绑定阶段拒绝；密集输入保留原对齐适配。
 CUDA 在 NVIDIA 的合资格小 T 域使用原 MMVF，直接读取 GPU IDs 和共享／独立激活，不整理 T×S 份输入；
 资格按原设备／形状偏好、pair 对齐、实际元素宽度／步幅和设备 grid 限制检查；严格 BF16W/F32A 域复用原 F32 计算偏好。
 重复 ID 保留独立输出槽，
@@ -901,17 +890,16 @@ CUDA 在 NVIDIA 的合资格小 T 域使用原 MMVF，直接读取 GPU IDs 和�
 [CUDA BF16 分组记录](../evidence/performance/bf16-grouped-bank-2026-10-20.json)。
 
 MoE 的连续专家权重使用 `gguf_grouped_weight_description(type, logical_type, experts, n, k)`，其逻辑与
-物理轴均为 `[E,N,K]`，交给普通 `GroupedMatMul`。当前 CPU、CUDA、Apple 与 Vulkan 默认路线会在准备期把合格的
+物理轴均为 `[E,N,K]`，交给普通 `GroupedMatMul`。当前 CPU、CUDA和Apple默认路线会在准备期把合格的
 MatMul/GroupedMatMul 绑定到固定 ggml 原生程序；具体设备和上游版本仍可能拒绝某种格式或 shape。
 Graph 使用相同描述器与 Provider recipe，重复 submit 不重新选路、不重新量化，也不复制压缩权重。
 伪造已知格式 ID 但给出错误 block byte 数会在准备前被拒绝。Apple 用 `apple::input_spec()` 将逻辑描述
 映射到 MLX `uint8` carrier；大 bank 用二维编码行保留单轴原生尺寸，消费者仍使用同一逻辑 descriptor。
-Vulkan 使用其原生 buffer 与相应程序。
 一种压缩格式可执行，不表示完整模型的其它必需片段也可执行。
 
 CPU/CUDA 的压缩 `GroupedMatMul` 按原生block寻址检查完整bank，不把整个逻辑
 `E*N*K` 误限为I32；单维、单expert stride和原native block索引边界仍保留。
-Vulkan还受真实 `maxStorageBufferRange` 限制，Apple的carrier也有原生尺寸约束。
+Apple的carrier受原生尺寸约束。
 同一制品可能需分bank或按需驻留；库不在一次Grouped调用中暗中换入整个模型。
 
 固定的模型专用规则必须完整匹配身份及其余适用条件；缺失/未知信息只允许合法通用路径，
@@ -925,7 +913,7 @@ CUDA 的 `cuda::environment(context)` 返回 Context 创建时采集的设备名
 `driver_release` 来自可选系统 NVML，缺少时为空、不禁用 CUDA 路线。冷规则的 `kApiVersion` 为前者，
 `kDriverVersion` 为实际 NVIDIA release 文本，`kDriverName` 为 nvidia。系统 driver DLL 不随 SDK 复制。
 固定规则只能匹配实际具备的事实；
-不能把该字段当作驱动补丁版本。Apple/Vulkan 使用各自原生 `Environment`，Provider 版本来自
+不能把该字段当作驱动补丁版本。Apple 使用原生 `Environment`，Provider 版本来自
 对应实现/锁定依赖；它们不共用一个万能设备结构。
 
 ## CPU 非 GGUF 原格式与压缩专家
@@ -966,14 +954,12 @@ CPU默认单向量优先packed，多行先原矩阵；明确要求`ProviderRepla
 [CPU三系统验证](../evidence/correctness/ct-packed-cpu-portability-2026-10-20.json)和
 [默认排序实测](../evidence/performance/ct-packed-cpu-policy-2026-10-20.json)区分能力与默认性能。
 
-[Vulkan](../evidence/correctness/ct-packed-vulkan-2026-10-20.json)与
 [Apple](../evidence/correctness/ct-packed-apple-2026-10-20.json)沿原native Program承载同一recipe：
-Vulkan只对已测单行BF16 scale/decode/operand默认优先packed，多行和其他精度先原路线；
 Apple支持正rank2 plain激活与实际stride，当前实测较慢，默认仍为原路线。
 普通路线仍可能物化dense W，native private量以实际报告为准；workspace0不代表总分配0，也不承诺OOM后自动换路。
-GPTQ-v1的四后端原decode与闭合packed候选已有[数值及寿命回归](../evidence/correctness/gptq-reference-2026-10-20.json)，
+GPTQ-v1的原decode与闭合packed候选已有[数值及寿命回归](../evidence/correctness/gptq-reference-2026-10-20.json)，
 包含动态g_idx、非法ID、双槽／旧结果、逃逸原分解与CUDA实际捕获。packed路径直接读原四份权重端口，
-不建立额外整份dense W；Vulkan／Apple的新GPTQ候选保守排序，不由功能测试宣称更快。
+不建立额外整份dense W；Apple的新GPTQ候选保守排序，不由功能测试宣称更快。
 所选量化制品的payload／整模型、其它GPTQ packing、W4A4及FFN/专家覆盖见[模型总表](../implementation/model-operators.md)。
 
 `model_ops::nvfp4_linear()`提供固定group16的ModelOpt软件参考线性：
@@ -984,9 +970,9 @@ A的当前块absmax经E4M3 scale、E2M1量化后存BF16；W先在F32乘两级sca
 输入A须finite、scale须finite且非负、两个global须finite且严格正；有限输入仍可产生IEEE非有限结果。
 域错误由Completion报告，失败结果不可读；Graph失败Invocation须从同Executable重建并重新绑定／准备。
 CPU/CUDA沿既有prepared入口执行，使用调用者的2×M×K字节激活工作区，只展开当前W组，不保留整bank浮点副本；
-CUDA可RequireCapture；Apple/Vulkan沿各自原生program执行，也只物化A，不展开整份W。
+CUDA可RequireCapture；Apple沿原生program执行，也只物化A，不展开整份W。
 Apple另有检查数组及managed状态成本，不能把总临时内存写成仅2×M×K。
-[四后端数值及寿命回归](../evidence/correctness/nvfp4-cross-backend-reference-2026-10-20.json)
+[数值及寿命回归](../evidence/correctness/nvfp4-cross-backend-reference-2026-10-20.json)
 含非零subnormal权重；未验证Linux、实际制品质量或吞吐，也不证明与硬件native FP4 GEMM等价。
 
 `model_ops::grouped_nvfp4_linear()`沿用上述数学，六个输入依次为
@@ -995,7 +981,7 @@ Apple另有检查数组及managed状态成本，不能把总临时内存写成�
 A另支持真实零slot步幅和token行距View，重复ID保留独立slot。共享原始A也须按每个选中专家的IG分别QDQ，
 不能共享已量化A。激活QDQ本体占2×T×S×K字节，直接读压缩W，不展开整E×N×K；各后端另有状态／运行时成本。
 全部ID先检查，非法ID不会用于专家寻址；WG/IG/scale只检查选中专家，未选专家的无效metadata不使调用失败。
-域错误及失败Invocation处理与dense入口相同。CPU Direct/Graph、CUDA capture、Apple Metal与Vulkan的
+域错误及失败Invocation处理与dense入口相同。CPU Direct/Graph、CUDA capture和Apple Metal的
 [数值及寿命回归](../evidence/correctness/grouped-nvfp4-reference-2026-10-20.json)已通过，保留原dense邻居检查；
 这不代表执行了所选Q24整制品或证明了硬件FP4 GEMM、质量和吞吐。
 
@@ -1008,10 +994,10 @@ A的absmax／6先舍入到BF16，再乘IG并量化E4M3，仅零scale替换为0.1
 [固定制品／producer合同](../evidence/research/ct-local-nvfp4-contract-2026-10-20.json)。
 输入值域、全ID先检查、只检查选中metadata及失败后重建Invocation的要求与上述入口一致。
 令R为dense的M或grouped的T×S：CPU/CUDA使用调用者2×R×K字节激活工作区，CUDA支持capture；
-Apple/Vulkan在原生program中准备该激活临时量，Apple另有逐组／逐输出检查数组，Vulkan另有状态缓冲及运行时成本。
+Apple在原生program中准备该激活临时量和逐组／逐输出检查数组。
 各端均直接读取压缩W；2×R×K不代表总临时内存。索引域、workspace与设备单buffer／绑定容量仍按实际后端检查。
-[27项数值／寿命及原ModelOpt邻居回归](../evidence/correctness/ct-local-nvfp4-reference-2026-10-20.json)
-在Windows CPU/CUDA/Vulkan及macOS M4上通过，无跳过；未验证Linux、512专家分立tensor到工作集的整条资源旅程、
+[数值／寿命及原ModelOpt邻居回归](../evidence/correctness/ct-local-nvfp4-reference-2026-10-20.json)
+覆盖Windows CPU/CUDA及macOS M4；未验证Linux、512专家分立tensor到工作集的整条资源旅程、
 任意大bank、所选制品payload／整模型、质量或吞吐，也不等同硬件scaled FP4 GEMM。
 
 `model_ops::mxfp4_linear()`／`Mxfp4Linear`提供group32软件参考，三个真实plain dense输入为
@@ -1025,8 +1011,8 @@ W保留相邻偶K低nibble／奇K高nibble，码乘E8M0 scale先舍入到BF16，
 SF0为非零的2^-127；非finite A或SF255由Completion报错，合法有限输入产生的IEEE溢出仍是数值结果。
 grouped先检查全部ID再形成专家地址，SF只检查选中专家；重复ID保留slot，A支持零slot步幅及token行距View。
 CPU/CUDA使用调用者激活工作区：dense为2×M×K字节，共享A1／零slot步幅为2×T×K，独立AS为2×T×S×K。
-Apple/Vulkan沿原生Program准备相同激活临时量；Apple的检查数组及managed状态、Vulkan的状态缓冲与运行时开销另计。
-四后端复用既有FP4 family和执行机制，原ModelOpt／Local四个入口的数学保持不变。
+Apple沿原生Program准备相同激活临时量，检查数组及managed状态另计。
+CPU、CUDA和Apple复用既有FP4 family和执行机制，原ModelOpt／Local四个入口的数学保持不变。
 [37项数值、寿命及FP4邻居回归](../evidence/correctness/quark-mxfp4-reference-2026-10-20.json)通过且无跳过；
 该证据不覆盖所选制品payload／整模型、硬件FP4 GEMM、质量或吞吐。
 
@@ -1048,7 +1034,7 @@ affine 的 bits 为 4/5/6/8、group 为 32/64/128；`kMxfp4` 固定 bits4/group3
 解码权重及累加保持 F32，最后按输出 dtype 舍入。MX 输出保持 A dtype，其 E8M0 scale 先转为
 A dtype，保留原低精度溢出或下溢。integer affine8 与浮点 MXFP8 是两个编码合同。
 
-上述 MLX 基础算子已接通 CPU、CUDA、Apple 和 Vulkan；Vulkan 的设备特性、workspace 与容量资格仍按实际设备检查。
+上述 MLX 基础算子已接通 CPU、CUDA 和 Apple。
 Apple的完整通用5/6/4bit MoE组合现也已[实际执行](../evidence/correctness/precise-role-consumers-reference-2026-10-21.json)，
 覆盖两种专家数、双槽与更新后的旧结果；不代表某个GLM整层。
 
@@ -1063,7 +1049,6 @@ MX及embedding不接受`kWeightAsStored`。同一个head-bank的两方向、显�
 [CUDA 23 项及公开 Direct/Graph](../evidence/correctness/mlx-affine-widths-cuda-2026-10-19.zip)、
 [Apple Direct 5 项](../evidence/correctness/mlx-affine-widths-apple-2026-10-19.zip)是定向算子回归；
 Apple 的一般乘加收缩、typed embedding 两次独立舍入和跨后端逐 bit 等价仍未证明。
-[Vulkan 18 项](../evidence/correctness/mlx-affine-widths-vulkan-2026-10-19.zip)含 Direct8/Graph3/private IREE7，另覆盖12个位宽/算子交叉域和8个F32解码反例；这些结果不表示已导入或运行任一完整 MLX 量化制品，也没有新增吞吐结论。
 
 这组实现借用固定 bitsandbytes、AutoAWQ、compressed-tensors、MLX 的原计算组合，由 ATen CPU 承载。
 它们属于 managed replay，存在原库临时分配与线程成本；不保证 capture、零热分配或未知私有内存的硬预算。
@@ -1083,7 +1068,7 @@ CUDA 的相同公开操作支持 dense F32 输入。ggml 承载通道数为128�
 ## 设备端单选与可定位随机数
 
 确定性单选直接使用原 `TopK{.count = 1}`，仍返回原存储类型的 values 与 I32 indices，
-同分取首索引、NaN 排在非 NaN 后。CPU、CUDA、Apple 和 Vulkan 的适用形状使用归约；
+同分取首索引、NaN 排在非 NaN 后。CPU、CUDA 和 Apple 的适用形状使用归约；
 其它 count 和原先合法的 axis/stride 域沿各路线原合同执行，不需要额外的 greedy API。
 
 `hyle/compute/sampling_ops.h` 提供两种独立数值操作，沿原 Direct prepare 或 Graph builder 使用：
@@ -1240,9 +1225,9 @@ Apple的`import_readonly`与原生Graph结果支持plain非连续只读视图：
 池的 drain 也先永久停止接纳，再等待 admitted uses；保留 reader 仍有效，不等待这些 reader 全部销毁。
 需要继续重放时等待本次 Completion，不调用 adapter 或池的 drain。
 
-Apple/Vulkan 的 native Program 使用各自 memory 头里的 `LeasedInvocation` 与 `LeasedInput`；
+Apple 的 native Program 使用原生 memory 头里的 `LeasedInvocation` 与 `LeasedInput`；
 bind 冷建立 readonly native view，submit 自动接纳 use，原 native slot 的实际退休归还 use。
-结果/来源 alias 继续由原 native owner 保留。四路线接口独立，不需要通用 Queue 或自写 completion vector。不外推未测设备/工具链。
+结果/来源 alias 继续由原 native owner 保留。原生接口独立，不需要通用 Queue 或自写 completion vector。不外推未测设备/工具链。
 
 Graph 在原 `Invocation` 上准备资源绑定，使用 `<hyle/graph/executable.h>` 和
 `<hyle/graph/result.h>`：
@@ -1273,7 +1258,7 @@ bind、prepare_replay 和 submit；不另建执行器。`GraphOutput` 及其复�
 
 `hyle/compute/batch_transfer.h` 的 `CopyBatchProgram` 冷固定 CPU/CUDA Context、资源域、
 范围/阶段上限和 metadata budget；每个 `CopyBatchInvocation` 是独立运行槽，借用一个地址稳定的
-原 Queue。Apple/Vulkan 使用各自 memory 头中的同名类型及原 native Context，创建槽时省略 Queue。
+原 Queue。Apple 使用原生 memory 头中的同名类型及原 native Context，创建槽时省略 Queue。
 resource、Context、Queue 和自定义 allocator 均须活到所有槽与原生在途工作退休。
 
 ```cpp
@@ -1300,13 +1285,12 @@ auto ready = copied.output({0}, {1}, 0, 4096).value();
 取消与未知退役均不发布 ready。较早组可独立观察，后继 readonly 搬运仍保活它。
 生产者有尚未退休的写时，用 `bind_producer` 交接同 native owner 的实际 Completion；未知外部
 完成不能猜成 native fence。失败绑定不消费传入 lease/Completion。
-Apple/Vulkan 的原 native dependency 接纳会拒绝已经请求取消且仍在途的来源，
+Apple 的原 native dependency 接纳会拒绝已经请求取消且仍在途的来源，
 返回 Cancelled 并保留传入 Completion。取消不证明退休；接纳之后才发生的取消仍
 按原 native 完成合同处理。排序本身也不替消费者合并来源与后继的最终错误。
 
 搬运保持原编码，不做 dtype 转换或量化重打包。`physical_bytes=0` 为 exact copy；显式 padding
-必须属于源和目标的已分配范围，计入 alias 与 byte budget。Metal 的 offset/size 为 4-byte 对齐；
-Vulkan 也必须符合原 buffer copy 约束，不能以向上取整越过邻块。
+必须属于源和目标的已分配范围，计入 alias 与 byte budget。Metal 的 offset/size 为 4-byte 对齐，范围限于实际分配。
 `CopyBatchReport` 分别给出 logical/physical bytes、实际 copy calls、native dependencies、阶段完成
 和 host waits；`native_metadata_unknown` 表示 vendor 内部成本未知，不能据此宣称所有热分配为零。
 Apple 沿原 MLX owner 同步实际 command buffer，每 native phase 的 worker host wait 会计入报告。
@@ -1321,7 +1305,7 @@ Apple 沿原 MLX owner 同步实际 command buffer，每 native phase 的 worker
 
 需要把一组已接纳更新交给后继持有时，用 `CopyBatchUpdate::take(std::move(slot),
 std::move(submission))` 合并两个原控制。CPU/CUDA 使用 `compute::CopyBatchUpdate`；
-Apple/Vulkan 使用各自 namespace 的同名类型。两个控制必须来自同一实际运行槽；
+Apple 使用原生 namespace 的同名类型。两个控制必须来自同一实际运行槽；
 失败不消费它们，成功同时移空 caller。该对象只保存两个原 handles，不创建队列、
 Completion 或执行线程。Context、Queue、资源与 allocator 须活到所有实际工作退休。
 
@@ -1346,9 +1330,9 @@ Completion 或执行线程。Context、Queue、资源与 allocator 须活到所�
 
 `hyle/compute/file_stream.h` 的 `FileResourcePipeline` 把原 IO、资源租约与批量搬运组合成
 分块文件旅程。另包含所选路线的 `hyle/compute/cpu_file_stream.h`、`cuda_file_stream.h`、
-`apple_file_stream.h` 或 `vulkan_file_stream.h`，调用对应 namespace 的
+`apple_file_stream.h`，调用对应 namespace 的
 `create_file_pipeline`；默认计算头不再声明文件工厂。CPU/CUDA
-沿原 Context、Queue，Apple/Vulkan 沿各自 Context。创建时明确 stage resource、目标资源域、
+沿原 Context、Queue，Apple 沿原生 Context。创建时明确 stage resource、目标资源域、
 槽数和有限 byte/request/group 容量。CUDA stage 使用原 pinned host resource；不把整个模型 pin。
 
 `StreamFile::adopt` 接管已有 `io::File`，`borrow` 保留调用方地址稳定的 File；两者都需明确合法容量。
@@ -1385,7 +1369,7 @@ allocator 必须活到所有原生 use 和保留结果结束；不会关闭调�
 
 ## 准备时绑定实现
 
-普通计算不需要用户提供 timing profile。四路线的默认优选规则由 HYLE 研发阶段验证并固定；
+普通计算不需要用户提供 timing profile。默认优选规则由 HYLE 研发阶段验证并固定；
 准备时匹配适用条件和资源约束，执行时复用已绑定制品，不计时、不重选。各路线当前能力以其
 公开入口与实际准备结果为准。
 
@@ -1499,7 +1483,7 @@ OpenMP team、executor、ggml worker、BLAS 或 GPU service thread 的总和。
   `result()` 只 poll，pending 明确返回 FailedPrecondition，失败/取消不产生 ready lease。保留 lease 后，
   原提交对象和生产槽可销毁；同槽仍有结果引用时不能覆盖，另一槽可继续使用。T 的 runtime 决定如何读其数据，
   HYLE 不把它伪装为 Mem allocation，也不隐式创建 host shadow copy。注入 allocator 必须活过所有结果引用。
-  这些共同接口不描述 MLX/Metal 或 Vulkan 的原生 Program；其默认规则和验收范围见对应路线指南。
+  这些共同接口不描述 MLX/Metal 的原生 Program；其默认规则和验收范围见对应路线指南。
 - RMSNorm 允许 input/output 精确同址；所有 operation 拒绝不安全 partial overlap 和第二输入/output
   overlap。CPU route 要求 host-accessible storage，并如实调用 non-coherent resource 的 invalidate/flush。
 - 不同 Queue 可并发；同一 ordered Queue 是单 producer 提交域，两个线程同时录入会明确失败。Graph 会用
@@ -1568,7 +1552,7 @@ OpenMP team、executor、ggml worker、BLAS 或 GPU service thread 的总和。
 直接进入 typed trampoline，没有额外虚函数层；用户 kernel 的分配、同步和线程必须符合自己声明的
 prepared/managed 成本。此 factory 当前为 exact-point；Windows CPU/CUDA 示例已验证三种交付，其中
 CUDA 使用真实 native kernel、双 Queue 和 exact Graph capture。此 factory 的 exact-point 限制仍在；
-Apple/Vulkan 使用各自原生 Program 与 custom lowering，见路线指南。四路线的正确性、三交付、
+Apple 使用原生 Program 与 custom lowering，见路线指南。各路线的正确性、三交付、
 sanitizer 和有限性能证据各有适用范围，不能把 shared-Queue factory 外推为所有 native runtime 的接口。
 
 ## Custom operation 的外部资源访问

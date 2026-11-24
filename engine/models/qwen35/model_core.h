@@ -743,10 +743,6 @@ struct ColdResources final {
       }
       deferred_root_release.reset();
     }
-    if (retirement_backend) {
-      g::Invocation empty;
-      status = wait ? retirement_backend->drain_retired(empty) : retirement_backend->collect_retired();
-    }
     // A copy may retain completed Graph outputs after the host Model has
     // handed off its endpoint. Recover that original copy first; neither an
     // idle Graph nor a failed copy observation authorizes early retirement.
@@ -3275,16 +3271,12 @@ public:
     if (!active_step) return {true, {}};
     auto *retirement_pool = nonblocking ? retirement_workers.get() : nullptr;
     if (successor_step) {
-      inference::record_retirement_status(successor_step->execution.terminal, execution.collect_retired());
       const auto retired = successor_step->try_abort(retirement_pool, resources_);
       if (!retired) return {false, retired.error()};
       if (!*retired) return {false, successor_step->execution.terminal};
       successor_step.reset();
     }
-    // Dropping the public Completion does not remove original native work.
-    // Drive its owning environment before checking the unchanged Graph/page
-    // retirement gates; an observation error alone never proves retirement.
-    inference::record_retirement_status(active_step->execution.terminal, execution.collect_retired());
+    // The original Graph and page retirement gates still own accepted work.
     const auto retired = active_step->try_abort(retirement_pool, resources_);
     if (!retired) {
       inference::record_retirement_status(active_step->execution.terminal, retired.error());
@@ -3364,10 +3356,8 @@ public:
         (void)successor_step->execution.retire(execution);
       }
     }
-    // Nonblocking collection cannot drain a partially accepted Vulkan prefix.
-    // Hand off once to the original blocking owner, then check the unchanged
-    // Graph/page gates. Unknown native failure keeps this candidate, Session
-    // pins and admission intact for an explicit retry; it must not spin.
+    // Let the original invocation retire before checking Graph and page gates.
+    // An observation failure keeps the candidate and Session pins for retry.
     if (active_step->execution.run && active_step->phase) {
       (void)active_step->execution.retire(execution);
     }

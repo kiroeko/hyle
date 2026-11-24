@@ -10,7 +10,6 @@ and memory tradeoffs separately. Pure statistics cannot repair unequal work.
 | CPU Graph | Four complete Graph default/Native pairs; both own the same Graph lifecycle |
 | CUDA Direct / Graph | Independent precise SGLang reference through the same HYLE lifecycle; Graph captures both arms |
 | Apple Direct / Graph | Independent pinned MLX expression through the same Context owner, result lease and checked completion |
-| Vulkan Direct / Graph | Independently compiled ggml shaders through the same admission, completion and output ownership adapter |
 | Sched request / wake | Complete request collection and persistent external completion episodes |
 
 The following active pairs were removed, not renamed into eligible benchmarks:
@@ -19,12 +18,12 @@ The following active pairs were removed, not renamed into eligible benchmarks:
   cells versus caller-owned Marl result slots behind one batch WaitGroup.
 - CPU Graph: four fused and four natural-sequence bare Direct pairs. The bare
   calls omit Graph admission, reusable-slot exclusion and Completion services.
-- The six CUDA/Apple/Vulkan `native_cost_bench` targets and their bare branches.
+- The CUDA and Apple `native_cost_bench` targets and their bare branches.
   A raw native wait does not supply each route's managed ownership and failure duties.
 
 Current fixtures retain complete-service peers and numeric checks.
 `HYLE_BENCH_VERIFY_ONLY=1` performs
-fixture correctness without sampling for the four-route fixtures. Independent
+fixture correctness without sampling. Independent
 GPU numeric oracles and CPU Native correctness tests remain in place.
 
 The old certification runner and its central contracts have been removed.

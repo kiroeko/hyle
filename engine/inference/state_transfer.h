@@ -72,16 +72,9 @@ class StateTransfer final {
   using AppleControl = NativeControl<compute::apple::CopyBatchProgram,
       compute::apple::CopyBatchInvocation, compute::apple::CopyBatchUpdate>;
 #endif
-#if defined(HYLE_COMPUTE_VULKAN)
-  using VulkanControl = NativeControl<compute::vulkan::CopyBatchProgram,
-      compute::vulkan::CopyBatchInvocation, compute::vulkan::CopyBatchUpdate>;
-#endif
   using Control = std::variant<CommonControl
 #if defined(HYLE_COMPUTE_APPLE)
       , AppleControl
-#endif
-#if defined(HYLE_COMPUTE_VULKAN)
-      , VulkanControl
 #endif
       >;
   struct Scope final {
@@ -117,7 +110,7 @@ public:
       HYLE_ASSIGN_OR_RETURN(auto *context, backend.common_context());
       allocator = context->metadata_allocator();
     }
-    // The original Apple/Vulkan copy APIs default to system metadata. A real
+    // The original Apple copy APIs default to system metadata. A real
     // budget replaces that allocator for every transfer-owned metadata object.
     if (budget) { HYLE_ASSIGN_OR_RETURN(allocator, budget.metadata_allocator()); }
     try {
@@ -273,13 +266,6 @@ private:
       owner.control.emplace<AppleControl>(); return {};
     }
 #endif
-#if defined(HYLE_COMPUTE_VULKAN)
-    case BackendKind::kVulkan: {
-      HYLE_ASSIGN_OR_RETURN(auto *context, backend.vulkan_context());
-      if (!context->valid()) return Status::FailedPrecondition("state transfer Vulkan Context is empty");
-      owner.control.emplace<VulkanControl>(); return {};
-    }
-#endif
     default: return Status::Unimplemented("state transfer endpoint is unavailable");
     }
   }
@@ -301,13 +287,6 @@ private:
         HYLE_ASSIGN_OR_RETURN(auto *context, backend.apple_context());
         HYLE_ASSIGN_OR_RETURN(control.program, compute::apple::CopyBatchProgram::prepare(*context, resources, options));
         HYLE_ASSIGN_OR_RETURN(control.invocation, compute::apple::CopyBatchInvocation::create(control.program));
-      }
-#endif
-#if defined(HYLE_COMPUTE_VULKAN)
-      else if constexpr (std::is_same_v<Selected, VulkanControl>) {
-        HYLE_ASSIGN_OR_RETURN(auto *context, backend.vulkan_context());
-        HYLE_ASSIGN_OR_RETURN(control.program, compute::vulkan::CopyBatchProgram::prepare(*context, resources, options));
-        HYLE_ASSIGN_OR_RETURN(control.invocation, compute::vulkan::CopyBatchInvocation::create(control.program));
       }
 #endif
       return {};

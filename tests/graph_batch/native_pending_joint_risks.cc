@@ -2,19 +2,10 @@
 #include <chrono>
 #include <thread>
 #if defined(HYLE_PENDING_MULTI_NATIVE_PRODUCERS)
-#if defined(HYLE_G01_PAGE_RISK_APPLE)
 #include <hyle/graph/apple.h>
-#else
-#include <hyle/graph/vulkan.h>
 #endif
-#endif
-#if defined(HYLE_G01_PAGE_RISK_APPLE)
 #include "../compute_batch/native_apple_failure_fixture.h"
 #include "hyle/compute/detail/apple_copy_stream_access.h"
-#else
-#include "../compute_batch/native_vulkan_failure_fixture.h"
-#include "hyle/compute/detail/vulkan_copy_stream_access.h"
-#endif
 
 namespace {
 namespace jr=hyle_joint_page_risk;namespace r=jr::r;namespace c=r::c;namespace n=r::n;namespace g=jr::g;namespace route=jr::route;
@@ -30,13 +21,8 @@ enum class Mode { success,hole,cancel_before,cancel_after,abandon,allocation,cap
 Status episode(Mode mode){
   hyle_f5_fault_fixture::ConcurrentAllocator allocator;
   HYLE_ASSIGN_OR_RETURN(auto context,n::Context::create());
-#if defined(HYLE_G01_PAGE_RISK_APPLE)
   HYLE_ASSIGN_OR_RETURN(auto device,n::MemoryResource::create(context));
   HYLE_ASSIGN_OR_RETURN(auto staging,n::MemoryResource::create(context));
-#else
-  HYLE_ASSIGN_OR_RETURN(auto device,n::MemoryResource::create(context,n::MemoryKind::kDevice));
-  HYLE_ASSIGN_OR_RETURN(auto staging,n::MemoryResource::create(context,n::MemoryKind::kStaging));
-#endif
   struct Close final {n::Context&context;~Close(){context.close().IgnoreError();}}close{context};
   HYLE_ASSIGN_OR_RETURN(auto data,r::inputs(context,device,staging));
   const std::array<std::int32_t,2> ptr{0,1};const std::array<std::int32_t,1> ids{1},tail{2};
@@ -116,7 +102,6 @@ Status episode(Mode mode){
   HYLE_ASSIGN_OR_RETURN(auto positive,producer_builder.add(c::Unary{c::UnaryKind::kAbs},producer_input));
   HYLE_RETURN_IF_ERROR(producer_builder.publish(positive));
   HYLE_ASSIGN_OR_RETURN(auto producer_graph,std::move(producer_builder).finish());
-#if defined(HYLE_G01_PAGE_RISK_APPLE)
   HYLE_ASSIGN_OR_RETURN(auto producer_program,g::apple::compile(context,producer_graph));
   HYLE_ASSIGN_OR_RETURN(auto key_input,device.allocate(source_desc));
   HYLE_ASSIGN_OR_RETURN(auto value_input,device.allocate(source_desc));
@@ -124,13 +109,6 @@ Status episode(Mode mode){
   HYLE_ASSIGN_OR_RETURN(auto value_tensor,value_ready.tensor(source_desc));
   HYLE_RETURN_IF_ERROR(device.copy_from_host(key_input,key_tensor));
   HYLE_RETURN_IF_ERROR(device.copy_from_host(value_input,value_tensor));
-#else
-  HYLE_ASSIGN_OR_RETURN(auto producer_program,g::vulkan::compile(context,producer_graph));
-  source_words.fill(0xa800);
-  HYLE_ASSIGN_OR_RETURN(auto key_input,context.upload(source_desc,std::as_bytes(std::span(source_words))));
-  source_words.fill(0xb400);
-  HYLE_ASSIGN_OR_RETURN(auto value_input,context.upload(source_desc,std::as_bytes(std::span(source_words))));
-#endif
   HYLE_ASSIGN_OR_RETURN(auto key_producer,producer_program.create_invocation());
   HYLE_ASSIGN_OR_RETURN(auto value_producer,producer_program.create_invocation());
   const std::array key_args{key_input},value_args{value_input};
@@ -151,7 +129,6 @@ Status episode(Mode mode){
       0
 #endif
       },{2},{1},0,0,512}}};
-#if defined(HYLE_G01_PAGE_RISK_APPLE)
   namespace mx=mlx::core;
   auto gate=std::make_shared<hyle_f5_apple_failure_fixture::Gate>();
   struct Release final {decltype(gate) gate;n::Context&context;~Release(){gate->release();context.close().IgnoreError();}}release{gate,context};
@@ -167,18 +144,6 @@ Status episode(Mode mode){
   HYLE_ASSIGN_OR_RETURN(auto prefix,blocking.submit());
   HYLE_RETURN_IF_ERROR(r::require(gate->await(),"joint pending risk has no actual native queued prefix"));
   const auto release_native=[&]{gate->release();};
-#else
-  hyle_f5_vk_failure_fixture::Boundary boundary(context);
-  static std::atomic<bool> masked{true};masked=true;
-  boundary.device.fn.GetFenceStatus=[](VkDevice device,VkFence fence)->VkResult{
-    auto&hook=*hyle_f5_vk_failure_fixture::Boundary::active;
-    if(hook.fail_poll.exchange(false))return VK_ERROR_OUT_OF_HOST_MEMORY;
-    const auto real=hook.original.GetFenceStatus(device,fence);
-    return masked.load()?VK_NOT_READY:real;
-  };
-  const auto release_native=[&]{masked=false;};
-  struct Release final {std::atomic<bool>& masked;~Release(){masked=false;}}release{masked};
-#endif
 #if defined(HYLE_PENDING_MULTI_NATIVE_PRODUCERS)
   HYLE_ASSIGN_OR_RETURN(auto key_result,key_producer.submit());
   HYLE_ASSIGN_OR_RETURN(auto value_result,value_producer.submit());
@@ -199,9 +164,6 @@ Status episode(Mode mode){
   HYLE_RETURN_IF_ERROR(r::require(count==original_sources.size(),"joint pending risk lost original accepted producer/phase controls"));
   if(mode==Mode::cancel_before)HYLE_RETURN_IF_ERROR(update.request_cancel());
 
-#if !defined(HYLE_G01_PAGE_RISK_APPLE)
-  if(mode==Mode::native_rejection)boundary.fail_at=boundary.submits+1;
-#endif
   if(mode==Mode::closed){release_native();HYLE_RETURN_IF_ERROR(update.wait());}
   if(mode==Mode::allocation){
     const auto before=allocator.live.load();allocator.fail=allocator.attempts.load();
@@ -245,23 +207,6 @@ Status episode(Mode mode){
       "accepted receiver never admitted its actual query use"));
   // With independent producers, cancel only the second source; the first stays OK.
   if(mode==Mode::cancel_after)HYLE_RETURN_IF_ERROR(original_sources[cancel_source]->request_cancel());
-#if !defined(HYLE_G01_PAGE_RISK_APPLE)
-  if(mode==Mode::unknown){
-    boundary.fail_poll=true;
-    auto source_diagnosis=original_sources.back()->poll();
-    HYLE_RETURN_IF_ERROR(r::require(source_diagnosis && *source_diagnosis==c::CompletionPoll::kPending,
-        "joint original source unknown did not retain actual copy prefix"));
-    auto diagnosis=result->poll();
-    std::fprintf(stderr,"joint unknown has_poll=%d poll=%d injected=%d query_uses=%llu source_uses=%llu\n",
-        diagnosis.has_value(),diagnosis?int(*diagnosis):-1,!boundary.fail_poll.load(),
-        static_cast<unsigned long long>(query.pool.stats().active_uses),static_cast<unsigned long long>(pool.stats().active_uses));
-    // The existing dependent observer records the original error, but remains
-    // pending until actual retirement. Its final wait must return that error.
-    HYLE_RETURN_IF_ERROR(r::require(diagnosis && *diagnosis==c::CompletionPoll::kPending &&
-        !boundary.fail_poll.load() && query.pool.stats().active_uses>0 && !route::take_update(receiver),
-        "unknown receiver observation fabricated retirement or released source"));
-  }
-#endif
   if(mode==Mode::abandon){
     *result={};receiver={};
 #if defined(HYLE_PENDING_MULTI_NATIVE_PRODUCERS)
@@ -335,9 +280,6 @@ int main(){
   for(auto mode:{Mode::success,Mode::cancel_after,Mode::abandon}){
 #else
   for(auto mode:{Mode::success,Mode::hole,Mode::cancel_before,Mode::cancel_after,Mode::abandon,Mode::allocation,Mode::capacity,Mode::closed,Mode::budget
-#if !defined(HYLE_G01_PAGE_RISK_APPLE)
-      ,Mode::unknown,Mode::native_rejection
-#endif
   }){
 #endif
     auto status=episode(mode);if(!status.ok()){

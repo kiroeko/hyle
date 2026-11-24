@@ -1,15 +1,7 @@
-#if defined(HYLE_PENDING_RECEIVER_APPLE)
 #include <hyle/compute/apple_batch.h>
 #include <hyle/compute/apple_memory.h>
 #if defined(HYLE_PENDING_NATIVE_RESULT_SOURCE)
 #include <hyle/graph/apple.h>
-#endif
-#else
-#include <hyle/compute/vulkan_batch.h>
-#include <hyle/compute/vulkan_memory.h>
-#if defined(HYLE_PENDING_NATIVE_RESULT_SOURCE)
-#include <hyle/graph/vulkan.h>
-#endif
 #endif
 #if defined(HYLE_PENDING_NATIVE_COPY_REDUCTION)
 #include <hyle/graph/cpu.h>
@@ -19,11 +11,7 @@
 #include <hyle/graph/batch.h>
 #include <hyle/graph/cpu.h>
 #include <hyle/sched/scheduler.h>
-#if defined(HYLE_PENDING_RECEIVER_APPLE)
 #include <hyle/graph/apple.h>
-#else
-#include <hyle/graph/vulkan.h>
-#endif
 #include <hyle/graph/progress.h>
 #include <hyle/graph/result.h>
 #include <hyle/sched/blocking.h>
@@ -37,20 +25,12 @@
 
 namespace {
 namespace c=hyle::compute;
-#if defined(HYLE_PENDING_RECEIVER_APPLE)
 namespace n=c::apple;
-#else
-namespace n=c::vulkan;
-#endif
 using hyle::Status;
 using hyle::Result;
 #if defined(HYLE_PENDING_NATIVE_JOINT_GRAPH)
 namespace g=hyle::graph;
-#if defined(HYLE_PENDING_RECEIVER_APPLE)
 namespace ng=g::apple;
-#else
-namespace ng=g::vulkan;
-#endif
 constexpr g::ExecutionTargetId kNativeTarget{0},kCpuTarget{1};
 constexpr g::StorageDomainId kHostStorage{0},kDeviceStorage{1};
 Result<std::vector<g::QueueBinding>> cpu_queues(const g::CompileReport&report,c::Queue&queue){
@@ -139,12 +119,8 @@ double decode(std::uint16_t x,bool bf=false){
     HYLE_ASSIGN_OR_RETURN(auto output,builder.add(slice,positive));HYLE_RETURN_IF_ERROR(builder.publish(output));
   }
   HYLE_ASSIGN_OR_RETURN(auto producer_graph,std::move(builder).finish());
-#if defined(HYLE_PENDING_RECEIVER_APPLE)
   HYLE_ASSIGN_OR_RETURN(auto producer_program,hyle::graph::apple::compile(context,producer_graph));
   HYLE_ASSIGN_OR_RETURN(auto native_input,device.allocate(source_desc));
-#else
-  HYLE_ASSIGN_OR_RETURN(auto producer_program,hyle::graph::vulkan::compile(context,producer_graph));
-#endif
   std::array<n::Invocation,2> producers;
   for(auto&producer:producers){HYLE_ASSIGN_OR_RETURN(producer,producer_program.create_invocation());}
   const std::array update_specs{c::CopyResourceSpec{device.ref(),row_bytes},c::CopyResourceSpec{device.ref(),row_bytes},
@@ -213,9 +189,6 @@ double decode(std::uint16_t x,bool bf=false){
   HYLE_ASSIGN_OR_RETURN(auto native_source,ng::execution_source(context));
   HYLE_ASSIGN_OR_RETURN(auto cpu_source,g::ExecutionSource::acquire(cpu));
   const std::vector<g::StorageDomain> domains{{hyle::mem::system_resource()},{device.ref()}
-#if !defined(HYLE_PENDING_RECEIVER_APPLE)
-      ,{staging.ref()}
-#endif
   };
   const std::array targets{g::ExecutionTarget{native_source,kDeviceStorage},
       g::ExecutionTarget{cpu_source,kHostStorage}};
@@ -370,12 +343,8 @@ double decode(std::uint16_t x,bool bf=false){
 #if defined(HYLE_PENDING_NATIVE_RESULT_SOURCE)
     // Input preparation is explicit. From accepted native producer through
     // F2 and attention, only the final original aggregate is host-observed.
-#if defined(HYLE_PENDING_RECEIVER_APPLE)
     HYLE_ASSIGN_OR_RETURN(auto source_tensor,host.tensor(source_desc));
     HYLE_RETURN_IF_ERROR(device.copy_from_host(native_input,source_tensor));
-#else
-    HYLE_ASSIGN_OR_RETURN(auto native_input,context.upload(source_desc,std::as_bytes(std::span(incoming))));
-#endif
     const std::array producer_inputs{native_input};auto&producer=producers[step%2];
     HYLE_RETURN_IF_ERROR(producer.bind(producer_inputs));HYLE_ASSIGN_OR_RETURN(auto produced,producer.submit());
     const std::array<n::ResultCopyBinding,4> source_bindings{{{{0},0,row_desc},{{1},1,row_desc},{{2},2,row_desc},{{3},3,row_desc}}};
@@ -472,13 +441,9 @@ double decode(std::uint16_t x,bool bf=false){
       }
 #else
       std::vector<std::uint16_t> actual(active*heads*depth);
-#if defined(HYLE_PENDING_RECEIVER_APPLE)
       HYLE_ASSIGN_OR_RETURN(auto output_desc,c::TensorDesc::dense(cap.query_type,std::array<std::int64_t,3>{active,heads,depth}));
       HYLE_ASSIGN_OR_RETURN(auto output,device.import_readonly(result->arrays()[0],output_desc));
       HYLE_RETURN_IF_ERROR(output.view()->read(std::as_writable_bytes(std::span(actual))));
-#else
-      HYLE_RETURN_IF_ERROR(context.download(result->tensors()[0],std::as_writable_bytes(std::span(actual))));
-#endif
 #endif
       const auto ptr=layout.host().query_indptr;
       for(unsigned request=0;request<2;++request){
@@ -587,12 +552,8 @@ Status reduction(n::Context&context,n::MemoryResource&device,n::MemoryResource&s
     HYLE_ASSIGN_OR_RETURN(auto output,builder.add(slice,positive));HYLE_RETURN_IF_ERROR(builder.publish(output));
   }
   HYLE_ASSIGN_OR_RETURN(auto graph,std::move(builder).finish());
-#if defined(HYLE_PENDING_RECEIVER_APPLE)
   HYLE_ASSIGN_OR_RETURN(auto program,g::apple::compile(context,graph));
   HYLE_ASSIGN_OR_RETURN(auto native_input,device.allocate(desc));
-#else
-  HYLE_ASSIGN_OR_RETURN(auto program,g::vulkan::compile(context,graph));
-#endif
   std::array<n::Invocation,2> producers;
   for(auto&producer:producers){HYLE_ASSIGN_OR_RETURN(producer,program.create_invocation());}
   const std::array specs{c::CopyResourceSpec{device.ref(),64},c::CopyResourceSpec{device.ref(),64},
@@ -618,13 +579,9 @@ Status reduction(n::Context&context,n::MemoryResource&device,n::MemoryResource&s
     auto&copy=slots[step%2];auto&producer=producers[step%2];auto&consumer=consumers[step%2];
     HYLE_RETURN_IF_ERROR(copy.reset());HYLE_RETURN_IF_ERROR(consumer.reset());
     std::array<float,64> words;for(unsigned i=0;i<64;++i)words[i]=-float(i+step+1);
-#if defined(HYLE_PENDING_RECEIVER_APPLE)
     HYLE_ASSIGN_OR_RETURN(auto w,host.allocate(256,64));HYLE_RETURN_IF_ERROR(w.view()->write(std::as_bytes(std::span(words))));
     HYLE_ASSIGN_OR_RETURN(auto ready,w.publish());HYLE_ASSIGN_OR_RETURN(auto tensor,ready.tensor(desc));
     HYLE_RETURN_IF_ERROR(device.copy_from_host(native_input,tensor));
-#else
-    HYLE_ASSIGN_OR_RETURN(auto native_input,context.upload(desc,std::as_bytes(std::span(words))));
-#endif
     const std::array args{native_input};HYLE_RETURN_IF_ERROR(producer.bind(args));
     HYLE_ASSIGN_OR_RETURN(auto produced,producer.submit());
     HYLE_RETURN_IF_ERROR(copy.bind_source(bindings,std::move(produced)));
@@ -652,22 +609,14 @@ Status reduction(n::Context&context,n::MemoryResource&device,n::MemoryResource&s
 }
 #endif
 Status run(){HYLE_ASSIGN_OR_RETURN(auto context,n::Context::create());
-#if defined(HYLE_PENDING_RECEIVER_APPLE)
   HYLE_ASSIGN_OR_RETURN(auto device,n::MemoryResource::create(context));
   HYLE_ASSIGN_OR_RETURN(auto staging,n::MemoryResource::create(context));
-#else
-  HYLE_RETURN_IF_ERROR(require(!context.environment().software_device,"dirty page requires actual Vulkan GPU"));
-  HYLE_ASSIGN_OR_RETURN(auto device,n::MemoryResource::create(context,n::MemoryKind::kDevice));
-  HYLE_ASSIGN_OR_RETURN(auto staging,n::MemoryResource::create(context,n::MemoryKind::kStaging));
-#endif
   struct Close{n::Context& context;~Close(){context.close().IgnoreError();}}close{context};
 #if defined(HYLE_PENDING_NATIVE_COPY_REDUCTION)
   return reduction(context,device,staging);
 #else
   HYLE_RETURN_IF_ERROR(exercise(context,device,staging));
-#if defined(HYLE_PENDING_RECEIVER_APPLE)
   HYLE_RETURN_IF_ERROR(exercise(context,device,staging,true));
-#endif
   return Status::Ok();
 #endif
 }

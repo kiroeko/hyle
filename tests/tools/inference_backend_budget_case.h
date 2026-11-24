@@ -112,7 +112,7 @@ inline Result<BackendBudgetFacts> backend_budget_case() {
       }
       HYLE_RETURN_IF_ERROR(run.drain());
     }
-    HYLE_RETURN_IF_ERROR(backend.collect_retired());
+
     HYLE_RETURN_IF_ERROR(check_idle(budget, active_limits,
         std::span(before).first(active_limits.size()), opaque_before));
     ++facts.retired_scopes;
@@ -152,7 +152,7 @@ inline Result<BackendBudgetFacts> backend_budget_case() {
       return std::unexpected(Status::Internal("missing GPU resource did not preserve its typed budget rejection"));
     ++facts.missing_resource_rejections;
   }
-  HYLE_RETURN_IF_ERROR(backend.collect_retired());
+
   HYLE_RETURN_IF_ERROR(check_idle(missing_device, limits, std::span(&before, 1), opaque_before));
   ++facts.retired_scopes;
   return facts;

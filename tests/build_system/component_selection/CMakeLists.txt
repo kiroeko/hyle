@@ -4,9 +4,10 @@ project(hyle_component_selection_test LANGUAGES NONE)
 # Configure-only regression: exercise the real resolver without configuring
 # dependency SDKs or building product/test binaries.
 get_filename_component(HYLE_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../../.." ABSOLUTE)
+set(CMAKE_SYSTEM_NAME Linux)
 set(HYLE_TARGET_PROCESSOR x86_64)
 set(HYLE_COMPONENTS graph)
-set(HYLE_COMPUTE_ROUTES vulkan)
+set(HYLE_COMPUTE_ROUTES cuda)
 set(HYLE_BUILD_TESTS OFF)
 include("${HYLE_SOURCE_DIR}/cmake/HyleComponents.cmake")
 set(production_without_tests "${HYLE_PRODUCTION_COMPONENT_LIST}")
@@ -17,7 +18,7 @@ if(NOT HYLE_PRODUCTION_COMPONENT_LIST STREQUAL HYLE_RESOLVED_COMPONENT_LIST OR
 endif()
 if("compute" IN_LIST HYLE_PRODUCTION_PRODUCT_LIST OR
    "compute_backend_cpu" IN_LIST HYLE_PRODUCTION_COMPONENT_LIST)
-  message(FATAL_ERROR "A Vulkan Graph must not acquire CPU fixtures as production")
+  message(FATAL_ERROR "A CUDA Graph must not acquire CPU fixtures as production")
 endif()
 if(HYLE_BUILD_COMPUTE_STREAM OR HYLE_BUILD_IO_CORE)
   message(FATAL_ERROR "Resident Graph must not acquire file streaming or IO")
@@ -66,7 +67,7 @@ set(HYLE_COMPONENTS graph_progress)
 include("${HYLE_SOURCE_DIR}/cmake/HyleComponents.cmake")
 if(NOT HYLE_BUILD_GRAPH OR NOT HYLE_BUILD_SCHED OR
    NOT HYLE_BUILD_GRAPH_PROGRESS OR HYLE_BUILD_GRAPH_BATCH OR
-   HYLE_BUILD_COMPUTE_ROUTE_CPU OR HYLE_BUILD_COMPUTE_ROUTE_VULKAN OR
+   HYLE_BUILD_COMPUTE_ROUTE_CPU OR HYLE_BUILD_COMPUTE_ROUTE_CUDA OR
    HYLE_BUILD_COMPUTE_PROVIDER_NATIVE OR HYLE_BUILD_COMPUTE_STREAM OR
    HYLE_BUILD_IO_CORE OR HYLE_COMPUTE_ROUTE_LIST)
   message(FATAL_ERROR "Standalone host progress acquired a route or unrelated service")
@@ -75,9 +76,9 @@ endif()
 # The explicit streaming service selects only the requested route's adapter.
 set(HYLE_COMPONENTS graph compute_stream)
 include("${HYLE_SOURCE_DIR}/cmake/HyleComponents.cmake")
-if(NOT HYLE_BUILD_COMPUTE_STREAM OR NOT HYLE_BUILD_COMPUTE_STREAM_VULKAN OR
+if(NOT HYLE_BUILD_COMPUTE_STREAM OR NOT HYLE_BUILD_COMPUTE_STREAM_CUDA OR
    NOT HYLE_BUILD_IO_CORE OR HYLE_BUILD_COMPUTE_STREAM_CPU OR
-   HYLE_BUILD_COMPUTE_STREAM_CUDA OR HYLE_BUILD_COMPUTE_STREAM_APPLE OR
+   HYLE_BUILD_COMPUTE_STREAM_APPLE OR
    HYLE_BUILD_COMPUTE_BACKEND_CPU OR HYLE_BUILD_IO_TLS OR HYLE_BUILD_IO_HTTP OR
    HYLE_BUILD_GRAPH_PROGRESS)
   message(FATAL_ERROR "Graph + file streaming acquired an unselected route or service")
@@ -90,7 +91,7 @@ include("${HYLE_SOURCE_DIR}/cmake/HyleComponents.cmake")
 if(NOT HYLE_BUILD_COMPUTE_STREAM_CPU OR NOT HYLE_BUILD_COMPUTE_BACKEND_CPU OR
    HYLE_BUILD_COMPUTE_ROUTE_CPU OR HYLE_BUILD_COMPUTE_PROVIDER_NATIVE OR
    HYLE_BUILD_COMPUTE_PROVIDER_ONEDNN OR HYLE_BUILD_COMPUTE_PROVIDER_GGML OR
-   HYLE_BUILD_GRAPH OR HYLE_BUILD_COMPUTE_STREAM_VULKAN)
+   HYLE_BUILD_GRAPH OR HYLE_BUILD_COMPUTE_STREAM_CUDA OR HYLE_BUILD_COMPUTE_STREAM_APPLE)
   message(FATAL_ERROR "CPU file streaming acquired a math roster or stale route")
 endif()
 if("compute" IN_LIST HYLE_PRODUCTION_PRODUCT_LIST OR

@@ -9,7 +9,7 @@ int qwen35::run(int argc, char **argv) {
     std::cout << "Hyle Qwen diagnostic driver\n"
         "Usage: hyle_qwen35_diagnostic --inputs DIR [options]\n"
         "  --inputs DIR                Locally prepared checkpoint and token IDs\n"
-        "  --backend cpu|cuda|apple|vulkan  Primary backend; required when multiple GPU routes are compiled\n"
+        "  --backend cpu|cuda|apple  Primary backend; required when multiple GPU routes are compiled\n"
         "  --mtp auto|off|on           Auto: prepared/explicit assets or eligible CUDA GGUF full-head K1\n"
         "  --mtp-max-drafts N          Maximum proposals; 0 disables drafting (default: artifact recommendation or 1)\n"
         "  --mtp-draft-vocabulary auto|full|FILE  Prepared draft IDs (default: auto); greedy only\n"
@@ -96,8 +96,7 @@ int qwen35::run(int argc, char **argv) {
         if (value == "cpu") backend_selection.primary = qwen35::BackendKind::kCpu;
         else if (value == "cuda") backend_selection.primary = qwen35::BackendKind::kCuda;
         else if (value == "apple") backend_selection.primary = qwen35::BackendKind::kApple;
-        else if (value == "vulkan") backend_selection.primary = qwen35::BackendKind::kVulkan;
-        else throw std::runtime_error("--backend requires cpu, cuda, apple or vulkan");
+        else throw std::runtime_error("--backend requires cpu, cuda or apple");
       }
       else if (option == "--sampling") {
         if (value != "greedy" && value != "random") throw std::runtime_error("--sampling requires greedy or random");
@@ -434,8 +433,7 @@ int qwen35::run(int argc, char **argv) {
     // payload formula is not an upper bound for that combined byte scope.
     // Auto keeps the configured version/batch bounds; an explicit byte cap
     // still accounts for and limits every cache allocation, including metadata.
-    const bool native_generated_storage = backend_selection.primary == qwen35::BackendKind::kApple ||
-        backend_selection.primary == qwen35::BackendKind::kVulkan;
+    const bool native_generated_storage = backend_selection.primary == qwen35::BackendKind::kApple;
     if (cache_bytes == 0) cache_bytes = (native_generated_storage || backend_selection.primary == qwen35::BackendKind::kCpu)
         ? SIZE_MAX : selected_cache.backing_bytes;
     else if (!native_generated_storage && selected_cache.backing_bytes > cache_bytes) {

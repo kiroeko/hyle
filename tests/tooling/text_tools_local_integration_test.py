@@ -182,7 +182,7 @@ def main():
     parser.add_argument('--inputs', type=Path, required=True)
     parser.add_argument('--tokenizer', type=Path, required=True)
     parser.add_argument('--fixture', type=Path, required=True)
-    parser.add_argument('--backend', choices=('cpu', 'cuda', 'apple', 'vulkan'), default='cuda')
+    parser.add_argument('--backend', choices=('cpu', 'cuda', 'apple'), default='cuda')
     parser.add_argument('--cpu-ffn-layers', type=int, default=0)
     parser.add_argument('--prefill-chunk-tokens', type=int)
     parser.add_argument('--port', type=int, default=2048)

@@ -157,7 +157,7 @@ TEST(QwenBackendCpuCuda, ExplicitCpuExecutesOriginalQueueAfterMove) {
   ASSERT_TRUE(done->wait().ok());
   ASSERT_TRUE(readback->read(*run,std::as_writable_bytes(std::span(actual))).ok());
   for(std::size_t i=0;i<input.size();++i)EXPECT_EQ(actual[i],-input[i]);
-  ASSERT_TRUE(run->drain().ok());ASSERT_TRUE(backend.collect_retired().ok());
+  ASSERT_TRUE(run->drain().ok());
 }
 
 TEST(QwenBackendCpuCuda, NoncallerReadbackNeedsNoCallerDomainTable) {
@@ -241,7 +241,7 @@ TEST(QwenBackendCpuCuda, NoncallerReadbackNeedsNoCallerDomainTable) {
         check_edges();
       }
       ASSERT_TRUE(run.drain().ok());
-      ASSERT_TRUE(backend.collect_retired().ok());
+
     }
   }
 }
@@ -384,7 +384,7 @@ TEST(QwenBackendCpuCuda, InvalidOrUncompiledSelectionNeverFallsBack) {
   ASSERT_FALSE(unknown);EXPECT_TRUE(unknown.error().IsInvalidArgument());
   auto cpu_assist=Backend::create({.primary=BackendKind::kCpu,.cpu_assist=true});
   ASSERT_FALSE(cpu_assist);EXPECT_TRUE(cpu_assist.error().IsInvalidArgument());
-  for(const auto kind:{BackendKind::kCpu,BackendKind::kCuda,BackendKind::kApple,BackendKind::kVulkan}) {
+  for(const auto kind:{BackendKind::kCpu,BackendKind::kCuda,BackendKind::kApple}) {
     const auto compiled=Backend::compiled_backends();
     if(std::find(compiled.begin(),compiled.end(),kind)!=compiled.end())continue;
     auto unavailable=Backend::create({.primary=kind});
@@ -459,7 +459,7 @@ TEST(QwenBackendCpuCuda, OriginalOwnersQueuesBorrowedReplicaAndRetirement) {
       for(std::size_t i=0;i<count;++i)EXPECT_EQ(actual[i],std::abs(std::abs(x[i])+w[i]));
     }
     ASSERT_TRUE(invocation->drain().ok());EXPECT_FALSE(invocation->submit(backend.queue_bindings()));
-    ASSERT_TRUE(backend.collect_retired().ok());
+
   }
   // The live budget owns its own control metadata. All graph/constant/episode
   // charges must retire back to that actual pre-compile baseline.

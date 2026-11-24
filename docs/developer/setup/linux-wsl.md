@@ -15,7 +15,6 @@ Linux AArch64 可构建受支持的基础组件，完整 CPU/CUDA 产品未提�
 CUDA 需要 Linux CUDA Toolkit 13.3+ 和驱动。WSL 中应发现 Linux `nvcc` 与 Linux runtime，
 不能把 Windows PATH 中的 `nvcc.exe` 当成 Linux 编译器。已有 cache 选错工具链时应重新初始化，
 不把 Windows 的对象文件、SDK 或 CMake cache 搬进 Linux 构建目录。
-Vulkan 缺少宿主 glslang 时，在线初始化可按中央 lock 准备它；离线时须提前准备相应工具。
 
 ## WSL 目录与缓存
 

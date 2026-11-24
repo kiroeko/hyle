@@ -18,10 +18,8 @@ namespace q = qwen35;
 constexpr auto native_backend = hyle::inference::BackendKind::kApple;
 #elif defined(HYLE_COMPUTE_CUDA)
 constexpr auto native_backend = hyle::inference::BackendKind::kCuda;
-#elif defined(HYLE_COMPUTE_VULKAN)
-constexpr auto native_backend = hyle::inference::BackendKind::kVulkan;
 #else
-#error "This native gate probe requires an Apple, CUDA or Vulkan endpoint"
+#error "This native gate probe requires an Apple or CUDA endpoint"
 #endif
 void require(bool value, const char *message) {
   if (!value) throw std::runtime_error(message);

@@ -20,16 +20,13 @@ endif()
 set(_qwen35_probes mtp_session)
 if(APPLE AND "apple" IN_LIST _hyle_engine_routes)
   set(_qwen35_apple TRUE)
-  set(_qwen35_native TRUE)
 elseif("cuda" IN_LIST _hyle_engine_routes)
   set(_qwen35_cuda TRUE)
-elseif("vulkan" IN_LIST _hyle_engine_routes)
-  set(_qwen35_native TRUE)
 endif()
-if(_qwen35_native OR _qwen35_cuda)
+if(_qwen35_apple OR _qwen35_cuda)
   list(APPEND _qwen35_probes retirement)
 endif()
-if(_qwen35_native)
+if(_qwen35_apple)
   list(APPEND _qwen35_probes retained_budget)
 elseif(_qwen35_cuda)
   list(APPEND _qwen35_probes batch)
@@ -51,7 +48,7 @@ endforeach()
 
 # Real-weight sampling diagnostics are opt-in: ordinary engine builds must not
 # compile their large model consumer or require local model assets.
-if((_qwen35_native OR _qwen35_cuda) AND
+if((_qwen35_apple OR _qwen35_cuda) AND
    EXISTS "${CMAKE_CURRENT_LIST_DIR}/../../../tests/tools/qwen_random_mtp_probe.cc")
   add_executable(hyle_qwen35_random_mtp_probe EXCLUDE_FROM_ALL
     "${CMAKE_CURRENT_LIST_DIR}/../../../tests/tools/qwen_random_mtp_probe.cc"

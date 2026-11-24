@@ -39,14 +39,8 @@
 #include "hyle/compute/apple_memory.h"
 #include "hyle/graph/apple.h"
 #endif
-#if defined(HYLE_COMPUTE_VULKAN)
-#include "hyle/compute/vulkan_batch.h"
-#include "hyle/compute/vulkan_file_stream.h"
-#include "hyle/compute/vulkan_memory.h"
-#include "hyle/graph/vulkan.h"
-#endif
-#if !defined(HYLE_COMPUTE_CPU) && !defined(HYLE_COMPUTE_CUDA) && !defined(HYLE_COMPUTE_VULKAN) && !(defined(HYLE_COMPUTE_APPLE) && defined(__APPLE__))
-#error "Hyle inference requires a CPU, Apple, CUDA or Vulkan backend"
+#if !defined(HYLE_COMPUTE_CPU) && !defined(HYLE_COMPUTE_CUDA) && !(defined(HYLE_COMPUTE_APPLE) && defined(__APPLE__))
+#error "Hyle inference requires a CPU, CUDA or Apple backend"
 #endif
 
 namespace hyle::compute::cpu { struct DefaultContextOptions; }
@@ -85,13 +79,6 @@ private:
     graph::ExecutionSource source;
   };
 #endif
-#if defined(HYLE_COMPUTE_VULKAN)
-  struct VulkanEndpoint final {
-    compute::vulkan::Context context;
-    compute::vulkan::MemoryResource memory, staging;
-    graph::ExecutionSource source;
-  };
-#endif
   struct State final {
     // Independent identity only. Escaped typed host storage may retain this
     // empty token without keeping endpoints, model state or weights alive.
@@ -108,9 +95,6 @@ private:
 #if defined(HYLE_COMPUTE_APPLE) && defined(__APPLE__)
         , AppleEndpoint
 #endif
-#if defined(HYLE_COMPUTE_VULKAN)
-        , VulkanEndpoint
-#endif
         > primary;
 #if defined(HYLE_COMPUTE_CPU)
     std::optional<CpuEndpoint> cpu;
@@ -125,12 +109,6 @@ private:
     std::size_t lane_count = 0;
     std::array<graph::QueueBinding, 2> queues{};
     std::size_t queue_count = 0;
-    // Only Vulkan requires explicit native collection/drain. These point to
-    // its original stable Context, never a temporary visitor or Backend.
-    void *retirement_context = nullptr;
-    Status (*collect)(void *) noexcept = [](void *) noexcept { return Status::Ok(); };
-    Status (*drain)(void *, graph::Invocation &) noexcept =
-        [](void *, graph::Invocation &run) noexcept { return run.drain(); };
   };
 
 public:
@@ -164,9 +142,6 @@ public:
 #endif
 #if defined(HYLE_COMPUTE_APPLE) && defined(__APPLE__)
         BackendKind::kApple,
-#endif
-#if defined(HYLE_COMPUTE_VULKAN)
-        BackendKind::kVulkan,
 #endif
     };
     return kinds;
@@ -225,7 +200,7 @@ private:
     }
     switch (selection.primary) {
     case BackendKind::kCpu: case BackendKind::kCuda:
-    case BackendKind::kApple: case BackendKind::kVulkan: break;
+    case BackendKind::kApple: break;
     default: return std::unexpected(Status::InvalidArgument("backend selection kind is invalid"));
     }
     if (cpu_options != nullptr) {
@@ -250,7 +225,7 @@ private:
     }
     auto &state = *result.state_;
     state.selection = selection;
-    if (selection.primary == BackendKind::kApple || selection.primary == BackendKind::kVulkan) {
+    if (selection.primary == BackendKind::kApple) {
       try { state.host_storage_identity = std::make_shared<const unsigned char>(0); }
       catch (const std::bad_alloc &) {
         return std::unexpected(Status::ResourceExhausted("native Backend identity metadata"));
@@ -306,30 +281,6 @@ private:
       break;
     }
 #endif
-#if defined(HYLE_COMPUTE_VULKAN)
-    case BackendKind::kVulkan: {
-      auto &endpoint = state.primary.emplace<VulkanEndpoint>();
-      HYLE_ASSIGN_OR_RETURN(endpoint.context, compute::vulkan::Context::create());
-      HYLE_ASSIGN_OR_RETURN(endpoint.memory, compute::vulkan::MemoryResource::create(
-          endpoint.context, compute::vulkan::MemoryKind::kDevice));
-      HYLE_ASSIGN_OR_RETURN(auto owner, endpoint.memory.retain_storage_owner(endpoint.context));
-      HYLE_ASSIGN_OR_RETURN(endpoint.staging, compute::vulkan::MemoryResource::create(
-          endpoint.context, compute::vulkan::MemoryKind::kStaging));
-      HYLE_ASSIGN_OR_RETURN(staging_owner, endpoint.staging.retain_storage_owner(endpoint.context));
-      HYLE_ASSIGN_OR_RETURN(endpoint.source, graph::vulkan::execution_source(endpoint.context));
-      state.device = endpoint.memory.ref(); state.staging = endpoint.staging.ref();
-      state.domains[0] = {.resource = state.device, .workspace_budget_bytes = budgets.device, .owner = std::move(owner)};
-      state.targets[0] = {endpoint.source, graph::StorageDomainId{0}};
-      state.retirement_context = &endpoint.context;
-      state.collect = [](void *context) noexcept {
-        return static_cast<compute::vulkan::Context *>(context)->collect();
-      };
-      state.drain = [](void *context, graph::Invocation &) noexcept {
-        return static_cast<compute::vulkan::Context *>(context)->drain();
-      };
-      break;
-    }
-#endif
     default:
       return std::unexpected(Status::Unimplemented("selected backend has no compiled endpoint"));
     }
@@ -364,7 +315,7 @@ public:
   }
   bool host_only() const noexcept { return kind() == BackendKind::kCpu; }
   bool native_generated_storage() const noexcept {
-    return kind() == BackendKind::kApple || kind() == BackendKind::kVulkan;
+    return kind() == BackendKind::kApple;
   }
   // A secondary CPU endpoint on a GPU primary, distinct from a CPU primary.
   bool has_cpu_assist() const noexcept { return state_ && state_->selection.cpu_assist; }
@@ -373,7 +324,6 @@ public:
     case BackendKind::kCpu: return "cpu";
     case BackendKind::kCuda: return "cuda";
     case BackendKind::kApple: return "apple";
-    case BackendKind::kVulkan: return "vulkan";
     default: return "unselected";
     }
   }
@@ -426,15 +376,6 @@ public:
       // Shared Metal storage has its own allocation controller. Host reads do
       // not require retaining MLX jobs, the execution Context or any model bank.
       HYLE_ASSIGN_OR_RETURN(auto memory, compute::apple::MemoryResource::create(endpoint->context));
-      return HostStorage::adopt(std::move(memory), state_->host_storage_identity);
-    }
-#endif
-#if defined(HYLE_COMPUTE_VULKAN)
-    if (const auto *endpoint = std::get_if<VulkanEndpoint>(&state_->primary)) {
-      // This resource retains the original Runtime/device and uses its own
-      // process-lifetime system allocator. It owns no Backend execution state.
-      HYLE_ASSIGN_OR_RETURN(auto memory, compute::vulkan::MemoryResource::create(
-          endpoint->context, compute::vulkan::MemoryKind::kStaging));
       return HostStorage::adopt(std::move(memory), state_->host_storage_identity);
     }
 #endif
@@ -526,13 +467,9 @@ public:
   std::span<const graph::StorageDomain> storage_domains() const noexcept {
     return state_ ? domains() : std::span<const graph::StorageDomain>{};
   }
-  Status collect_retired() noexcept {
-    if (!state_) return Status::FailedPrecondition("Backend is not initialized");
-    return state_->collect(state_->retirement_context);
-  }
   Status drain_retired(graph::Invocation &run) noexcept {
     if (!state_) return Status::FailedPrecondition("Backend is not initialized");
-    return state_->drain(state_->retirement_context, run);
+    return run.drain();
   }
 
   Result<compute::FileResourcePipeline> create_file_pipeline(io::IoContext &io,
@@ -556,11 +493,6 @@ public:
     case BackendKind::kApple:
       return compute::apple::create_file_pipeline(io,
           std::get<AppleEndpoint>(state_->primary).context, staging(), targets, options);
-#endif
-#if defined(HYLE_COMPUTE_VULKAN)
-    case BackendKind::kVulkan:
-      return compute::vulkan::create_file_pipeline(io,
-          std::get<VulkanEndpoint>(state_->primary).context, staging(), targets, options);
 #endif
     default: return std::unexpected(Status::FailedPrecondition("Backend has no selected input endpoint"));
     }
@@ -610,10 +542,6 @@ public:
 #if defined(HYLE_COMPUTE_APPLE) && defined(__APPLE__)
     if (auto *endpoint = std::get_if<AppleEndpoint>(&state_->primary))
       return compute::apple::supports_device_lengths_paged(endpoint->context, capacity, budget);
-#endif
-#if defined(HYLE_COMPUTE_VULKAN)
-    if (auto *endpoint = std::get_if<VulkanEndpoint>(&state_->primary))
-      return compute::vulkan::supports_device_lengths_paged(endpoint->context, capacity, budget);
 #endif
     const auto context = common_context();
     if (!context) return false; // This initialized endpoint has no common batch provider.
@@ -672,12 +600,6 @@ public:
   Result<compute::apple::Context *> apple_context() noexcept {
     if (state_) if (auto *endpoint = std::get_if<AppleEndpoint>(&state_->primary)) return &endpoint->context;
     return std::unexpected(Status::FailedPrecondition("Apple primary is not selected"));
-  }
-#endif
-#if defined(HYLE_COMPUTE_VULKAN)
-  Result<compute::vulkan::Context *> vulkan_context() noexcept {
-    if (state_) if (auto *endpoint = std::get_if<VulkanEndpoint>(&state_->primary)) return &endpoint->context;
-    return std::unexpected(Status::FailedPrecondition("Vulkan primary is not selected"));
   }
 #endif
 

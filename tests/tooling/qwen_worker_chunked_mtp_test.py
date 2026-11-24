@@ -40,7 +40,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--engine', type=Path, required=True)
     parser.add_argument('--inputs', type=Path, required=True)
-    parser.add_argument('--backend', choices=('cpu', 'cuda', 'apple', 'vulkan'), default='cpu')
+    parser.add_argument('--backend', choices=('cpu', 'cuda', 'apple'), default='cpu')
     args = parser.parse_args()
     command = [args.engine, '--engine-worker', '--inputs', args.inputs, '--backend', args.backend,
                '--capacity', '512', '--max-sessions', '1', '--active-sequences', '1',

@@ -28,7 +28,6 @@ inline void qualification_matrix() {
       Case{{.backend = q::BackendKind::kCuda, .completion = q::TextCompletion::kStateOnly}, true, false, false},
       Case{{.backend = q::BackendKind::kCuda, .role = q::GraphRole::kMtpPrefill}, false, false, false},
       Case{{.backend = q::BackendKind::kApple}, false, false, false},
-      Case{{.backend = q::BackendKind::kVulkan}, false, false, false},
   };
   for (const auto &test : cases)
     require(test.facts.packet_inputs() == test.packet && test.facts.caller_small_results() == test.materialize &&

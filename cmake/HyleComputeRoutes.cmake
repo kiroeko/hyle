@@ -3,7 +3,7 @@ include_guard(GLOBAL)
 # Keep route identity, public expert roots and cold assembly helpers together. This is
 # private assembly metadata, not another user selector or a second factor DAG.
 function(_hyle_compute_route_names output)
-  set(${output} cpu cuda apple vulkan PARENT_SCOPE)
+  set(${output} cpu cuda apple PARENT_SCOPE)
 endfunction()
 
 function(_hyle_compute_route_metadata route prefix)
@@ -32,10 +32,6 @@ function(_hyle_compute_route_metadata route prefix)
     set(_anchors compute_route_apple compute_provider_ggml_metal)
     set(_systems Darwin)
     set(_processor aarch64)
-  elseif(route STREQUAL "vulkan")
-    set(_anchors compute_route_vulkan compute_provider_ggml_vulkan
-      compute_provider_iree_vulkan)
-    set(_systems "Windows|Linux|Darwin")
   else()
     message(FATAL_ERROR "Unknown internal Compute route '${route}'")
   endif()
@@ -108,7 +104,7 @@ function(_hyle_reject_legacy_compute_options)
     if(DEFINED ${_name})
       message(FATAL_ERROR
         "${_name} is no longer a public build option. Use "
-        "HYLE_COMPUTE_ROUTES=cpu, cuda, apple, vulkan, or a semicolon-separated "
+        "HYLE_COMPUTE_ROUTES=cpu, cuda, apple, or a semicolon-separated "
         "set such as 'cpu;cuda'. Remove the old option from the parent/preset "
         "or clear its cached value with cmake -U ${_name}; required Providers are automatic.")
     endif()
@@ -128,7 +124,7 @@ function(_hyle_parse_compute_routes value output)
     if(NOT _route IN_LIST _known)
       message(FATAL_ERROR
         "Unknown HYLE_COMPUTE_ROUTES item '${_route}'; use cpu, cuda, apple, "
-        "vulkan or a semicolon-separated set. AUTO and empty items are not routes.")
+        "or a semicolon-separated set. AUTO and empty items are not routes.")
     endif()
     list(APPEND _normalized "${_route}")
   endforeach()
@@ -171,8 +167,6 @@ function(_hyle_check_compute_route_platform routes complete_math)
         message(FATAL_ERROR "The Apple route requires macOS Apple Silicon")
       elseif(_route STREQUAL "cuda")
         message(FATAL_ERROR "The CUDA route requires Windows or Linux")
-      else()
-        message(FATAL_ERROR "The Vulkan route requires Windows, Linux, or macOS")
       endif()
     endif()
   endforeach()
@@ -212,7 +206,7 @@ function(hyle_resolve_compute_product_routes products)
   endif()
   _hyle_check_compute_route_platform("${_routes}" "${_complete_math}")
   set(HYLE_COMPUTE_ROUTES "${_routes}" CACHE STRING
-    "Complete Compute routes: cpu;cuda;apple;vulkan (a nonempty subset)" FORCE)
+    "Complete Compute routes: cpu;cuda;apple (a nonempty subset)" FORCE)
   set(HYLE_COMPUTE_ROUTES "${_routes}" PARENT_SCOPE)
   _hyle_publish_compute_routes("${_routes}")
 endfunction()

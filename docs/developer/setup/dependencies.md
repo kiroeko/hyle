@@ -16,7 +16,6 @@
 
 具体版本、来源、hash 和许可证以 [HyleDependencyLock.json](../../../cmake/HyleDependencyLock.json) 为准，
 文档不再维护第二份 pin 清单。CUDA Toolkit 和显卡驱动是系统 SDK，不能由一个源码 commit 代替。
-Vulkan 缺少宿主 glslang 时，初始化可用同一 lock 准备宿主工具；该工具与目标设备 runtime 分开。
 宿主工具的构建保存在共享源码 cache 同级的 `tools-v1/`，按依赖身份、系统、架构与编译器隔离并复用。
 
 tests/bench 和 trace 默认关闭；`init.py --tests` 才准备测试依赖，`--trace` 准备跟踪依赖。

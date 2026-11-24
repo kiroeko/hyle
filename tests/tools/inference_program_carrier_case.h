@@ -196,7 +196,7 @@ inline std::size_t finish_source_chain(i::Backend &backend, const g::CompiledGra
     require(retired.retired && q::take(episodes[index]->recover([]() noexcept {})),
         "Source chain did not recover its actual retired carrier");
   }
-  retained = {}; cleanup.active = false; q::check(backend.collect_retired());
+  retained = {}; cleanup.active = false;
   require(pool.stats().live_blocks == 0, "Source chain retained an original output block after cleanup");
   return 3;
 }
@@ -492,7 +492,7 @@ inline int run(q::BackendKind kind) {
       !completion_refused.has_native_error() && completion_callbacks == std::array<std::size_t, 2>{1, 1} &&
       observations == std::array<std::size_t, 2>{1, 1} && completions == std::array<std::size_t, 2>{0, 1},
       "stage completion replaced a callback Status, repeated a callback or continued after refusal");
-  q::check(backend.collect_retired());
+
   require(!a.pending() && !b.pending() && !programs.pending() && a_lifetime.expired() && b_lifetime.expired(),
       "successful real Completions did not release their own original retained scopes");
   std::array<float, 4> actual_a{}, actual_b{};

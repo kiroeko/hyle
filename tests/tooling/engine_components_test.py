@@ -93,7 +93,6 @@ endif()
             ("cpu", "Windows", "x86_64"),
             ("cuda", "Linux", "x86_64"),
             ("apple", "Darwin", "aarch64"),
-            ("vulkan", "Windows", "x86_64"),
             ("cpu;cuda", "Windows", "x86_64"),
         ):
             with self.subTest(route=route):
@@ -309,14 +308,14 @@ endforeach()
     def test_deepseek_private_component_and_sdk_dependencies(self):
         self.model_component("deepseek")
 
-    def test_retirement_gate_follows_the_selected_route_on_macos(self):
+    def test_retirement_gate_follows_the_selected_native_route(self):
         # This source-selection fixture deliberately keeps the host C++
         # compiler. Enabling Objective-C++ is recorded, not executed: no SDK
         # or Apple compiler is required just to check the cold route branch.
         for routes, expected, objective in (
-                ("vulkan", "native_gate.cc", "FALSE"),
-                ("cpu;vulkan", "native_gate.cc", "FALSE"),
-                ("apple;vulkan", "native_gate_apple.mm", "TRUE")):
+                ("cuda", "native_gate.cc", "FALSE"),
+                ("cpu;cuda", "native_gate.cc", "FALSE"),
+                ("cpu;apple", "native_gate_apple.mm", "TRUE")):
             with self.subTest(routes=routes):
                 source = self.directory / ("gate-" + routes.replace(";", "-"))
                 source.mkdir()
@@ -325,7 +324,7 @@ endforeach()
                     'project(GateSelection LANGUAGES CXX)\n'
                     f'set(HYLE_SOURCE_DIR "{ROOT.as_posix()}")\n'
                     f'set(HYLE_COMPUTE_ROUTE_LIST "{routes}")\n'
-                    'set(APPLE TRUE)\n'
+                    f'set(APPLE {objective})\n'
                     'function(enable_language language)\n'
                     '  if(NOT language STREQUAL "OBJCXX")\n'
                     '    message(FATAL_ERROR "unexpected language request")\n'

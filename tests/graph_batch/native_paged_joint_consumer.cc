@@ -1,11 +1,7 @@
 #include <hyle/graph/batch.h>
 #include <hyle/graph/cpu.h>
 #include <hyle/sched/scheduler.h>
-#if defined(HYLE_JOINT_PAGE_APPLE)
 #include <hyle/graph/apple.h>
-#else
-#include <hyle/graph/vulkan.h>
-#endif
 #include <hyle/graph/progress.h>
 #include <hyle/graph/result.h>
 #include <hyle/mem/buffer.h>
@@ -21,11 +17,7 @@
 
 namespace {
 namespace c=hyle::compute;namespace g=hyle::graph;
-#if defined(HYLE_JOINT_PAGE_APPLE)
 namespace n=c::apple;namespace ng=g::apple;
-#else
-namespace n=c::vulkan;namespace ng=g::vulkan;
-#endif
 using hyle::Status;using hyle::Result;
 constexpr g::ExecutionTargetId kNativeTarget{0},kCpuTarget{1};
 constexpr g::StorageDomainId kHostStorage{0},kDeviceStorage{1};
@@ -107,9 +99,6 @@ Status exercise(c::Context& cpu,n::Context& native,n::MemoryResource& device,
   HYLE_ASSIGN_OR_RETURN(auto native_source,ng::execution_source(native));
   HYLE_ASSIGN_OR_RETURN(auto cpu_source,g::ExecutionSource::acquire(cpu));
   const std::vector<g::StorageDomain> domains{{hyle::mem::system_resource()},{device.ref()}
-#if !defined(HYLE_JOINT_PAGE_APPLE)
-      ,{staging.ref()}
-#endif
   };
   const std::array targets{g::ExecutionTarget{native_source,kDeviceStorage},
       g::ExecutionTarget{cpu_source,kHostStorage}};
@@ -228,107 +217,9 @@ Status exercise(c::Context& cpu,n::Context& native,n::MemoryResource& device,
   for(auto& slot:slots)HYLE_RETURN_IF_ERROR(slot.close());
   std::fprintf(stderr,"joint page actual CPU/native/CPU PASS D=%u bf16=%d causal=%d episodes=64\n",depth,bf,causal);return Status::Ok();
 }
-#if !defined(HYLE_JOINT_PAGE_APPLE)
-Status empty_episode(c::Context&cpu,n::Context&native,n::MemoryResource&device,n::MemoryResource&staging){
-  const c::BatchCapacity cap{.query_type=c::DataType::kFloat16,.output_type=c::DataType::kFloat16,
-      .key_storage=c::CacheStorage::plain(c::DataType::kFloat16).value(),
-      .value_storage=c::CacheStorage::plain(c::DataType::kFloat16).value(),
-      .max_requests=1,.max_query_rows=1,.max_kv_rows=16,.max_pages=1,.max_page_refs=1,
-      .query_heads=8,.kv_heads=2,.qk_head_dim=64,.value_head_dim=64};
-  HYLE_ASSIGN_OR_RETURN(auto schema,c::BatchSchema::create(cap));
-  const std::array<std::int32_t,2> ptr{0,0};const std::array<std::int32_t,1> tails{0};
-  HYLE_ASSIGN_OR_RETURN(auto layout,schema.version({ptr,ptr,{},tails}));
-  HYLE_ASSIGN_OR_RETURN(auto recipe,c::NativePagedBatchProgram::prepare(schema,
-      {.max_host_metadata_bytes=32,.scale=.125F,.causal=true}));
-  HYLE_ASSIGN_OR_RETURN(auto keys,c::PagedArena::create(schema,c::BatchCacheRole::kKey,device.ref(),{.max_backing_bytes=8192}));
-  HYLE_ASSIGN_OR_RETURN(auto values,c::PagedArena::create(schema,c::BatchCacheRole::kValue,device.ref(),{.max_backing_bytes=8192}));
-  // No ready page exists: both actual arena pages remain exclusively writable.
-  HYLE_ASSIGN_OR_RETURN(auto key_writer,keys.acquire(0));HYLE_ASSIGN_OR_RETURN(auto value_writer,values.acquire(0));
-  HYLE_ASSIGN_OR_RETURN(auto key_frame,keys.read(layout,{}));HYLE_ASSIGN_OR_RETURN(auto value_frame,values.read(layout,{}));
-  HYLE_RETURN_IF_ERROR(check(key_frame.valid() && value_frame.valid() &&
-      key_frame.page_count()==0 && value_frame.page_count()==0,"empty frame acquired a physical page permission"));
-  HYLE_ASSIGN_OR_RETURN(auto native_query_description,recipe.input_description(layout,0));
-  HYLE_ASSIGN_OR_RETURN(auto key_description,recipe.input_description(layout,1));
-  HYLE_ASSIGN_OR_RETURN(auto value_description,recipe.input_description(layout,2));
-  HYLE_ASSIGN_OR_RETURN(auto qdesc,c::TensorDesc::dense(c::DataType::kFloat32,native_query_description.dimensions()));
-  HYLE_RETURN_IF_ERROR(check(qdesc.dimensions()[0]==0,"empty graph still exposes a capacity-sized Q producer"));
-  HYLE_ASSIGN_OR_RETURN(auto builder,g::GraphBuilder::create());HYLE_ASSIGN_OR_RETURN(auto q,builder.input(qdesc));
-  HYLE_ASSIGN_OR_RETURN(auto key,builder.input(key_description));HYLE_ASSIGN_OR_RETURN(auto value,builder.input(value_description));
-  HYLE_ASSIGN_OR_RETURN(auto positive,builder.add(c::Unary{c::UnaryKind::kAbs},q));
-  HYLE_ASSIGN_OR_RETURN(auto converted,builder.add(c::Cast{c::DataType::kFloat16},positive));
-  HYLE_ASSIGN_OR_RETURN(auto descriptor,g::batch::paged_attention(layout,
-      {.scale=recipe.scale(),.causal=recipe.causal(),.window_left=recipe.window_left()}));
-  const std::array ports{converted,key,value};HYLE_ASSIGN_OR_RETURN(auto page,builder.add_node(c::Operation::custom(descriptor),ports));
-  HYLE_ASSIGN_OR_RETURN(auto attended,builder.result(page));HYLE_ASSIGN_OR_RETURN(auto widened,builder.add(c::Cast{c::DataType::kFloat32},attended));
-  HYLE_ASSIGN_OR_RETURN(auto output,builder.add(c::Unary{c::UnaryKind::kNeg},widened));
-  HYLE_RETURN_IF_ERROR(builder.publish(output));HYLE_ASSIGN_OR_RETURN(auto graph,std::move(builder).finish());
-  std::vector<g::NodePlacement> placements;
-  for(std::size_t i=0;i<graph.node_count();++i){HYLE_ASSIGN_OR_RETURN(auto node,graph.node_id(i));
-    placements.push_back({node,node==page?kNativeTarget:kCpuTarget,g::PlacementStrength::kRequired});}
-  HYLE_ASSIGN_OR_RETURN(auto cpu_source,g::ExecutionSource::acquire(cpu));HYLE_ASSIGN_OR_RETURN(auto native_source,g::vulkan::execution_source(native));
-  const std::array domains{g::StorageDomain{hyle::mem::system_resource()},g::StorageDomain{device.ref()},g::StorageDomain{staging.ref()}};
-  const std::array targets{g::ExecutionTarget{native_source,kDeviceStorage},g::ExecutionTarget{cpu_source,kHostStorage}};
-  const std::array external{g::ExternalResourceContract{q,kHostStorage},g::ExternalResourceContract{key,kDeviceStorage},
-      g::ExternalResourceContract{value,kDeviceStorage},g::ExternalResourceContract{output,kHostStorage}};
-  HYLE_ASSIGN_OR_RETURN(auto compiled,g::compile(graph,{.storage_domains=domains,.targets=targets},
-      {.node_placements=placements,.external_resources=external}));
-  HYLE_ASSIGN_OR_RETURN(auto queue,cpu.create_queue());HYLE_ASSIGN_OR_RETURN(auto queues,shared_queues(compiled.report,queue));
-  hyle::sched::Scheduler scheduler(1,hyle::mem::system_allocator(),32);
-  hyle::sched::BlockingPool workers(hyle::mem::system_allocator(),2);Drain drain{scheduler};
-  HYLE_ASSIGN_OR_RETURN(auto slot,compiled.executable.create_invocation({.resources=g::ResourceOptions{}}));
-  HYLE_RETURN_IF_ERROR(g::prepare_progress(slot,scheduler,workers));
-  const std::array layouts{g::batch::NodeLayout{page,layout}};
-  HYLE_RETURN_IF_ERROR(g::batch::prepare(slot,queues,layouts));
-  HYLE_ASSIGN_OR_RETURN(auto bytes,qdesc.required_bytes());
-  HYLE_ASSIGN_OR_RETURN(auto input_pool,c::LeasePool::create(hyle::mem::system_resource(),bytes+64,{.max_blocks=1}));
-  HYLE_ASSIGN_OR_RETURN(auto query,input_pool.allocate(std::max<std::size_t>(bytes,1),64));HYLE_RETURN_IF_ERROR(query.view()->fill(std::byte{0}));
-  HYLE_ASSIGN_OR_RETURN(auto ready,query.publish());HYLE_RETURN_IF_ERROR(slot.bind(q,qdesc,ready));
-  HYLE_RETURN_IF_ERROR(g::batch::bind(slot,key,key_frame));HYLE_RETURN_IF_ERROR(g::batch::bind(slot,value,value_frame));
-  HYLE_ASSIGN_OR_RETURN(auto outdesc,graph.value_description(output));HYLE_ASSIGN_OR_RETURN(auto outbytes,outdesc.required_bytes());
-  HYLE_RETURN_IF_ERROR(check(outbytes==0,"empty native page produced a nonempty public description"));
-  // This real zero-byte caller buffer is borrowed until the original slot closes.
-  HYLE_ASSIGN_OR_RETURN(auto buffer,hyle::mem::Buffer::create(hyle::mem::system_resource(),0,64));
-  HYLE_ASSIGN_OR_RETURN(auto destination,c::TensorView::create(outdesc,buffer.view()));
-  HYLE_RETURN_IF_ERROR(slot.bind(output,destination));HYLE_RETURN_IF_ERROR(slot.prepare_replay(queues));
-  HYLE_ASSIGN_OR_RETURN(auto report,g::batch::native_report(slot,page));
-  HYLE_RETURN_IF_ERROR(check(report.layout_generation==layout.generation() && report.uploaded_bytes==0,
-      "empty native page uploaded a table or changed its layout"));
-  HYLE_ASSIGN_OR_RETURN(auto done,slot.submit(queues));HYLE_RETURN_IF_ERROR(done.wait());
-  HYLE_ASSIGN_OR_RETURN(auto result,slot.result(output));HYLE_ASSIGN_OR_RETURN(auto tensor,result.tensor());
-  HYLE_ASSIGN_OR_RETURN(auto result_bytes,tensor.description().required_bytes());
-  HYLE_RETURN_IF_ERROR(check(result_bytes==0 && input_pool.stats().active_uses==0 &&
-      key_writer.valid() && value_writer.valid(),"empty native chain read pages or lost real terminal lifetime"));
-  HYLE_RETURN_IF_ERROR(check(!g::batch::prepare(slot,queues,layouts).ok() && !slot.reset().ok(),
-      "empty GraphOutput did not guard original preparation/reset"));
-  tensor={};result={};done={};HYLE_RETURN_IF_ERROR(slot.reset());HYLE_RETURN_IF_ERROR(slot.close());
-  // Exercise the original Direct zero-lease importer too. Its real4-byte
-  // backing owns a zero-length subview; no query row is fabricated.
-  HYLE_ASSIGN_OR_RETURN(auto carrier_description,c::TensorDesc::dense(c::DataType::kFloat16,std::array<std::int64_t,1>{2}));
-  const std::array<std::uint16_t,2> zeros{};
-  HYLE_ASSIGN_OR_RETURN(auto carrier,native.upload(carrier_description,std::as_bytes(std::span(zeros))));
-  HYLE_ASSIGN_OR_RETURN(auto carrier_read,device.import_readonly(carrier));
-  HYLE_ASSIGN_OR_RETURN(auto zero_read,carrier_read.subview(0,0));
-  HYLE_ASSIGN_OR_RETURN(auto direct,n::PagedBatchInvocation::create(native,recipe,device,staging,{.max_metadata_backing_bytes=4096}));
-  HYLE_RETURN_IF_ERROR(direct.prepare_batch(layout));HYLE_RETURN_IF_ERROR(direct.bind(zero_read,{},{}));
-  {
-    HYLE_ASSIGN_OR_RETURN(auto direct_done,direct.submit());HYLE_ASSIGN_OR_RETURN(auto direct_result,direct_done.wait());
-    HYLE_ASSIGN_OR_RETURN(auto direct_description,c::batch_output_description(cap,0));
-    HYLE_RETURN_IF_ERROR(check(direct_result->tensors().size()==1 && direct_result->tensors()[0].description()==direct_description &&
-        key_writer.valid() && value_writer.valid(),"Direct zero lease changed the empty output or acquired page permission"));
-    HYLE_RETURN_IF_ERROR(check(!direct.prepare_batch(layout).ok(),"Direct empty output did not guard original reuse"));
-  }
-  HYLE_RETURN_IF_ERROR(direct.close());
-  std::fprintf(stderr,"joint page full Q0/refs0 actual CPU/native/CPU PASS: exact empty frames, both page writers held, output0, original result gate\n");
-  return Status::Ok();
-}
-#endif
 Status run(int argc,char**argv){
   unsigned selected_depth=0,selected_causal=0;
-#if defined(HYLE_JOINT_PAGE_APPLE)
   const bool only_empty=false;
-#else
-  const bool only_empty=argc==2 && std::string_view(argv[1])=="empty";
-#endif
   if(argc!=1 && !only_empty){
     if(argc!=3)return Status::InvalidArgument("expected optional depth causal (0 or 1)");
     const auto depth_text=std::string_view(argv[1]),causal_text=std::string_view(argv[2]);
@@ -340,20 +231,12 @@ Status run(int argc,char**argv){
       return Status::InvalidArgument("expected depth 64/128/256 and causal 0/1");
   }
   HYLE_ASSIGN_OR_RETURN(auto cpu,g::cpu::create_context());HYLE_ASSIGN_OR_RETURN(auto native,n::Context::create());
-#if defined(HYLE_JOINT_PAGE_APPLE)
   HYLE_ASSIGN_OR_RETURN(auto device,n::MemoryResource::create(native));HYLE_ASSIGN_OR_RETURN(auto staging,n::MemoryResource::create(native));
   if(selected_depth){
     for(bool bf:{false,true})HYLE_RETURN_IF_ERROR(exercise(cpu,native,device,staging,selected_depth,bf,selected_causal!=0));
     return Status::Ok();
   }
   for(bool bf:{false,true})for(unsigned d:{64U,128U,256U})for(bool causal:{false,true})HYLE_RETURN_IF_ERROR(exercise(cpu,native,device,staging,d,bf,causal));
-#else
-  HYLE_ASSIGN_OR_RETURN(auto device,n::MemoryResource::create(native,n::MemoryKind::kDevice));HYLE_ASSIGN_OR_RETURN(auto staging,n::MemoryResource::create(native,n::MemoryKind::kStaging));
-  if(only_empty)return empty_episode(cpu,native,device,staging);
-  if(selected_depth)return exercise(cpu,native,device,staging,selected_depth,false,selected_causal!=0);
-  for(unsigned d:{64U,128U,256U})for(bool causal:{false,true})HYLE_RETURN_IF_ERROR(exercise(cpu,native,device,staging,d,false,causal));
-  HYLE_RETURN_IF_ERROR(empty_episode(cpu,native,device,staging));
-#endif
   return Status::Ok();
 }
 } // namespace

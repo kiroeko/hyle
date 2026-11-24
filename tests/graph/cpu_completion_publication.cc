@@ -1,11 +1,7 @@
 // Private source test: observe the owner through CompletionDependency, never
 // concurrently settle the same move-only Completion wrapper.
 #define main hyle_publication_sample_main
-#if defined(HYLE_COMPLETION_PUBLICATION_APPLE)
 #include "../../samples/package/graph/cpu_apple/main.cc"
-#else
-#include "../../samples/package/graph/cpu_vulkan/main.cc"
-#endif
 #undef main
 
 #include <hyle/compute/detail/generated_result.h>
@@ -242,22 +238,12 @@ Status run(CompileGraph compile) {
 } // namespace publication_cases
 
 Status publication_contracts() {
-#if defined(HYLE_COMPLETION_PUBLICATION_APPLE)
   HYLE_ASSIGN_OR_RETURN(auto native, a::Context::create());
   HYLE_ASSIGN_OR_RETURN(auto memory, a::MemoryResource::create(native));
   return publication_cases::run(
       [&](const g::Graph &graph, const c::Context &cpu, g::CompileOptions options) {
         return compile_graph(graph, cpu, native, memory, options);
       });
-#else
-  HYLE_ASSIGN_OR_RETURN(auto native, v::Context::create());
-  HYLE_ASSIGN_OR_RETURN(auto device, v::MemoryResource::create(native, v::MemoryKind::kDevice));
-  HYLE_ASSIGN_OR_RETURN(auto staging, v::MemoryResource::create(native, v::MemoryKind::kStaging));
-  return publication_cases::run(
-      [&](const g::Graph &graph, const c::Context &cpu, g::CompileOptions options) {
-        return compile_graph(graph, Resources{cpu, native, device, staging}, options);
-      });
-#endif
 }
 } // namespace
 

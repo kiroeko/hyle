@@ -534,7 +534,7 @@ int main(int argc, char **argv) {
   try {
     const bool closed_recovery = argc == 3 && std::string_view(argv[2]) == "--closed-recovery";
     if (argc != 2 && !closed_recovery)
-      throw std::runtime_error("usage: inference_state_transfer_test --cpu|--cuda|--apple|--vulkan [--closed-recovery], or --faults");
+      throw std::runtime_error("usage: inference_state_transfer_test --cpu|--cuda|--apple [--closed-recovery], or --faults");
     const std::string_view selected(argv[1]);
     if (selected == "--faults") {
       if (closed_recovery) throw std::runtime_error("--faults does not take a backend or recovery option");
@@ -548,7 +548,6 @@ int main(int argc, char **argv) {
     if (selected == "--cpu") kind = i::BackendKind::kCpu;
     else if (selected == "--cuda") kind = i::BackendKind::kCuda;
     else if (selected == "--apple") kind = i::BackendKind::kApple;
-    else if (selected == "--vulkan") kind = i::BackendKind::kVulkan;
     else throw std::runtime_error("unknown transfer-test backend");
     const auto compiled = i::Backend::compiled_backends();
     if (std::find(compiled.begin(), compiled.end(), kind) == compiled.end()) {

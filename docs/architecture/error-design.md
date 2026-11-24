@@ -39,7 +39,7 @@ canonical code 使用 Abseil/gRPC 的稳定分类，供跨平台恢复。`Invali
 尚不支持；`Unavailable` 是外部能力暂不可用。Hyle 自身不变量损坏不能一律降成 `Internal` 后继续。
 
 少数恢复或诊断需要一个 `{NativeErrorDomain, int64 code}`。当前固定 domain 覆盖 errno、Win32、
-WinSock、HRESULT、Vulkan、CUDA runtime/driver 与 NVRTC。它不是任意 payload map 或运行时 category
+WinSock、HRESULT、CUDA runtime/driver 与 NVRTC。它不是任意 payload map 或运行时 category
 registry。普通恢复看 canonical code；需要原生动作时才看 native detail，不解析 message 获取机器值。
 
 固定 errno/Win32/WinSock/HRESULT classifier 不引入 OS 头到 public surface，按常量集合分类；
@@ -108,7 +108,7 @@ opt-in `error/format.h` 才引入 owning string 和有界 `format_status`。公�
 性能比较须对齐 code-only、携带诊断和原生 detail 的语义；不能用无诊断值击败保存任意 payload 的
 carrier 后宣称同等。改变共享/生命周期语义也不是正常的局部优化。
 
-CUDA/Vulkan 翻译归 Compute，syscall operation override 归 Platform/IO；Error 只拥有 taxonomy 与
+CUDA 翻译归 Compute，syscall operation override 归 Platform/IO；Error 只拥有 taxonomy 与
 carrier。异步错误不自动证明设备工作已经退休，取消也不等于资源可立即复用，这些属于执行 owner。
 当前交付 C++ source/static/shared，没有 C ABI。构建见[构建架构](build-system.md)，源合同见
 [Status](../../include/hyle/error/status.h) 与 [Result](../../include/hyle/error/result.h)。

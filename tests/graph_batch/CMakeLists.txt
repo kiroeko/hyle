@@ -33,62 +33,29 @@ if(_HYLE_COMPUTE_HAVE_CPU AND _HYLE_COMPUTE_HAVE_CUDA AND HYLE_GGML_CPU_ENABLED 
   target_compile_definitions(hyle_graph_batch_cuda_encoded_pages_test PRIVATE HYLE_ENCODED_CUDA=1)
   hyle_stage_runtime(hyle_graph_batch_cuda_encoded_pages_test)
 endif()
-if(_HYLE_COMPUTE_HAVE_CPU AND _HYLE_COMPUTE_HAVE_VULKAN AND
-   TARGET hyle_graph_route_cpu AND TARGET hyle_graph_route_vulkan AND
-   TARGET hyle_graph_progress)
-  hyle_add_test(graph_batch NAME vulkan_native_ready
-    SOURCES native_paged_joint_consumer.cc
-    DEPS hyle_graph_route_cpu hyle_graph_route_vulkan hyle_graph_progress)
-  hyle_stage_runtime(hyle_graph_batch_vulkan_native_ready_test)
-  hyle_add_test(graph_batch NAME vulkan_native_append
-    SOURCES native_paged_append_consumer.cc
-    DEPS hyle_graph_route_cpu hyle_graph_route_vulkan hyle_graph_progress)
-  hyle_stage_runtime(hyle_graph_batch_vulkan_native_append_test)
-  hyle_add_test(graph_batch NAME vulkan_native_capacity
-    SOURCES native_paged_capacity_consumer.cc
-    DEPS hyle_graph_route_cpu hyle_graph_route_vulkan hyle_graph_progress)
-  hyle_stage_runtime(hyle_graph_batch_vulkan_native_capacity_test)
-  hyle_add_test(graph_batch NAME vulkan_native_pending
-    SOURCES ../compute_batch/pending_paged_receiver_native_consumer.cc
-    DEPS hyle_graph_route_cpu hyle_graph_route_vulkan hyle_graph_progress)
-  target_compile_definitions(hyle_graph_batch_vulkan_native_pending_test PRIVATE HYLE_PENDING_NATIVE_JOINT_GRAPH=1)
-  hyle_stage_runtime(hyle_graph_batch_vulkan_native_pending_test)
-  hyle_add_test(graph_batch NAME paged_semantics
-    SOURCES paged_semantics_consumer.cc
-    DEPS hyle_graph_route_cpu hyle_graph_route_vulkan hyle_graph_progress)
-  hyle_stage_runtime(hyle_graph_batch_paged_semantics_test)
-  hyle_add_test(graph_batch NAME vulkan_encoded_pages
-    SOURCES ../compute_batch/encoded_page_native_consumer.cc
-    DEPS hyle_graph_route_cpu hyle_graph_route_vulkan hyle_graph_progress hyle_simd)
-  hyle_stage_runtime(hyle_graph_batch_vulkan_encoded_pages_test)
-endif()
 if(_HYLE_COMPUTE_HAVE_CPU AND _HYLE_COMPUTE_HAVE_APPLE AND
    TARGET hyle_graph_route_cpu AND TARGET hyle_graph_route_apple AND TARGET hyle_graph_progress)
   hyle_add_test(graph_batch NAME apple_native_ready
     SOURCES native_paged_joint_consumer.cc
     DEPS hyle_graph_route_cpu hyle_graph_route_apple hyle_graph_progress)
-  target_compile_definitions(hyle_graph_batch_apple_native_ready_test PRIVATE HYLE_JOINT_PAGE_APPLE=1)
   hyle_stage_runtime(hyle_graph_batch_apple_native_ready_test)
   hyle_add_test(graph_batch NAME apple_native_append
     SOURCES native_paged_append_consumer.cc
     DEPS hyle_graph_route_cpu hyle_graph_route_apple hyle_graph_progress)
-  target_compile_definitions(hyle_graph_batch_apple_native_append_test PRIVATE HYLE_JOINT_PAGE_APPLE=1)
   hyle_stage_runtime(hyle_graph_batch_apple_native_append_test)
   hyle_add_test(graph_batch NAME apple_native_capacity
     SOURCES native_paged_capacity_consumer.cc
     DEPS hyle_graph_route_cpu hyle_graph_route_apple hyle_graph_progress)
-  target_compile_definitions(hyle_graph_batch_apple_native_capacity_test PRIVATE HYLE_JOINT_PAGE_APPLE=1)
   hyle_stage_runtime(hyle_graph_batch_apple_native_capacity_test)
   hyle_add_test(graph_batch NAME apple_native_pending
     SOURCES ../compute_batch/pending_paged_receiver_native_consumer.cc
     DEPS hyle_graph_route_cpu hyle_graph_route_apple hyle_graph_progress)
   target_compile_definitions(hyle_graph_batch_apple_native_pending_test PRIVATE
-    HYLE_PENDING_NATIVE_JOINT_GRAPH=1 HYLE_PENDING_RECEIVER_APPLE=1)
+    HYLE_PENDING_NATIVE_JOINT_GRAPH=1)
   hyle_stage_runtime(hyle_graph_batch_apple_native_pending_test)
   hyle_add_test(graph_batch NAME apple_encoded_pages
     SOURCES ../compute_batch/encoded_page_native_consumer.cc
     DEPS hyle_graph_route_cpu hyle_graph_route_apple hyle_graph_progress hyle_simd)
-  target_compile_definitions(hyle_graph_batch_apple_encoded_pages_test PRIVATE HYLE_ENCODED_APPLE=1)
   hyle_stage_runtime(hyle_graph_batch_apple_encoded_pages_test)
 endif()
 if(_HYLE_COMPUTE_HAVE_CPU AND TARGET hyle_graph_route_cpu)
@@ -109,15 +76,7 @@ if(_HYLE_COMPUTE_HAVE_CPU AND _HYLE_COMPUTE_HAVE_APPLE AND
   hyle_add_test(graph_batch NAME apple_public_mla
     SOURCES ../compute_batch/public_mla_native_consumer.cc
     DEPS hyle_graph_route_cpu hyle_graph_route_apple hyle_graph_progress hyle_compute_provider_native hyle_simd)
-  target_compile_definitions(hyle_graph_batch_apple_public_mla_test PRIVATE HYLE_TEST_MLA_APPLE=1)
   hyle_stage_runtime(hyle_graph_batch_apple_public_mla_test)
-endif()
-if(_HYLE_COMPUTE_HAVE_CPU AND _HYLE_COMPUTE_HAVE_VULKAN AND
-   TARGET hyle_graph_route_cpu AND TARGET hyle_graph_route_vulkan AND TARGET hyle_graph_progress)
-  hyle_add_test(graph_batch NAME vulkan_public_mla
-    SOURCES ../compute_batch/public_mla_native_consumer.cc
-    DEPS hyle_graph_route_cpu hyle_graph_route_vulkan hyle_graph_progress hyle_compute_provider_native hyle_simd)
-  hyle_stage_runtime(hyle_graph_batch_vulkan_public_mla_test)
 endif()
 if(_HYLE_COMPUTE_HAVE_CPU AND HYLE_GGML_CPU_ENABLED AND TARGET hyle_compute_route_cpu)
   hyle_add_test(graph_batch NAME cpu_public_mla
@@ -125,34 +84,24 @@ if(_HYLE_COMPUTE_HAVE_CPU AND HYLE_GGML_CPU_ENABLED AND TARGET hyle_compute_rout
     DEPS hyle_compute_route_cpu hyle_simd)
   hyle_stage_runtime(hyle_graph_batch_cpu_public_mla_test)
 endif()
-foreach(_page_route IN ITEMS apple vulkan)
-  string(TOUPPER "${_page_route}" _page_route_upper)
-  if(_HYLE_COMPUTE_HAVE_CPU AND _HYLE_COMPUTE_HAVE_${_page_route_upper} AND
-     TARGET hyle_graph_route_cpu AND TARGET hyle_graph_route_${_page_route} AND TARGET hyle_graph_progress)
-    foreach(_page_case IN ITEMS ready pending producers)
-      if(_page_case STREQUAL "ready")
-        set(_page_source native_paged_joint_risks.cc)
-      else()
-        set(_page_source native_pending_joint_risks.cc)
-      endif()
-      set(_page_test hyle_graph_batch_${_page_route}_${_page_case}_risks_test)
-      hyle_add_test(graph_batch NAME ${_page_route}_${_page_case}_risks
-        SOURCES ${_page_source}
-        DEPS hyle_graph_route_cpu hyle_graph_route_${_page_route} hyle_graph_progress hyle_simd)
-      if(_page_route STREQUAL "apple")
-        target_compile_definitions(${_page_test} PRIVATE HYLE_JOINT_PAGE_APPLE=1)
-      else()
-        target_include_directories(${_page_test} PRIVATE "${HYLE_SOURCE_DIR}/src/compute_ggml_runtime")
-      endif()
-      if(_page_case STREQUAL "producers")
-        target_compile_definitions(${_page_test} PRIVATE HYLE_PENDING_MULTI_NATIVE_PRODUCERS=1)
-      endif()
-      hyle_stage_runtime(${_page_test})
-    endforeach()
-  endif()
-endforeach()
-unset(_page_route)
-unset(_page_route_upper)
+if(_HYLE_COMPUTE_HAVE_CPU AND _HYLE_COMPUTE_HAVE_APPLE AND
+   TARGET hyle_graph_route_cpu AND TARGET hyle_graph_route_apple AND TARGET hyle_graph_progress)
+  foreach(_page_case IN ITEMS ready pending producers)
+    if(_page_case STREQUAL "ready")
+      set(_page_source native_paged_joint_risks.cc)
+    else()
+      set(_page_source native_pending_joint_risks.cc)
+    endif()
+    set(_page_test hyle_graph_batch_apple_${_page_case}_risks_test)
+    hyle_add_test(graph_batch NAME apple_${_page_case}_risks
+      SOURCES ${_page_source}
+      DEPS hyle_graph_route_cpu hyle_graph_route_apple hyle_graph_progress hyle_simd)
+    if(_page_case STREQUAL "producers")
+      target_compile_definitions(${_page_test} PRIVATE HYLE_PENDING_MULTI_NATIVE_PRODUCERS=1)
+    endif()
+    hyle_stage_runtime(${_page_test})
+  endforeach()
+endif()
 unset(_page_case)
 unset(_page_source)
 unset(_page_test)

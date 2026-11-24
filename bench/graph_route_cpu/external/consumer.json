@@ -1,5 +1,5 @@
 {
-  "consumer": "Complete synchronous resident native CPU/Apple/Vulkan fragments through ordinary HYLE Direct/Graph",
+  "consumer": "Complete synchronous resident native CPU/Apple fragments through ordinary HYLE Direct/Graph",
   "scope": "Whole fragment cost, not bare leaf overhead, mathematical SOTA or full-model throughput",
   "profiles": [
     "Qwen3.5-2B official BF16 FFN M1 H2048 N6144, two resident changed inputs",
@@ -10,8 +10,7 @@
   "ownership": "Separate complete route owners, independently resident input slots and constants; all accepted completions and output leases released within each blocking call",
   "routes": {
     "cpu": "Ordinary default Context with one native thread; complete Direct prepared sequence versus Graph with region planning/fusion",
-    "apple": "One public Context.compile MLX FFN; mixed MoE joins maximal contiguous MLX regions with complete native ggml Metal regions. All required region waits charged",
-    "vulkan": "Public Recorder combines complete prepared programs into one Direct submission; Graph native planning with ordinary Program/Invocation and result lease"
+    "apple": "One public Context.compile MLX FFN; mixed MoE joins maximal contiguous MLX regions with complete native ggml Metal regions. All required region waits charged"
   },
   "oracle": "Original qualified D5 complete-output and mixed-format tolerances, changed inputs before/after every sampled process; no precision exception",
   "resources": "Cold preparation/upload separate; resident hot fragment including required checks, conversions, native work, completion and ownership settlement",

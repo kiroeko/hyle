@@ -97,7 +97,7 @@ python scripts/init.py --name inference --components compute,graph --backends cp
 python scripts/build.py
 ```
 
-CLI 后端名为 `cpu`、`cuda`、`metal`、`vulkan`，可逗号组合。所选 SDK 缺失时明确失败。
+CLI 后端名为 `cpu`、`cuda`、`metal`，可逗号组合。所选 SDK 缺失时明确失败。
 源码嵌入使用对应的 `HYLE_COMPUTE_ROUTES` 集合，Metal 的 CMake 值为 `apple`。
 构建多个后端只表示库具备这些能力，运行时使用 CPU、GPU 或混合图仍由应用明确决定。
 
@@ -105,8 +105,8 @@ CLI 后端名为 `cpu`、`cuda`、`metal`、`vulkan`，可逗号组合。所选 
 |---|---|---|
 | 准备一个算子，并对变化输入重复执行 | [Compute：第一次 Direct 计算](compute.md#第一次-direct-计算) | [Direct CPU/GPU](../../samples/package/compute/cpp/) |
 | 构建多节点计算、规划中间存储并重复执行 | [Graph：第一次图执行](graph.md#第一次图执行) | [多节点 CPU/GPU 图](../../samples/package/graph/cpp/) |
-| 使用原生 Metal 或 Vulkan 程序 | [Apple](apple-compute.md)、[Vulkan](vulkan-compute.md) | 各指南链接的后端示例 |
-| 显式组合 CPU 与一个 GPU 的片段 | [Graph：CPU 与 GPU 组合](graph.md#cpu-与-gpu-组合) | [CPU+Metal](../../samples/package/graph/cpu_apple/)、[CPU+Vulkan](../../samples/package/graph/cpu_vulkan/) |
+| 使用原生 Metal 程序 | [Apple](apple-compute.md) | 指南所列示例 |
+| 显式组合 CPU 与一个 GPU 的片段 | [Graph：CPU 与 GPU 组合](graph.md#cpu-与-gpu-组合) | [CPU+Metal](../../samples/package/graph/cpu_apple/) |
 | 复用外部资源、分块装入权重 | [Compute 资源租约](compute.md#外部资源租约与-direct-提交)、[文件管线](compute.md#有界文件与资源管线) | [资源租约](../../samples/package/graph/resource_leases/)、[文件流](../../samples/package/graph/file_streaming/) |
 | 分页 KV、多请求 attention 或状态快照 | [批次 attention](batch-attention.md)、[状态版本](state-versions.md) | 按指南选择对应路线 |
 

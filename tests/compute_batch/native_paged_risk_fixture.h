@@ -1,9 +1,5 @@
 #pragma once
-#if defined(HYLE_G01_PAGE_RISK_APPLE)
 #include <hyle/compute/apple_batch.h>
-#else
-#include <hyle/compute/vulkan_batch.h>
-#endif
 #include <hyle/mem/quota_allocator.h>
 #include <hyle/mem/buffer.h>
 #include <hyle/simd/dtype.h>
@@ -16,13 +12,8 @@
 
 namespace hyle_g01_page_risk {
 namespace c=hyle::compute;
-#if defined(HYLE_G01_PAGE_RISK_APPLE)
 namespace n=c::apple;
 inline constexpr const char* route="Apple";
-#else
-namespace n=c::vulkan;
-inline constexpr const char* route="Vulkan";
-#endif
 using hyle::Status;using hyle::Result;
 inline Status require(bool good,const char* message){return good?Status::Ok():Status::Internal(message);}
 struct Inputs final {
@@ -38,12 +29,7 @@ inline Result<Inputs> inputs(n::Context& context,n::MemoryResource& device,n::Me
   c::BatchCapacity cap{.storage=c::BatchStorage::kPaged,.query_type=c::DataType::kFloat16,.output_type=c::DataType::kFloat16,.key_storage=c::CacheStorage::plain(c::DataType::kFloat16).value(),.value_storage=c::CacheStorage::plain(c::DataType::kFloat16).value(),
       .max_requests=2,.max_query_rows=2,.max_kv_rows=48,.max_pages=4,.max_page_refs=4,
       .query_heads=8,.kv_heads=2,.qk_head_dim=64,.value_head_dim=64,.page_size=16};
-#if defined(HYLE_ENCODED_PAGE_RISK)
-  cap.key_storage=c::CacheStorage::q8_0().value();cap.value_storage=cap.key_storage;cap.value_head_dim=128;
-  constexpr auto window=16;
-#else
   constexpr auto window=-1;
-#endif
   HYLE_ASSIGN_OR_RETURN(data.schema,c::BatchSchema::create(cap));
   const std::array<std::int32_t,3> qp{0,1,2},kp{0,2,3};
   const std::array<std::int32_t,3> pages{2,0,2},next_pages{0,2,0};
@@ -74,30 +60,14 @@ inline Result<Inputs> inputs(n::Context& context,n::MemoryResource& device,n::Me
   for(unsigned i=0;i<words.size();++i)words[i]=hyle::simd::f32_to_f16(float(int(i%13)-6)/32.F).bits;
   HYLE_ASSIGN_OR_RETURN(auto qw,data.query_pool.allocate(2048,64));
   HYLE_ASSIGN_OR_RETURN(data.query,upload(qw,std::as_bytes(std::span(words).first(1024))));
-#if defined(HYLE_ENCODED_PAGE_RISK)
-  // Independent encoded bytes, with different physical K/V row/page extents.
-  std::vector<std::byte> key_bytes(data.keys.page_bytes()),value_bytes(data.values.page_bytes());
-  for(std::size_t block=0;block<value_bytes.size()/34;++block){
-    value_bytes[block*34+1]=std::byte{0x34};
-    std::fill_n(value_bytes.begin()+block*34+2,32,std::byte{1});
-  }
-#endif
   for(unsigned i=0;i<2;++i){
     const unsigned page=i?2:0;
     HYLE_ASSIGN_OR_RETURN(auto kw,data.keys.acquire(page));
-#if defined(HYLE_ENCODED_PAGE_RISK)
-    HYLE_ASSIGN_OR_RETURN(data.key_reads[i],upload(kw.lease(),key_bytes));
-#else
     HYLE_ASSIGN_OR_RETURN(data.key_reads[i],upload(kw.lease(),std::as_bytes(std::span(words))));
-#endif
     HYLE_RETURN_IF_ERROR(kw.complete(data.key_reads[i],cap.page_size));
     for(unsigned j=0;j<words.size();++j)words[j]=hyle::simd::f32_to_f16(float((j+page)%17)/32.F).bits;
     HYLE_ASSIGN_OR_RETURN(auto vw,data.values.acquire(page));
-#if defined(HYLE_ENCODED_PAGE_RISK)
-    HYLE_ASSIGN_OR_RETURN(data.value_reads[i],upload(vw.lease(),value_bytes));
-#else
     HYLE_ASSIGN_OR_RETURN(data.value_reads[i],upload(vw.lease(),std::as_bytes(std::span(words))));
-#endif
     HYLE_RETURN_IF_ERROR(vw.complete(data.value_reads[i],cap.page_size));
   }
   HYLE_ASSIGN_OR_RETURN(data.key_frame,data.keys.read(data.layout,data.key_reads));
@@ -136,11 +106,7 @@ inline Status cold_failures(n::Context& context,n::MemoryResource& device,n::Mem
     HYLE_RETURN_IF_ERROR(slot.bind(data.query,data.key_frame,data.value_frame));
     {
     HYLE_ASSIGN_OR_RETURN(auto done,slot.submit());HYLE_ASSIGN_OR_RETURN(auto result,done.wait());
-#if defined(HYLE_G01_PAGE_RISK_APPLE)
     HYLE_RETURN_IF_ERROR(require(result->arrays().size()==1,"old prepared recipe lost after cold native rejection"));
-#else
-    HYLE_RETURN_IF_ERROR(require(result->tensors().size()==1,"old prepared recipe lost after cold native rejection"));
-#endif
     }
     const auto before_reuse=fault.attempts;fault.fail=before_reuse;
     HYLE_RETURN_IF_ERROR(slot.prepare_batch(data.next));
@@ -173,11 +139,7 @@ inline Status domain_checks(n::Context& context,n::MemoryResource& device,n::Mem
   HYLE_RETURN_IF_ERROR(require(slot.bind(data.query,data.key_frame,data.value_frame).IsInvalidArgument(),"empty page episode accepted mismatched live KV frames"));
   HYLE_RETURN_IF_ERROR(slot.bind(data.query,{},{}));
   {HYLE_ASSIGN_OR_RETURN(auto done,slot.submit());HYLE_ASSIGN_OR_RETURN(auto result,done.wait());
-#if defined(HYLE_G01_PAGE_RISK_APPLE)
     HYLE_RETURN_IF_ERROR(require(result->arrays().size()==1 && result->arrays()[0].size()==0,"empty page output is not empty"));
-#else
-    HYLE_RETURN_IF_ERROR(require(result->tensors().size()==1 && result->tensors()[0].description().element_count()==std::size_t{0},"empty page output is not empty"));
-#endif
     HYLE_RETURN_IF_ERROR(require(!slot.prepare_batch(data.layout).ok(),"empty old result allowed slot reuse"));
   }
   HYLE_RETURN_IF_ERROR(slot.prepare_batch(data.layout));
@@ -185,14 +147,6 @@ inline Status domain_checks(n::Context& context,n::MemoryResource& device,n::Mem
   HYLE_RETURN_IF_ERROR(wrong_buffer.view().fill(std::byte{0}));
   HYLE_ASSIGN_OR_RETURN(auto wrong_query,c::ReadLease::adopt(std::move(wrong_buffer)));
   HYLE_RETURN_IF_ERROR(require(slot.bind(wrong_query,data.key_frame,data.value_frame).IsInvalidArgument() && !slot.submit(),"foreign source resource accepted page binding"));
-#if defined(HYLE_ENCODED_PAGE_RISK)
-  // A native bind failure may retire its controller. It does not promise
-  // recovery of that slot; verify rejection on a separate original owner.
-  HYLE_ASSIGN_OR_RETURN(auto wrong_roles,create(context,device,staging,data));
-  HYLE_RETURN_IF_ERROR(wrong_roles.prepare_batch(data.layout));
-  HYLE_RETURN_IF_ERROR(require(wrong_roles.bind(data.query,data.value_frame,data.key_frame).IsInvalidArgument() && !wrong_roles.submit(),
-      "swapped different-byte encoded K/V roles accepted page binding"));
-#endif
   HYLE_RETURN_IF_ERROR(slot.bind(data.query,data.key_frame,data.value_frame));
   {HYLE_ASSIGN_OR_RETURN(auto done,slot.submit());HYLE_ASSIGN_OR_RETURN(auto result,done.wait());}
   std::printf("%s native page exact backing cap, all-empty output/old result and foreign resource refusal PASS\n",route);return Status::Ok();

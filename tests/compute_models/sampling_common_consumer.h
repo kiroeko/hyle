@@ -172,8 +172,7 @@ private:
   c::cuda::MemoryResource device_memory_;
 #endif
   m::MemoryResourceRef memory_;
-  // Two replay slots plus a held-result slot. Vulkan explicitly prevents
-  // overwriting retained tensors; the shared fixture observes that contract.
+  // Two replay slots plus a held-result slot.
   std::array<c::Queue, 3> queues_;
   std::vector<c::TensorDesc> descriptions_, outputs_;
   std::vector<m::Buffer> inputs_;

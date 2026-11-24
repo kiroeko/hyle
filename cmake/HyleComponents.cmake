@@ -455,27 +455,6 @@ _hyle_declare_component(graph_route_apple
   TEST_DEPS graph_progress
   SPLIT_PUBLIC_HEADERS hyle/graph/apple.h)
 
-# Native Vulkan owners, independent of the CPU/CUDA/Apple executors.
-_hyle_declare_component(compute_route_vulkan
-  TRACE
-  PRIVATE_DEPS time util_core compute_provider_ggml_vulkan compute_provider_iree_vulkan
-  PUBLIC_DEPS core compute compute_ops error mem compute_batch
-  PUBLIC_TYPE_DEPS compute_batch
-  SPLIT_PUBLIC_HEADERS hyle/compute/vulkan.h hyle/compute/vulkan_memory.h hyle/compute/vulkan_weights.h hyle/compute/vulkan_batch.h hyle/compute/vulkan_row_cache.h hyle/compute/detail/vulkan_plan.h hyle/compute/detail/vulkan_batch_access.h
-    hyle/compute/detail/vulkan_copy_stream_access.h)
-_hyle_declare_component(graph_route_vulkan
-  TRACE
-  PRIVATE_DEPS graph_batch compute container util_core
-  PUBLIC_DEPS core compute_ops compute_route_vulkan compute_batch error graph
-  PUBLIC_TYPE_DEPS compute_batch compute_route_vulkan
-  TEST_DEPS graph_progress
-  SPLIT_PUBLIC_HEADERS hyle/graph/vulkan.h)
-
-# The Vulkan implementation factor owns its native adapters.
-# No dependency on the route or Graph: both retain their own public semantics.
-_hyle_declare_component(compute_provider_ggml_vulkan
-  PRIVATE_DEPS core compute compute_ops error mem platform compute_ggml_runtime)
-
 # Shared locked source and fallible resource seam; private to native providers.
 _hyle_declare_component(compute_ggml_runtime
   PRIVATE_DEPS core error mem platform util_core)
@@ -499,10 +478,6 @@ _hyle_declare_component(compute_provider_flashinfer
 # M1-A: independent original Metal program and native resource boundary.
 _hyle_declare_component(compute_provider_ggml_metal
   PRIVATE_DEPS core compute_ops compute_ggml_runtime error mem)
-
-# Independent original Vulkan VM/program owner; no dependency on Graph or the route.
-_hyle_declare_component(compute_provider_iree_vulkan
-  PRIVATE_DEPS core error mem compute_ops compute_provider_ggml_vulkan)
 
 # Original CUDA ATen decoding and fused BF16 attention carrier.
 _hyle_declare_component(compute_provider_torch_cuda
@@ -544,10 +519,6 @@ _hyle_declare_component(compute_stream_apple
   PRIVATE_DEPS compute
   PUBLIC_DEPS core compute_stream compute_route_apple
   SPLIT_PUBLIC_HEADERS hyle/compute/apple_file_stream.h)
-_hyle_declare_component(compute_stream_vulkan
-  PRIVATE_DEPS compute
-  PUBLIC_DEPS core compute_stream compute_route_vulkan
-  SPLIT_PUBLIC_HEADERS hyle/compute/vulkan_file_stream.h)
 
 # F4 collection ownership sits above the original lease/copy mechanisms.
 # Compute core and native routes never acquire a reverse dependency here.

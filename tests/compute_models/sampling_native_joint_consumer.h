@@ -8,26 +8,17 @@
 #include <hyle/sched/blocking.h>
 #include <hyle/sched/scheduler.h>
 
-#if defined(HYLE_G08_APPLE)
 #include <hyle/graph/apple.h>
 #include <hyle/compute/apple_memory.h>
 #include <mlx/ops.h>
 #include <mlx/transforms.h>
-#else
-#include <hyle/graph/vulkan.h>
-#endif
 
 namespace sampling_test {
 namespace g=hyle::graph;
 namespace m=hyle::mem;
-#if defined(HYLE_G08_APPLE)
 namespace native=c::apple;
 namespace source=g::apple;
 namespace mx=mlx::core;
-#else
-namespace native=c::vulkan;
-namespace source=g::vulkan;
-#endif
 struct JointDrain final {
   hyle::sched::Scheduler &scheduler;
   ~JointDrain() { scheduler.drain(); }
@@ -36,12 +27,7 @@ inline void native_joint() {
   constexpr int rows=3,width=129;
   auto cpu=take(g::cpu::create_context());
   auto context=take(native::Context::create());
-#if defined(HYLE_G08_APPLE)
   auto memory=take(native::MemoryResource::create(context));
-#else
-  auto memory=take(native::MemoryResource::create(context,native::MemoryKind::kDevice));
-  auto staging=take(native::MemoryResource::create(context,native::MemoryKind::kStaging));
-#endif
   hyle::sched::Scheduler scheduler(2,m::system_allocator(),64);
   hyle::sched::BlockingPool completion_waiters(m::system_allocator(),2);
   auto table_buffer=take(m::Buffer::create(m::system_resource(),width*sizeof(float),256));
@@ -72,18 +58,14 @@ inline void native_joint() {
       g::NodePlacement{take(logical.node_id(4)),cpu_target,g::PlacementStrength::kRequired}};
   auto native_source=take(source::execution_source(context));
   auto cpu_source=take(g::ExecutionSource::acquire(cpu));
-#if defined(HYLE_G08_APPLE)
   const std::array domains{g::StorageDomain{m::system_resource()},g::StorageDomain{memory.ref()}};
-#else
-  const std::array domains{g::StorageDomain{m::system_resource()},g::StorageDomain{memory.ref()},g::StorageDomain{staging.ref()}};
-#endif
   const std::array targets{g::ExecutionTarget{native_source,native_storage},g::ExecutionTarget{cpu_source,host_storage}};
   const std::array external{g::ExternalResourceContract{x,native_storage},g::ExternalResourceContract{key,native_storage},
       g::ExternalResourceContract{table,host_storage},g::ExternalResourceContract{sum,host_storage}};
   auto program=take(g::compile(logical,{.storage_domains=domains,.targets=targets},
       {.constants=constants,.node_placements=placements,.external_resources=external}));
   // Count only copies feeding the actual selected CPU input ports. Apple can
-  // use shared Metal storage here; Vulkan may have an additional staging hop.
+  // use shared Metal storage here.
   // Storage ordinal alone identifies neither of these mathematical boundaries.
   std::vector<std::uint32_t> cpu_inputs;
   for(std::size_t i=0;i<program.report.step_count();++i){
@@ -163,23 +145,13 @@ inline void native_joint() {
       logits[std::size_t(r*width+second)]=16.F;
     }
     const auto keys=identities(rows,0xffffffffULL+std::uint64_t(step));
-#if defined(HYLE_G08_APPLE)
     auto input=mx::array(logits.data(),{rows,width},mx::float32);
     auto ids=mx::array(reinterpret_cast<const std::uint32_t *>(keys.data()),{rows,4},mx::uint32);
     mx::async_eval({input,ids});mx::synchronize(mx::default_stream(mx::Device::gpu));
     input.wait();ids.wait();
-#else
-    const auto input=take(context.upload(logits_desc,std::as_bytes(std::span(logits))));
-    const auto ids=take(context.upload(keys_desc,std::as_bytes(std::span(keys))));
-#endif
     const auto bank=std::size_t(step%2);auto &slot=slots[bank];
-#if defined(HYLE_G08_APPLE)
     auto input_owner=take(memory.import_readonly(input,logits_desc));
     auto key_owner=take(memory.import_readonly(ids,keys_desc));
-#else
-    auto input_owner=take(memory.import_readonly(input));
-    auto key_owner=take(memory.import_readonly(ids));
-#endif
     require(slot.bind(x,logits_desc,std::move(input_owner)));require(slot.bind(key,keys_desc,std::move(key_owner)));
     require(slot.bind(sum,output_views[bank]));require(slot.prepare_replay(bindings[bank]));
     auto work=take(slot.submit(bindings[bank]));require(work.wait());

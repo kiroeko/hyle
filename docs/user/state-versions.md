@@ -30,7 +30,7 @@ resource成员使用原ReadLease权限，不把未停止的writable aliases变�
 伪rollback后继续发布。取消、放弃或关闭均不改变旧版本。
 
 必须修改共享成员时才dirty clone。先按批量搬运 prepare资源与容量，cold factory只借稳定native
-endpoint（CPU/CUDA的Queue，Apple/Vulkan原Context/Program角色），不要捕获Store/Version
+endpoint（CPU/CUDA的Queue，Apple的原生Context/Program），不要捕获Store/Version
 owning handle造成反向环：
 
 ```cpp
@@ -46,7 +46,7 @@ auto writer = ticket.wait().value(); // 显式host等待；poll()可非阻塞观
 writer.publish().IgnoreError();
 ```
 
-Apple/Vulkan factory调用它们各自的CopyBatchInvocation::create(program)，不需要通用Queue。
+Apple factory调用原生的CopyBatchInvocation::create(program)，不需要通用Queue。
 clone只复制该完整byte-addressable成员，保留原编码；不对opaque布局做raw clone。不同资源/
 设备/原数学转换不是同一件事，需使用批量搬运接口支持的资源组合和已有成熟转换。pool/resource/Context、
 borrowed Queue与allocator活到全部版本、writer和实际native use退休。

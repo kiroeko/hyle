@@ -255,7 +255,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
     before[member].checkpoint.reset(); window.retire_active(keys[member]);
     h::retire(requests[member].session); window.release(keys[member]);
   }
-  q::check(model.execution.collect_retired());
+
   require(!model.snapshot_versions.live && !storage->live_images() && window.active().empty() &&
       model.page_inventory.free_ids.size() == plan.max_pages,
       "publication retirement retained an original version, page or host image");

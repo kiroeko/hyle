@@ -28,7 +28,7 @@
 
 | 局部问题 | 专题 |
 |---|---|
-| Apple或Vulkan原生接口、设备条件及资源 | [Apple MLX/Metal](apple-compute.md)、[Vulkan](vulkan-compute.md) |
+| Apple 原生接口、设备条件及资源 | [Apple MLX/Metal](apple-compute.md) |
 | 多请求attention、KV编码、页更新与有效区 | [批次attention](batch-attention.md) |
 | 只读快照、dirty clone和成功发布状态 | [状态版本](state-versions.md) |
 | 模型编码及特殊数学 | [Compute模型格式入口](compute.md#cpu-与模型格式接入)；整模型范围查[模型覆盖](../implementation/model-operators.md)。 |

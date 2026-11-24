@@ -723,7 +723,7 @@ c::TensorDesc role_description(const prepared::Role &role) {
   return take(take(c::gguf_weight_description(*codec, Type::kFloat32, role.shape[1], role.shape[0])).transposed());
 }
 namespace {
-// Apple/Vulkan copies require complete four-byte words. Keep the same owned
+// Apple copies require complete four-byte words. Keep the same owned
 // carrier on every route; the file range and tensor descriptor remain logical.
 // Only the stream initializes the extra tail, without reading a neighbour role.
 std::size_t streamed_weight_capacity(std::size_t bytes) {

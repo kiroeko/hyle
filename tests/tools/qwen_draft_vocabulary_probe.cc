@@ -229,10 +229,10 @@ void rows(i::Backend &backend, Type type, const c::ResourceBudget &budget) {
     }
     escaped = selected.tensor.ready;
   }
-  q::check(backend.collect_retired());
+
   require(read(backend, escaped) == expected && q::take(budget.usage(backend.device())).live_bytes > baseline,
       "selected row lease failed to outlive cold Invocation/LoadedWeight or lost its budget charge");
-  escaped.reset(); q::check(backend.collect_retired());
+  escaped.reset();
   if (backend.kind() == i::BackendKind::kApple) {
     // MLX can still hold the last input in a completed command's native
     // callback. Check exact retirement after real follow-up work on the same
@@ -368,10 +368,10 @@ void encoded_rows(i::Backend&backend,c::GgufQuantizedType codec,const c::Resourc
     require(read(backend,retry.tensor.ready)==expected,"encoded row selection could not retry after budget refusal");
     escaped=selected.tensor.ready;
   }
-  q::check(backend.collect_retired());
+
   require(read(backend,escaped)==expected && q::take(budget.usage(backend.device())).live_bytes>baseline,
       "encoded row lease lost its selected bytes or budget charge after source retirement");
-  escaped.reset();q::check(backend.collect_retired());
+  escaped.reset();
   require(q::take(budget.usage(backend.device())).live_bytes==baseline,"encoded row selection retained native resources");
 }
 
@@ -595,7 +595,7 @@ void full_head(i::Backend &backend, const std::filesystem::path &manifest,
     prepared_scores(backend, head, subset, full_mapping, source.roles.geometry, budget);
     escaped = head.weight.tensor.ready;
     head = std::move(subset);
-    q::check(backend.collect_retired());
+
     require(escaped.size() == role.bytes && read(backend, head.weight.tensor.ready) == subset_expected,
         "replacing the complete head invalidated an independently escaped source or compact projection");
     refused = false;
@@ -604,15 +604,15 @@ void full_head(i::Backend &backend, const std::filesystem::path &manifest,
     require(refused, "an already selected head was reinterpreted as a complete original head");
     subset_escaped = head.weight.tensor.ready;
   }
-  q::check(backend.collect_retired());
+
   require(escaped.valid() && q::take(budget.usage(backend.device())).live_bytes >= source.draft_head->role.bytes,
       "escaping full head lease lost its original resource charge");
-  escaped.reset(); q::check(backend.collect_retired());
+  escaped.reset();
   const auto compact_live = q::take(budget.usage(backend.device())).live_bytes;
   require(read(backend, subset_escaped) == subset_expected && compact_live >= subset_bytes &&
       compact_live < source.draft_head->role.bytes,
       "compact lease retained the complete head allocation or lost its own selected bytes");
-  subset_escaped.reset(); q::check(backend.collect_retired());
+  subset_escaped.reset();
   for (std::size_t n = 0; n < limits.size(); ++n) {
     const auto live = q::take(budget.usage(limits[n].resource)).live_bytes;
     if (live != baseline[n]) std::cerr << "head budget domain " << n << " before=" << baseline[n] << " after=" << live << '\n';
@@ -676,13 +676,13 @@ void compact_head(i::Backend &backend, const std::filesystem::path &manifest,
     prepared_scores(backend,complete,head,mapping,source.roles.geometry,budget);
     escaped=head.weight.tensor.ready;escaped_ids=head.original_ids.ready;
   }
-  q::check(backend.collect_retired());
+
   require(read(backend,escaped)==expected && q::take(budget.usage(backend.device())).live_bytes<full.draft_head->role.bytes,
       "compact escaped lease retained its full-head reference or lost its codes");
-  escaped.reset();q::check(backend.collect_retired());
+  escaped.reset();
   require(values<std::int32_t>(backend,escaped_ids)==std::vector<std::int32_t>(mapping.ids().begin(),mapping.ids().end()),
       "mapping lease retired before its independent reader");
-  escaped_ids.reset();q::check(backend.collect_retired());
+  escaped_ids.reset();
   for(std::size_t at=0;at<limits.size();++at)
     require(q::take(budget.usage(limits[at].resource)).live_bytes==baseline[at],"compact source retained a resource domain after retirement");
   std::cout<<"PASS compact Q4 head: bound source/map, same-size map refusal, budget refusal/retry, every selected code/scale and projection value, independent weight/ID escaping leases and real retirement\n";

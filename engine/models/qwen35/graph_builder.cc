@@ -31,8 +31,7 @@ GraphAssembly::GraphAssembly(const Backend &environment, PrecisionProfile precis
   if (mixed_) return;
   const auto context = environment.common_context();
   if (!context) {
-    if (environment.kind() == inference::BackendKind::kApple ||
-        environment.kind() == inference::BackendKind::kVulkan) return;
+    if (environment.kind() == inference::BackendKind::kApple) return;
     check(context.error());
   }
   packed_row_matmul_ = take(c::sequence_ops::supports_packed_row_matmul_rows(**context));

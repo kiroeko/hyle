@@ -795,26 +795,6 @@ foreach(_hyle_index RANGE 0 ${_hyle_dependency_last})
   list(APPEND HYLE_DEPENDENCY_NAMES "${_hyle_name}")
 endforeach()
 
-# When present, the Vulkan stack is one train rather than independently
-# drifting pins.  The conditional also permits minimal fixture locks in the
-# CMake contract tests.
-if(vulkan_headers IN_LIST HYLE_DEPENDENCY_NAMES OR
-   volk IN_LIST HYLE_DEPENDENCY_NAMES OR
-   glslang IN_LIST HYLE_DEPENDENCY_NAMES)
-  foreach(_hyle_vulkan_member IN ITEMS vulkan_headers volk glslang)
-    if(NOT _hyle_vulkan_member IN_LIST HYLE_DEPENDENCY_NAMES)
-      message(FATAL_ERROR
-        "Vulkan dependency lock must contain Vulkan-Headers, volk and glslang")
-    endif()
-  endforeach()
-  if(NOT HYLE_DEP_VULKAN_HEADERS_VERSION STREQUAL HYLE_DEP_VOLK_VERSION OR
-     NOT HYLE_DEP_VULKAN_HEADERS_VERSION STREQUAL HYLE_DEP_GLSLANG_VERSION)
-    message(FATAL_ERROR
-      "Vulkan-Headers, volk and glslang must use one Vulkan SDK version")
-  endif()
-  set(HYLE_DEP_VULKAN_SDK_VERSION "${HYLE_DEP_VULKAN_HEADERS_VERSION}")
-endif()
-
 # Audit only the vendored snapshots that the selected component/feature closure
 # consumes.  Projection itself must not make every in-tree vendor a requirement
 # for a core-only partial source checkout.  The direct script entry point and

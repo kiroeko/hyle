@@ -14,9 +14,6 @@ endif()
 if(_HYLE_COMPUTE_HAVE_APPLE AND TARGET hyle_compute_route_apple)
   list(APPEND _state_native_copy_dependencies hyle_compute_route_apple)
 endif()
-if(_HYLE_COMPUTE_HAVE_VULKAN AND TARGET hyle_compute_route_vulkan)
-  list(APPEND _state_native_copy_dependencies hyle_compute_route_vulkan)
-endif()
 if(_state_native_copy_dependencies)
   add_executable(hyle_compute_state_native_fault_consumer native_fault_consumer.cc)
   set_target_properties(hyle_compute_state_native_fault_consumer PROPERTIES
@@ -24,12 +21,6 @@ if(_state_native_copy_dependencies)
   target_compile_features(hyle_compute_state_native_fault_consumer PRIVATE cxx_std_23)
   target_link_libraries(hyle_compute_state_native_fault_consumer PRIVATE
     hyle_compute_state ${_state_native_copy_dependencies})
-  if(_HYLE_COMPUTE_HAVE_VULKAN)
-    # The existing unknown-fence observation boundary uses the native dispatch
-    # header. This is test-only and does not add SDK types to a public header.
-    target_include_directories(hyle_compute_state_native_fault_consumer SYSTEM PRIVATE
-      "$<TARGET_PROPERTY:Vulkan-Headers,INTERFACE_INCLUDE_DIRECTORIES>")
-  endif()
   hyle_apply_warnings(hyle_compute_state_native_fault_consumer)
   hyle_apply_sanitizer(hyle_compute_state_native_fault_consumer)
   hyle_stage_runtime(hyle_compute_state_native_fault_consumer)

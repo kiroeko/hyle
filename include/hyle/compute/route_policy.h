@@ -26,7 +26,6 @@ enum class NativeRoute : std::uint8_t {
   kCpu,
   kCuda,
   kApple,
-  kVulkan,
 };
 
 #if HYLE_OS_WINDOWS

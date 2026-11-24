@@ -36,7 +36,7 @@ using hyle::StatusCode;
 constexpr std::string_view kSsoSizedMessage = "missing";
 constexpr std::string_view kMediumMessage = "resource not found in shard 7";
 constexpr std::string_view kShortFormatMessage =
-    "vulkan vkQueueSubmit failed: VK_ERROR_DEVICE_LOST (-4)";
+    "cuda cudaLaunchKernel failed: cudaErrorLaunchFailure (719)";
 static_assert(kSsoSizedMessage.size() == 7);
 static_assert(kMediumMessage.size() == 29);
 static_assert(kShortFormatMessage.size() == 54);
@@ -94,8 +94,8 @@ HYLE_NOINLINE Result<int> hyle_info_chain(int value) {
 }
 
 #if defined(HYLE_BENCH_ABSL)
-constexpr std::string_view kVulkanPayloadUrl =
-    "type.hyle.dev/native-error/vulkan";
+constexpr std::string_view kCudaPayloadUrl =
+    "type.hyle.dev/native-error/cuda-runtime";
 constexpr std::string_view kPosixPayloadUrl =
     "type.hyle.dev/native-error/posix-errno";
 
@@ -109,7 +109,7 @@ void set_absl_native_payload(absl::Status &status, std::string_view type_url,
 absl::Status absl_native_error() {
   absl::Status status(absl::StatusCode::kUnavailable, "device lost",
                       absl::SourceLocation());
-  set_absl_native_payload(status, kVulkanPayloadUrl, -4);
+  set_absl_native_payload(status, kCudaPayloadUrl, -4);
   return status;
 }
 
@@ -638,7 +638,7 @@ int main() {
         [&] {
           Status status = Status::FromNative(
               hyle::StatusCode::Unavailable,
-              {hyle::NativeErrorDomain::Vulkan, -4}, "device lost");
+              {hyle::NativeErrorDomain::CudaRuntime, -4}, "device lost");
           nb::doNotOptimizeAway(status.ok());
         },
         "absl::Status + SetPayload", [&] {
@@ -648,7 +648,7 @@ int main() {
 #else
     bench.run("HYLE Status::FromNative", [&] {
       Status status = Status::FromNative(hyle::StatusCode::Unavailable,
-                                         {hyle::NativeErrorDomain::Vulkan, -4},
+                                         {hyle::NativeErrorDomain::CudaRuntime, -4},
                                          "device lost");
       nb::doNotOptimizeAway(status.ok());
     });
@@ -657,7 +657,7 @@ int main() {
 
   {
     const Status hyle_status = Status::FromNative(
-        hyle::StatusCode::Unavailable, {hyle::NativeErrorDomain::Vulkan, -4},
+        hyle::StatusCode::Unavailable, {hyle::NativeErrorDomain::CudaRuntime, -4},
         "device lost");
 #if defined(HYLE_BENCH_ABSL)
     const absl::Status absl_status = absl_native_error();
@@ -676,7 +676,7 @@ int main() {
         },
         "absl::Status GetPayload + decode", [&] {
           std::int64_t code = 0;
-          const auto payload = absl_status.GetPayload(kVulkanPayloadUrl);
+          const auto payload = absl_status.GetPayload(kCudaPayloadUrl);
           if (payload.has_value()) {
             const auto bytes = payload->TryFlat();
             if (bytes.has_value() && bytes->size() == sizeof(code)) {
