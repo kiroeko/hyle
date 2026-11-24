@@ -20,6 +20,7 @@
 #include "../compute_batch/row_cache_planning.h"
 
 #include <algorithm>
+#include <array>
 #include <mutex>
 #include <new>
 #include <optional>
@@ -139,6 +140,48 @@ Status qualify(void *context, const RegionCompileRequest &request,
   return Status::Ok();
 }
 
+// A dense reshape partitioned away from its native producer can force a
+// Graph tensor copy. Offer the producer and its whole-storage reshape as a
+// fallible alternative to a singleton while both can use the original route.
+Status propose_reshape_pairs(const Graph &graph, mem::AllocatorRef allocator,
+    std::span<const RegionProposal> ordinary, RegionProposalWriter &writer) noexcept {
+  container::SmallVector<std::size_t, 16, mem::AllocatorRef> groups(allocator);
+  if (!groups.try_resize(graph.node_count()))
+    return Status::ResourceExhausted("Apple reshape discovery metadata");
+  std::ranges::fill(groups, ordinary.size());
+  for (std::size_t index = 0; index < ordinary.size(); ++index)
+    for (const auto node : ordinary[index].nodes)
+      groups[node.ordinal()] = index;
+
+  for (std::size_t index = 0; index < groups.size(); ++index) {
+    if (groups[index] == ordinary.size()) continue;
+    HYLE_ASSIGN_OR_RETURN(const auto node, graph.node_id(index));
+    HYLE_ASSIGN_OR_RETURN(const auto &operation, graph.operation(node));
+    const auto *view = operation.get_if<compute::View>();
+    if (!view || view->kind() != compute::ViewKind::kReshape) continue;
+    HYLE_ASSIGN_OR_RETURN(const auto controls, graph.node_dependency_count(node));
+    if (controls != 0) continue;
+    HYLE_ASSIGN_OR_RETURN(const auto input, graph.node_input(node, 0));
+    if (input.kind() != ValueKind::kNodeOutput) continue;
+    HYLE_ASSIGN_OR_RETURN(const auto producer, graph.producer(input));
+    const auto origin = groups[producer.ordinal()];
+    if (origin == ordinary.size()) continue;
+    HYLE_ASSIGN_OR_RETURN(const auto &producing_operation, graph.operation(producer));
+    if (!compute::operation_traits(producing_operation).materializes) continue;
+    HYLE_ASSIGN_OR_RETURN(const auto &desc, graph.value_description(input));
+    if (!desc.is_plain() || !desc.is_dense()) continue;
+
+    // The reshape's sole predecessor is this producer. Both nodes have
+    // already passed native admission under the same placement constraints.
+    const std::array nodes{producer, node};
+    auto proposal = ordinary[origin];
+    proposal.nodes = nodes;
+    HYLE_ASSIGN_OR_RETURN(const auto more, writer.try_add(proposal));
+    if (!more) break;
+  }
+  return Status::Ok();
+}
+
 Status propose(void *context, const RegionDiscoveryRequest &request,
                mem::AllocatorRef allocator, RegionProposalWriter &writer) noexcept {
   const auto &graph = request.graph;
@@ -192,6 +235,12 @@ Status propose(void *context, const RegionDiscoveryRequest &request,
             .implementation = compute::ProviderImplementationId{1}, .preference = 200});
         }, {}, entry_policy));
   const auto ordinary_end = writer.size();
+  // Reserve these boundary alternatives before the per-node fallbacks fill
+  // discovery. Keep the original maximal and singleton routes available.
+  if (!request.allowed_nodes.empty() && !source.custom &&
+      !writer.proposal_limit_reached() && !writer.node_limit_reached())
+    HYLE_RETURN_IF_ERROR(propose_reshape_pairs(graph, allocator,
+        writer.proposals().subspan(ordinary_begin, ordinary_end - ordinary_begin), writer));
   if (!request.allowed_nodes.empty() && !writer.proposal_limit_reached() && !writer.node_limit_reached())
     HYLE_RETURN_IF_ERROR(graph::detail::add_region_singleton_fallbacks(writer, ordinary_begin));
   // Singleton fallbacks belong only to the original route. A packed route
