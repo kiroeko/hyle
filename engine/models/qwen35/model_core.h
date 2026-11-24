@@ -1767,7 +1767,7 @@ public:
     // In native Apple text generation, prefer the smallest prepared program.
     // Reusing a wider carrier also executes its padded projections and recurrence.
     const bool narrow_apple_prefill = role == GraphRole::kText && completion == TextCompletion::kEmitNext &&
-        execution.kind() == BackendKind::kApple && !execution.has_cpu_assist();
+        execution.kind() == BackendKind::kApple;
     const bool prefer_private_capacity = execution_storage_prepared && !execution_workspace.valid() && !narrow_apple_prefill;
     std::size_t selected = 0, resident = 0;
     for (const auto physical : found->second->chunks) {

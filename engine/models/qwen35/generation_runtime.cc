@@ -2628,13 +2628,19 @@ StartupPrefillWarmup prepare_generation_programs(Model &model, const GenerationP
     // Nonterminal chunks are exactly K; only the real final chunk emits an ID.
     constexpr std::array prefill_tiers{std::size_t{16}, std::size_t{32}, std::size_t{64},
         std::size_t{128}, std::size_t{256}, std::size_t{512}};
+    // Two-endpoint Metal prefill uses dense projections on both endpoints.
+    // An intermediate tier reduces their common padding above 256 rows.
+    constexpr std::array mixed_apple_tiers{std::size_t{16}, std::size_t{32},
+        std::size_t{64}, std::size_t{128}, std::size_t{256}, std::size_t{384}, std::size_t{512}};
+    const auto tiers = !mtp && model.execution.kind() == BackendKind::kApple && model.execution.has_cpu_assist()
+        ? std::span<const std::size_t>(mixed_apple_tiers) : std::span<const std::size_t>(prefill_tiers);
     const auto add_capacity = [&](GraphRole role) {
       const auto lag = static_cast<std::size_t>(draft_lag(role));
       if (model.cache_plan.max_query_rows <= lag) return;
       const auto maximum = (std::min)(max_prefill_rows, model.cache_plan.max_query_rows - lag);
       if (is_mtp_prefill(role) && maximum < 2) return; // T1 keeps Single/CatchupSingle.
       std::size_t previous = 0;
-      for (const auto tier : prefill_tiers) {
+      for (const auto tier : tiers) {
         const auto rows = (std::min)(tier, maximum);
         if (rows != previous) for (std::size_t member = 0; member < (reuse ? model.cache_plan.active_sequences : 1); ++member)
           note_carrier(role, rows, member, TextCompletion::kEmitNext, true);
