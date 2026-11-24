@@ -222,8 +222,10 @@ std::optional<mx::array> projection_weight_rows(const mx::array &right,
 std::optional<mx::array> lower_short_bfloat_projection(
     const mx::array &left, const mx::array &right, mx::Stream stream) {
   if (left.ndim() != 2 || right.ndim() != 2 ||
-      left.dtype() != mx::bfloat16 || right.dtype() != mx::bfloat16 ||
-      left.shape(0) < 1 || left.shape(0) > 4)
+      left.dtype() != mx::bfloat16 || right.dtype() != mx::bfloat16)
+    return std::nullopt;
+  const auto queries = left.shape(0);
+  if (queries < 1 || (queries > 4 && queries != 8))
     return std::nullopt;
   const auto inner = left.shape(1);
   const auto rows = right.shape(1);
