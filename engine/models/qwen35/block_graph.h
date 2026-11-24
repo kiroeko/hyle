@@ -19,8 +19,8 @@ namespace compute = hyle::compute;
 // absolute_prefix identifies either the target layer or the trained NextN
 // layer. Optional target probes use the original nine-value layer0 inventory.
 template<class R>
-Value emit_ffn(R &r, Value residual, const std::string &absolute_prefix,
-               std::span<Value> probes = {}) {
+Value emit_ffn_delta(R &r, Value residual, const std::string &absolute_prefix,
+                     std::span<Value> probes = {}) {
   const auto normalized = r.norm_absolute(residual, absolute_prefix + "post_attention_layernorm.weight");
   const auto projected_gate = r.linear_absolute(normalized, absolute_prefix + "mlp.gate_proj.weight");
   const bool f32 = r.activation_type() == Type::kFloat32;
@@ -35,8 +35,14 @@ Value emit_ffn(R &r, Value residual, const std::string &absolute_prefix,
     probes[3] = product; probes[5] = residual; probes[6] = normalized;
     probes[7] = projected_gate; probes[8] = up;
   }
-  const auto result = r.linear_absolute(product, absolute_prefix + "mlp.down_proj.weight");
-  return r.binary(compute::BinaryKind::kAdd, residual, result);
+  return r.linear_absolute(product, absolute_prefix + "mlp.down_proj.weight");
+}
+
+template<class R>
+Value emit_ffn(R &r, Value residual, const std::string &absolute_prefix,
+               std::span<Value> probes = {}) {
+  const auto delta = emit_ffn_delta(r, residual, absolute_prefix, probes);
+  return r.binary(compute::BinaryKind::kAdd, residual, delta);
 }
 
 // Called only after the caller emitted the original recurrent Store. Keep the

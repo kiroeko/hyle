@@ -44,6 +44,15 @@ GraphAssembly::Location GraphAssembly::cpu() const {
   return {g::ExecutionTargetId{1}, g::StorageDomainId{1}};
 }
 
+GraphAssembly::Location GraphAssembly::ffn_residual_location(Location projections) const noexcept {
+  // The original BF16 residual is already on Metal. Keeping its add there
+  // lets the next normalization share its region. Only the FFN delta returns
+  // from the CPU, with the projections using their original placement and weights.
+  if (mixed_ && backend_.kind() == inference::BackendKind::kApple && activation_type() == Type::kBFloat16)
+    return primary();
+  return projections;
+}
+
 Tensor &GraphAssembly::literal_at(Location location, c::TensorDesc description) {
   literals.emplace_back(take(backend_.resource_for(location.storage)), description, true, budget_);
   return literals.back();

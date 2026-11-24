@@ -52,6 +52,7 @@ struct GraphAssembly final {
   GraphAssembly &operator=(const GraphAssembly &) = delete;
   static Location primary();
   Location cpu() const;
+  Location ffn_residual_location(Location projections) const noexcept;
   Tensor &literal_at(Location location, c::TensorDesc description);
   Tensor &literal(c::TensorDesc description);
   Type predicate_type() const;

@@ -289,10 +289,16 @@ TargetGraphResult emit_target_graph(Recipe &r,
       mixed = r.linear(gated, prefix + "self_attn.o_proj.weight");
     }
     const auto ffn_input = r.binary(c::BinaryKind::kAdd, x, mixed);
+    const auto ffn_location = inputs.cpu_ffn_layers.contains(i) ? assembly.cpu() : assembly.primary();
+    V ffn_delta;
     {
-      GraphAssembly::Scope scope(assembly, inputs.cpu_ffn_layers.contains(i) ? assembly.cpu() : assembly.primary());
-      x = block_graph::emit_ffn(r, ffn_input, "model.language_model." + prefix,
+      GraphAssembly::Scope scope(assembly, ffn_location);
+      ffn_delta = block_graph::emit_ffn_delta(r, ffn_input, "model.language_model." + prefix,
           i == 0 ? std::span<V>(outputs.layer0_probes) : std::span<V>{});
+    }
+    {
+      GraphAssembly::Scope scope(assembly, assembly.ffn_residual_location(ffn_location));
+      x = r.binary(c::BinaryKind::kAdd, ffn_input, ffn_delta);
     }
     if (i == 0) outputs.layer0_probes[4] = x;
   }
