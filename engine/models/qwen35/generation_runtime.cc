@@ -3904,7 +3904,7 @@ ExecutionProfilePreparation prepare_execution_profile(const inference::ModelLoad
       .policy = {config.sampling.temperature, config.sampling.top_k, config.sampling.top_p}, .seed = 0};
   auto backend = shared_endpoint ? take(shared_endpoint->share_endpoint()) :
       continuous.endpoint ? std::move(*continuous.endpoint) :
-      query_endpoint ? std::move(*query_endpoint) : create_execution(geometry, plan, cpu_ffn_layers, execution);
+      query_endpoint ? std::move(*query_endpoint) : create_execution(source.roles, plan, cpu_ffn_layers, execution);
   return {std::move(source), std::move(backend), plan, sampling, std::move(additional_sampling), depth, overlap,
       vision_asset?vision_asset->path:std::filesystem::path{}, cpu_ffn_layers};
 }

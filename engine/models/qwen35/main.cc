@@ -451,7 +451,7 @@ int qwen35::run(int argc, char **argv) {
     const auto metadata_prepare_seconds = weight_source.metadata_prepare_seconds;
     const auto model_start = qwen35::Clock::now();
     auto execution = continuous.endpoint ? std::move(*continuous.endpoint)
-        : qwen35::create_execution(geometry, selected_cache, cpu_ffn_layers, backend_selection);
+        : qwen35::create_execution(weight_source.roles, selected_cache, cpu_ffn_layers, backend_selection);
     qwen35::Model model(std::move(execution), {}, std::move(weight_source), geometry, capacity,
         selected_cache, layer0_probe, progress, replay, cache_bytes, sampler, cpu_ffn_layers);
     const qwen35::RouteDecisionFacts routes{

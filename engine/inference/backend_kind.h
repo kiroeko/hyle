@@ -17,6 +17,8 @@ inline constexpr const char *backend_protocol_name(BackendKind kind) noexcept {
 struct BackendSelection final {
   BackendKind primary = BackendKind::kDefault;
   bool cpu_assist = false;
+  // Derived from the original weights assigned to the CPU during cold placement.
+  bool cpu_assist_bf16_projection = false;
 };
 
 } // namespace hyle::inference

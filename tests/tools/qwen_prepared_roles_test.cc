@@ -308,6 +308,13 @@ void cold_ffn_placement_comes_from_inventory() {
   });
   require(partial.selected.size() == 5, "selected component fixture differs");
   check_placement(partial);
+  require(!qwen35::FfnPlacement(partial, 2).has_bf16_projection(),
+      "CPU packed projections and Metal BF16 weights must keep the compact team");
+  const std::string bf16 = "model.language_model.layers.2.mlp.down_proj.weight";
+  partial.selected.push_back({bf16, "BF16", inventory.at(bf16).shape, {}, 0, 0});
+  require(!qwen35::FfnPlacement(partial, 2).has_bf16_projection() &&
+      qwen35::FfnPlacement(partial, hyle::inference::CpuFfnLayers::parse("2:3")).has_bf16_projection(),
+      "wide team qualification must follow the selected BF16 FFN layer");
   rejects([&] { (void)qwen35::FfnPlacement(selected, geometry.layers.size() + 1); }, "exceeds");
   rejects([&] { (void)qwen35::FfnPlacement(selected, hyle::inference::CpuFfnLayers::parse("1000:1001")); }, "exceeds");
 }

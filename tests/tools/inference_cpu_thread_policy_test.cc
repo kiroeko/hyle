@@ -12,6 +12,13 @@ int main() {
   using platform::CpuKind;
   using platform::ProcessCpuCapacity;
   const auto check = [](bool value) { if (!value) std::abort(); };
+#if HYLE_OS_MACOS && HYLE_ARCH_ARM64
+  check(inference::default_cpu_native_thread_preference(true) == kWideMatrixTeam);
+  check(inference::default_cpu_native_thread_preference(false, true) == kWideMatrixTeam);
+#else
+  check(inference::default_cpu_native_thread_preference(false, true) == kPerformanceCores);
+#endif
+  check(inference::default_cpu_native_thread_preference(false) == kPerformanceCores);
   const std::array mixed{
       CpuCacheClassInfo{.kind = CpuKind::kPerformance, .logical_cpus = 16, .physical_cores = 8},
       CpuCacheClassInfo{.kind = CpuKind::kEfficiency, .logical_cpus = 16, .physical_cores = 16}};

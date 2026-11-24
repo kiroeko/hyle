@@ -208,6 +208,16 @@ inline Backend create_execution(const ModelGeometry &geometry, const cache::Plan
   if (cpu_options) return take(Backend::create(selection, {compute, compute, staging}, *cpu_options));
   return take(Backend::create(selection, {compute, compute, staging}));
 }
+
+inline Backend create_execution(const prepared::Roles &roles, const cache::Plan &plan,
+    const inference::CpuFfnLayers &cpu_ffn_layers, BackendSelection selection) {
+#if HYLE_OS_MACOS && HYLE_ARCH_ARM64
+  if (selection.primary == BackendKind::kApple && !cpu_ffn_layers.empty())
+    selection.cpu_assist_bf16_projection = FfnPlacement(roles, cpu_ffn_layers).has_bf16_projection();
+#endif
+  return create_execution(roles.geometry, plan, cpu_ffn_layers, selection);
+}
+
 inline c::BatchCapacity attention_capacity(const ModelGeometry &geometry, PrecisionProfile precision, const cache::Plan &plan) {
   const auto storage = take(c::CacheStorage::plain(precision.cache_type()));
   return {.storage = c::BatchStorage::kPaged, .query_type = precision.cache_type(),

@@ -30,15 +30,15 @@ inline bool uses_wsl2_guest_cpu_topology() noexcept {
 #endif
 }
 
-inline CpuNativeThreadPreference default_cpu_native_thread_preference(bool primary) noexcept {
-  if (primary) {
+inline CpuNativeThreadPreference default_cpu_native_thread_preference(
+    bool primary, [[maybe_unused]] bool assist_bf16_projection = false) noexcept {
 #if HYLE_OS_MACOS && HYLE_ARCH_ARM64
+  if (primary || assist_bf16_projection)
     return CpuNativeThreadPreference::kWideMatrixTeam;
 #else
-    if (uses_wsl2_guest_cpu_topology())
-      return CpuNativeThreadPreference::kCompactUniformGuest;
+  if (primary && uses_wsl2_guest_cpu_topology())
+    return CpuNativeThreadPreference::kCompactUniformGuest;
 #endif
-  }
   return CpuNativeThreadPreference::kPerformanceCores;
 }
 
@@ -67,8 +67,8 @@ inline std::uint32_t select_cpu_native_threads(
   // uniform guest capacity, within the original process budget.
   if (preference == CpuNativeThreadPreference::kCompactUniformGuest && !has_efficiency_class)
     selected = (std::min)(selected, std::size_t{8});
-  // Apple Silicon CPU-only matrix-vector work can use the extra bandwidth
-  // beyond the performance cluster. Bound the extra workers by that cluster.
+  // Apple Silicon matrix-vector work can use the extra bandwidth beyond the
+  // performance cluster. Bound the extra workers by that cluster.
   if (preference == CpuNativeThreadPreference::kWideMatrixTeam && has_efficiency_class && performance)
     selected = performance + (std::min)(performance, all - performance);
   return static_cast<std::uint32_t>((std::max)(selected, std::size_t{1}));

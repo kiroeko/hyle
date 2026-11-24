@@ -30,9 +30,11 @@ class FfnPlacement final {
       // Linear physical components share the principal's group root. The
       // reader owns codec suffix/shape validation; placement has no codec list.
       const auto group = std::string_view(name).substr(0, name.size() - std::string_view("weight").size());
-      for (const auto &role : roles.selected)
+      for (const auto &role : roles.selected) {
         if (role.name == name || (parameter.linear && role.name.starts_with(group)))
           host_roles_.insert(role.name);
+        bf16_projection_ |= parameter.linear && role.name == name && role.dtype == "BF16";
+      }
     }
   }
   std::size_t target_layers() const noexcept { return target_layers_; }
@@ -40,10 +42,12 @@ class FfnPlacement final {
   bool ffn_on_cpu(std::size_t layer) const noexcept { return layers_.contains(layer); }
   const hyle::inference::CpuFfnLayers &layers() const noexcept { return layers_; }
   bool role_on_cpu(std::string_view name) const { return host_roles_.contains(name); }
+  bool has_bf16_projection() const noexcept { return bf16_projection_; }
 
  private:
   const std::size_t target_layers_;
   const hyle::inference::CpuFfnLayers layers_;
   std::set<std::string, std::less<>> host_roles_;
+  bool bf16_projection_ = false;
 };
 } // namespace qwen35

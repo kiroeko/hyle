@@ -316,6 +316,8 @@ CPU分置、prefix、多会话、scheduler和随机采样不自动启用。`--re
 引擎在 CPU 端点冷创建时，按进程可用的物理核心和 CPU 配额设置原有 ggml 原生线程组；
 已知性能核时优先使用性能核，线程数不超过所链接实现的上限。拓扑查询失败时保留单线程。
 混合放置的 CPU 端点也按进程拓扑与配额选择线程数。标准 x64 WSL2 内核上的纯 CPU 推理在来宾未区分 CPU 容量等级时，ggml 线程组最多使用 8 个线程。
+Apple Silicon 的纯 CPU 执行，以及 CPU 承担 BF16 投影的混合放置，可以为较大的单行 BF16 矩阵向量乘法使用更宽的原生线程组。
+多行矩阵和小算子继续使用性能核线程数，CPU 不承担 BF16 投影的混合放置也使用这个线程数。
 程序集成显式传入的 `compute::cpu::DefaultContextOptions` 保持调用方的线程预算与借用 executor；
 直接调用 Compute／Graph CPU 工厂的默认值仍为单线程。allocator／executor 支撑对象须活到全部派生制品和原生工作退休，
 具体组合见 [CPU executor 示例](../../samples/package/graph/cpu_executor/README.md)和[架构说明](../architecture/inference-design.md)。
