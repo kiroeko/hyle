@@ -1520,8 +1520,19 @@ void application_uses_one_provider_path_for_cli_and_worker() {
   const auto [range_status, range_output, range_error] =
       run({"--inputs", "other-model", "--tokens", "-", "--cpu-ffn-layers", "6:8,1:2,2:4"});
   require(!range_status && range_error.empty() && !range_output.empty() &&
-      application_loaded->execution.cpu_ffn_layers.ranges_text() == "1:4,6:8",
+      application_loaded->execution.cpu_ffn_layers &&
+      application_loaded->execution.cpu_ffn_layers->ranges_text() == "1:4,6:8",
       "application lost or changed exact CPU FFN placement");
+  const auto [limit_status, limit_output, limit_error] =
+      run({"--inputs", "other-model", "--tokens", "-", "--backend", "apple", "--device-budget-mib", "4096"});
+  require(!limit_status && !limit_output.empty() && limit_error.empty() &&
+      application_loaded->execution.device_budget_bytes == 4096ULL * 1024 * 1024 &&
+      !application_loaded->execution.cpu_ffn_layers, "application lost the automatic placement budget");
+  const auto [fixed_status, fixed_output, fixed_error] =
+      run({"--inputs", "other-model", "--tokens", "-", "--backend", "apple", "--device-budget-mib", "4096", "--cpu-ffn-layers", "0"});
+  require(!fixed_status && !fixed_output.empty() && fixed_error.empty() &&
+      application_loaded->execution.cpu_ffn_layers && application_loaded->execution.cpu_ffn_layers->empty(),
+      "explicit zero CPU FFNs must fix GPU-only placement under the budget");
   for (const auto *ranges : {"1:4,3:5", "3:3", "1:4,", "0:18446744073709551616"})
     require(std::get<0>(run({"--inputs", "other-model", "--tokens", "-", "--cpu-ffn-layers", ranges})) == 1,
         "application accepted malformed CPU FFN ranges");

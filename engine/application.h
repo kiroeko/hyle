@@ -114,6 +114,13 @@ inline ApplicationOptions parse_application_options(int argc, char **argv) {
       else throw std::invalid_argument("backend must be auto, cpu, cuda or apple");
     } else if (option == "--capacity") config.execution.context = application_number<std::size_t>(option, value);
     else if (option == "--cpu-ffn-layers") config.execution.cpu_ffn_layers = inference::CpuFfnLayers::parse(value);
+    else if (option == "--device-budget-mib") {
+      constexpr std::size_t mib = 1024 * 1024;
+      const auto limit = application_number<std::size_t>(option, value);
+      if (!limit || limit > SIZE_MAX / mib)
+        throw std::invalid_argument("--device-budget-mib requires a positive representable limit in MiB");
+      config.execution.device_budget_bytes = limit * mib;
+    }
     else if (option == "--max-sessions") config.execution.resident_sessions = application_number<std::size_t>(option, value);
     else if (option == "--active-sequences") config.execution.active_sequences = application_number<std::size_t>(option, value);
     else if (option == "--prefill-chunk-tokens") config.execution.prefill_rows = application_number<std::size_t>(option, value);
@@ -168,6 +175,7 @@ inline int run_application(std::span<const inference::ModelProvider> providers, 
       output << "Hyle text inference\nUsage: hyle generate --inputs SOURCE --tokens FILE|- [options]\n"
           "  --backend auto|cpu|cuda|apple  --capacity N\n"
           "  --cpu-ffn-layers N|START:END[,START:END...]  (zero-based, end exclusive; requires CPU and GPU)\n"
+          "  --device-budget-mib N  (managed GPU memory limit; fits CPU FFN layers if unspecified)\n"
           "  --max-sessions N  --active-sequences N  --max-output-tokens N\n"
           "  --sampling greedy|random  --temperature T  --top-k N  --top-p P  --seed N\n"
           "  --additional-sampling greedy|random|random,T,K,P  --sampling-index N\n"

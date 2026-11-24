@@ -35,7 +35,8 @@ def make_worker_command(args, choices: PreparedChoices | None = None) -> list[st
     command = [str(args.engine), '--engine-worker', '--inputs', str(args.inputs), '--backend', args.backend,
                '--capacity', str(args.capacity), '--max-sessions', str(args.max_sessions),
                '--active-sequences', str(args.active_sequences), '--sampling', args.sampling]
-    if args.cpu_ffn_layers: command += ['--cpu-ffn-layers', str(args.cpu_ffn_layers)]
+    if args.cpu_ffn_layers is not None: command += ['--cpu-ffn-layers', str(args.cpu_ffn_layers)]
+    if args.device_budget_mib is not None: command += ['--device-budget-mib', str(args.device_budget_mib)]
     if args.prefill_chunk_tokens is not None:
         command += ['--prefill-chunk-tokens', str(args.prefill_chunk_tokens)]
     if args.sampling == 'random':
@@ -86,8 +87,10 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
     common.add_argument('--config', type=Path, help='cold execution/sampling and session policy TOML')
     common.add_argument('--asset-cache', type=Path, help='immutable store for configured automatic asset recipes')
     common.add_argument('--backend', choices=('auto', 'cpu', 'cuda', 'apple'), default='auto')
-    common.add_argument('--cpu-ffn-layers', default=0, metavar='N|START:END[,START:END...]',
+    common.add_argument('--cpu-ffn-layers', metavar='N|START:END[,START:END...]',
                         help='cold target FFNs on CPU, as a count or zero-based end-exclusive ranges')
+    common.add_argument('--device-budget-mib', type=int,
+                        help='managed GPU memory limit; fits CPU FFN layers if unspecified')
     common.add_argument('--capacity', type=int, default=4096)
     common.add_argument('--prefill-chunk-tokens', type=int,
                         help='cold physical prefill row limit; does not reduce the model context')
@@ -116,13 +119,15 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
     generate.add_argument('--request-seed', type=int)
     args = parser.parse_args(argv)
     try:
-        cpu_ffn_ranges = parse_cpu_ffn_layers(str(args.cpu_ffn_layers))
+        cpu_ffn_ranges = () if args.cpu_ffn_layers is None else parse_cpu_ffn_layers(str(args.cpu_ffn_layers))
     except ValueError:
         parser.error('--cpu-ffn-layers requires a count or disjoint zero-based START:END ranges')
-    if not cpu_ffn_ranges:
-        args.cpu_ffn_layers = 0
     if cpu_ffn_ranges and args.backend == 'cpu':
         parser.error('--cpu-ffn-layers requires a GPU primary backend')
+    if args.device_budget_mib is not None and not 0 < args.device_budget_mib < 1 << 44:
+        parser.error('--device-budget-mib requires a positive representable limit in MiB')
+    if args.device_budget_mib is not None and args.backend not in ('auto', 'apple'):
+        parser.error('--device-budget-mib is supported on the Apple GPU backend')
     if args.prefill_chunk_tokens is not None and not 0 < args.prefill_chunk_tokens < 1 << 64:
         parser.error('--prefill-chunk-tokens requires a positive unsigned 64-bit integer')
     if args.sampling != 'random' and any(value is not None for value in

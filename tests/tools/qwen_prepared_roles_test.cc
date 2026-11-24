@@ -1,6 +1,7 @@
 // Standard-library-only metadata regression: no weight body, SDK or device IO.
 #include "../../engine/models/qwen35/prepared_roles.h"
 #include "../../engine/models/qwen35/ffn_placement.h"
+#include "../../engine/models/qwen35/ffn_memory_fit.h"
 #include "qwen_geometry_fixture.h"
 #include "../../engine/models/qwen35/precision_profile.h"
 #include "../../engine/models/qwen35/mtp_capabilities.h"
@@ -318,6 +319,28 @@ void cold_ffn_placement_comes_from_inventory() {
   rejects([&] { (void)qwen35::FfnPlacement(selected, geometry.layers.size() + 1); }, "exceeds");
   rejects([&] { (void)qwen35::FfnPlacement(selected, hyle::inference::CpuFfnLayers::parse("1000:1001")); }, "exceeds");
 }
+void cold_device_budget_selects_the_smallest_prefix() {
+  using hyle::inference::CpuFfnLayers;
+  p::Roles roles;
+  roles.geometry = geometry;
+  roles.selected = {
+      {.name = "model.language_model.embed_tokens.weight", .bytes = 64},
+      {.name = "model.language_model.layers.0.mlp.up_proj.weight", .bytes = 67},
+      {.name = "model.language_model.layers.1.mlp.up_proj.qweight", .bytes = 33},
+      {.name = "model.language_model.layers.1.mlp.up_proj.scales", .bytes = 5}};
+  const auto bytes = qwen35::placement_weight_bytes(roles, CpuFfnLayers(2));
+  require(bytes.device_weights == 64 && bytes.host_weights == 112,
+      "placement must account for whole physical FFN groups and padded file targets");
+  require(qwen35::fit_cpu_ffn_layers(roles, {}, 128, 304).empty(), "full placement fits the exact budget");
+  require(qwen35::fit_cpu_ffn_layers(roles, {}, 128, 236) == 1, "one FFN is sufficient at the exact boundary");
+  require(qwen35::fit_cpu_ffn_layers(roles, {}, 128, 235) == 2, "below the one-FFN boundary needs a second layer");
+  require(qwen35::fit_cpu_ffn_layers(roles, {}, 128, 304, 1) == 1, "a mixed route must retain its first CPU layer");
+  const auto sparse = CpuFfnLayers::parse("1:2");
+  require(qwen35::fit_cpu_ffn_layers(roles, sparse, 128, 260) == sparse, "explicit placement keeps its ranges");
+  rejects([&] { (void)qwen35::fit_cpu_ffn_layers(roles, CpuFfnLayers(0), 128, 303); }, "explicit FFN placement");
+  rejects([&] { (void)qwen35::fit_cpu_ffn_layers(roles, {}, 128, 191); }, "all target FFNs on CPU");
+}
+
 void check_selected(const p::Roles &result, std::size_t count, std::size_t bytes, bool mtp) {
   check_placement(result);
   if (result.identity != identity || result.selected.size() != count || result.bytes != bytes)
@@ -1119,6 +1142,7 @@ int main(int argc, char **argv) {
       require(!qwen35::supports_stored_draft_projection(roles), "missing projection was admitted as MTP head");
     }
     cold_ffn_placement_comes_from_inventory();
+    cold_device_budget_selects_the_smallest_prefix();
     modelopt_static_fp8_preserves_original_scalar_roles(directory);
     mlx_original_affine_names_and_effective_parameters(directory);
     full_inventory_and_selection(directory);

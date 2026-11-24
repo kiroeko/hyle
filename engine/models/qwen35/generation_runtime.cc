@@ -4,6 +4,7 @@
 #include <atomic>
 #include "model_core.h"
 #include "prepared_executor.h"
+#include "ffn_memory_fit.h"
 #include "device_mtp_planning.h"
 #include "schedule.h"
 #include "session_schedule.h"
@@ -3763,20 +3764,31 @@ bool matches_prepared_model(const std::filesystem::path &source) {
   return prepared::is_role_signature(signature);
 }
 
-struct ExecutionProfilePreparation final {
+struct ExecutionProfileInput final {
   PreparedWeightSource source;
+  std::filesystem::path vision_path;
+  std::size_t draft_depth;
+};
+
+struct ExecutionProfilePreparation final {
   Backend endpoint;
   cache::Plan cache;
   Model::Sampling sampling;
   std::vector<SamplingConfiguration> additional_sampling;
-  std::size_t draft_depth;
   bool overlap;
-  std::filesystem::path vision_path;
-  inference::CpuFfnLayers cpu_ffn_layers;
 };
 
-ExecutionProfilePreparation prepare_execution_profile(const inference::ModelLoadConfig &config,
-    std::size_t index, const Backend *shared_endpoint = nullptr) {
+inference::ColdWorkloadFacts execution_workload(const inference::ModelLoadConfig &config,
+    BackendSelection execution) {
+  const bool greedy = !config.sampling.random || std::ranges::any_of(config.additional_sampling,
+      [](const auto &policy) { return !policy.random; });
+  return {.natural_generation = true, .cpu_assist = execution.cpu_assist, .greedy = greedy,
+      .max_sessions = config.execution.resident_sessions, .active_sequences = config.execution.active_sequences,
+      .capacity = config.execution.context};
+}
+
+ExecutionProfileInput prepare_execution_profile_input(const inference::ModelLoadConfig &config,
+    std::size_t index, BackendSelection execution) {
   const auto &profile = config.execution_profiles[index];
   const auto source_assets = inference::execution_profile_assets(config, index);
   inference::validate_model_assets(source_assets);
@@ -3793,22 +3805,13 @@ ExecutionProfilePreparation prepare_execution_profile(const inference::ModelLoad
       config.execution.active_sequences > config.execution.resident_sessions || !config.execution.prefill_rows ||
       (profile.draft_count && *profile.draft_count >= config.execution.context))
     throw std::invalid_argument("model loading requires valid context, sequence, prefill and draft capacities");
-  const auto &cpu_ffn_layers = config.execution.cpu_ffn_layers;
-  const auto cpu_layers = cpu_ffn_layers.count();
-  const auto execution = select_execution(BackendSelection{.primary = config.execution.backend}, cpu_layers);
-  const bool has_greedy_sampling = !config.sampling.random || std::ranges::any_of(config.additional_sampling,
-      [](const auto &policy) { return !policy.random; });
-  const inference::ColdWorkloadFacts workload{
-      .natural_generation = true, .cpu_assist = cpu_layers != 0, .greedy = has_greedy_sampling,
-      .max_sessions = config.execution.resident_sessions, .active_sequences = config.execution.active_sequences,
-      .capacity = config.execution.context};
   namespace mtp_policy = inference::mtp;
   const bool explicit_depth = profile.draft_count.has_value();
   const auto requested_depth = profile.draft_count.value_or(1);
   MtpDefaultRequest request{
       .mode = vision_asset ? mtp_policy::RequestedMode::kOff : !explicit_depth ? mtp_policy::RequestedMode::kAuto :
           requested_depth ? mtp_policy::RequestedMode::kOn : mtp_policy::RequestedMode::kOff,
-      .workload = workload, .automatic_backend_eligible = execution.primary == BackendKind::kCuda,
+      .workload = execution_workload(config, execution), .automatic_backend_eligible = execution.primary == BackendKind::kCuda,
       .max_drafts = requested_depth,
       .automatic_vocabulary = vocabulary_asset ? vocabulary_asset->mode == inference::ModelAssetMode::kAutomatic : !explicit_depth};
   auto vocabulary = vocabulary_asset ? (vocabulary_asset->mode == inference::ModelAssetMode::kFile
@@ -3830,6 +3833,18 @@ ExecutionProfilePreparation prepare_execution_profile(const inference::ModelLoad
   // short context can hold every proposed row.
   const auto depth = (std::min)(selected_depth, config.execution.context - 1);
   if (mtp && !depth) throw std::invalid_argument("model draft depth requires a remaining context row");
+  return {std::move(source), vision_asset ? vision_asset->path : std::filesystem::path{}, depth};
+}
+
+ExecutionProfilePreparation prepare_execution_profile(const inference::ModelLoadConfig &config,
+    std::size_t index, const ExecutionProfileInput &input, BackendSelection execution,
+    const inference::CpuFfnLayers &cpu_ffn_layers, const Backend *shared_endpoint) {
+  const auto &profile = config.execution_profiles[index];
+  const auto &source = input.source;
+  const auto depth = input.draft_depth;
+  const bool mtp = depth != 0;
+  const auto workload = execution_workload(config, execution);
+  const auto prefill = (std::min)({config.execution.prefill_rows, std::size_t{512}, config.execution.context});
   const auto geometry = source.roles.geometry;
   FfnPlacement::validate(cpu_ffn_layers, geometry.layers.size());
   validate_mtp_source(geometry, mtp);
@@ -3857,7 +3872,7 @@ ExecutionProfilePreparation prepare_execution_profile(const inference::ModelLoad
       .mtp_enabled = mtp, .max_drafts = depth, .max_device_drafts = kMaximumDeviceMtpDrafts,
       .stored_draft_head = supports_stored_draft_projection(source.roles),
       .has_decode = config.execution.context > 1, .resolved_active_sequences = config.execution.active_sequences};
-  const bool qualify_native_mtp = mtp && !cpu_layers && execution.primary == BackendKind::kApple &&
+  const bool qualify_native_mtp = mtp && !execution.cpu_assist && execution.primary == BackendKind::kApple &&
       workload.max_sessions == 1 && workload.active_sequences == 1;
   std::optional<Backend> query_endpoint;
   bool native_candidate = !mtp && execution.primary == BackendKind::kApple;
@@ -3877,7 +3892,7 @@ ExecutionProfilePreparation prepare_execution_profile(const inference::ModelLoad
   const auto append_sampling_route = [&](const inference::PreparedSamplingPolicy &policy) {
     auto selected = facts;
     selected.workload.greedy = !policy.random;
-    const DeviceRelayCapabilities relay{execution.primary, cpu_layers != 0, false, policy.random && mtp, false,
+    const DeviceRelayCapabilities relay{execution.primary, execution.cpu_assist, false, policy.random && mtp, false,
         native_candidate, device_mtp_sampling_supported(policy.random, depth)};
     selected.relay_eligible = relay.eligible(); selected.relay_refusal = relay.refusal_reason();
     sampling_routes.push_back(selected);
@@ -3885,7 +3900,7 @@ ExecutionProfilePreparation prepare_execution_profile(const inference::ModelLoad
   append_sampling_route(config.sampling);
   for (const auto &policy : config.additional_sampling) append_sampling_route(policy);
   const auto routes = qwen35::plan_prepared_decode_routes(sampling_routes, profile.overlap, !qualify_native_mtp);
-  const bool overlap = !vision_asset && routes.overlap;
+  const bool overlap = input.vision_path.empty() && routes.overlap;
   // The verifier can consume a standalone draft chain; it does not require
   // an overlapping successor. Keep its independently selected capacity.
   const bool verification = routes.verification;
@@ -3905,57 +3920,121 @@ ExecutionProfilePreparation prepare_execution_profile(const inference::ModelLoad
   auto backend = shared_endpoint ? take(shared_endpoint->share_endpoint()) :
       continuous.endpoint ? std::move(*continuous.endpoint) :
       query_endpoint ? std::move(*query_endpoint) : create_execution(source.roles, plan, cpu_ffn_layers, execution);
-  return {std::move(source), std::move(backend), plan, sampling, std::move(additional_sampling), depth, overlap,
-      vision_asset?vision_asset->path:std::filesystem::path{}, cpu_ffn_layers};
+  return {std::move(backend), plan, sampling, std::move(additional_sampling), overlap};
 }
 
-std::unique_ptr<Model> instantiate_execution_profile(ExecutionProfilePreparation preparation,
-    std::size_t capacity, std::shared_ptr<WeightStorage> weights = {}, std::shared_ptr<VisionEncoder> shared_vision = {}) {
-  const auto geometry = preparation.source.roles.geometry;
-  const auto vision_path=preparation.vision_path;
-  const auto vision_target=vision_path.empty()?prepared::Roles{}:preparation.source.roles;
-  auto model = std::make_unique<Model>(std::move(preparation.endpoint), hyle::compute::ResourceBudget{}, std::move(preparation.source),
+std::unique_ptr<Model> instantiate_execution_profile(ExecutionProfileInput input, ExecutionProfilePreparation preparation,
+    std::size_t capacity, const inference::CpuFfnLayers &cpu_ffn_layers, const c::ResourceBudget &budget,
+    std::shared_ptr<WeightStorage> weights = {}, std::shared_ptr<VisionEncoder> shared_vision = {}) {
+  const auto geometry = input.source.roles.geometry;
+  const auto vision_target = input.vision_path.empty() ? prepared::Roles{} : input.source.roles;
+  auto model = std::make_unique<Model>(std::move(preparation.endpoint), budget, std::move(input.source),
       geometry, capacity, preparation.cache, std::filesystem::path{}, false, ReplayPolicy::kAuto, SIZE_MAX,
-      preparation.sampling, preparation.cpu_ffn_layers, preparation.additional_sampling, std::move(weights));
-  if (preparation.cache.draft_cache) model->configure_draft_policy({preparation.draft_depth});
-  if(!vision_path.empty())model->vision=shared_vision?std::move(shared_vision):
-      std::make_shared<VisionEncoder>(model->execution,vision_target,vision_path,model->allocation_budget);
+      preparation.sampling, cpu_ffn_layers, preparation.additional_sampling, std::move(weights));
+  if (preparation.cache.draft_cache) model->configure_draft_policy({input.draft_depth});
+  if (!input.vision_path.empty()) model->vision = shared_vision ? std::move(shared_vision) :
+      std::make_shared<VisionEncoder>(model->execution, vision_target, input.vision_path, model->allocation_budget);
   return model;
 }
 std::unique_ptr<inference::ModelExecutor> load_model_executor(const inference::ModelLoadConfig &config) {
   inference::validate_execution_preparation(config);
   const auto count = config.execution_profiles.size();
-  std::vector<std::unique_ptr<Model>> models(count);
-  std::vector<PreparedGenerationProfile> profiles(count);
-  std::vector<std::string> names;
-  auto first = prepare_execution_profile(config, 0);
-  if (count == 1) {
-    // Preserve the ordinary inline load and single prepared executor. No union
-    // inventory or separate asset pass is needed for one execution profile.
-    const bool overlap = first.overlap;
-    models[0] = instantiate_execution_profile(std::move(first), config.execution.context);
-    profiles[0] = {models[0].get(), overlap};
-  } else {
-    std::vector<ExecutionProfilePreparation> prepared;
-    prepared.reserve(count);
-    prepared.push_back(std::move(first));
-    for (std::size_t j = 1; j < count; ++j)
-      prepared.push_back(prepare_execution_profile(config, j, &prepared.front().endpoint));
+  auto cpu_ffn_layers = config.execution.cpu_ffn_layers.value_or(inference::CpuFfnLayers{});
+  auto execution = select_execution(BackendSelection{.primary = config.execution.backend}, cpu_ffn_layers.count());
+  const auto limit = config.execution.device_budget_bytes;
+  if (limit && (!*limit || execution.primary != BackendKind::kApple))
+    throw std::invalid_argument("a positive --device-budget-mib is supported on the Apple GPU backend");
+
+  std::vector<ExecutionProfileInput> inputs;
+  inputs.reserve(count);
+  for (std::size_t j = 0; j < count; ++j)
+    inputs.push_back(prepare_execution_profile_input(config, j, execution));
+  std::optional<prepared::Roles> shared_roles;
+  if (count > 1) {
     std::vector<const PreparedWeightSource *> sources;
     sources.reserve(count);
-    for (const auto &profile : prepared) sources.push_back(&profile.source);
-    auto weights = prepare_shared_weights(prepared.front().endpoint, shared_weight_roles(sources),
-        config.execution.cpu_ffn_layers);
-    std::map<std::filesystem::path,std::shared_ptr<VisionEncoder>> shared_vision;
+    for (const auto &input : inputs) sources.push_back(&input.source);
+    shared_roles.emplace(shared_weight_roles(sources));
+  }
+  std::vector<ExecutionProfilePreparation> prepared;
+  prepared.reserve(count);
+  const auto prepare_routes = [&] {
+    prepared.clear();
+    for (std::size_t j = 0; j < count; ++j)
+      prepared.push_back(prepare_execution_profile(config, j, inputs[j], execution, cpu_ffn_layers,
+          j ? &prepared.front().endpoint : nullptr));
+  };
+  prepare_routes();
+
+  c::ResourceBudget budget;
+  if (limit) {
+    const auto &roles = shared_roles ? *shared_roles : inputs.front().source.roles;
+    const auto runtime_bytes = [&] {
+      std::size_t bytes = 0;
+      for (std::size_t j = 0; j < count; ++j) {
+        const auto &plan = prepared[j].cache;
+        bytes = cache::add(bytes, cache::add(plan.backing_bytes,
+            model_workspace_envelope(roles.geometry, plan.max_query_rows)));
+        const auto &source = inputs[j].source;
+        if (source.draft_head)
+          bytes = cache::add(bytes, streamed_weight_capacity(source.draft_head->role.bytes));
+      }
+      return bytes;
+    };
+    auto reserve = runtime_bytes();
+    // GPU-only and CPU-assisted routes can have different cache plans. Fit
+    // mixed candidates against their own reserve after ruling out GPU-only.
+    if (!config.execution.cpu_ffn_layers &&
+        cache::add(placement_weight_bytes(roles, {}).device_weights, reserve) > *limit) {
+      cpu_ffn_layers = 1;
+      execution = select_execution(execution, 1);
+      prepare_routes();
+      reserve = runtime_bytes();
+    }
+    auto fitted = fit_cpu_ffn_layers(roles, config.execution.cpu_ffn_layers, reserve, *limit, cpu_ffn_layers.count());
+    if (fitted != cpu_ffn_layers) {
+      cpu_ffn_layers = std::move(fitted);
+      execution = select_execution(execution, cpu_ffn_layers.count());
+      prepare_routes();
+      reserve = runtime_bytes();
+      (void)fit_cpu_ffn_layers(roles, cpu_ffn_layers, reserve, *limit);
+    }
+    const auto bytes = placement_weight_bytes(roles, cpu_ffn_layers);
+    std::cerr << "device_placement mode=" << (config.execution.cpu_ffn_layers ? "explicit" : "fit")
+              << " cpu_ffn_layers=" << cpu_ffn_layers.count() << " cpu_ffn_ranges=" << cpu_ffn_layers.ranges_text()
+              << " device_weight_bytes=" << bytes.device_weights << " host_weight_bytes=" << bytes.host_weights
+              << " device_runtime_reserve_bytes=" << reserve << " device_limit_bytes=" << *limit
+              << " scope=managed_requested_bytes native_private_unknown=1\n";
+    const auto &endpoint = prepared.front().endpoint;
+    std::vector<c::ResourceBudgetLimit> limits{{endpoint.device(), *limit}};
+    for (const auto resource : {endpoint.staging(), mem::system_resource(), endpoint.host_device()})
+      if (resource.valid() && std::ranges::none_of(limits, [resource](const auto &row) { return row.resource == resource; }))
+        limits.push_back({resource});
+    budget = take(c::ResourceBudget::create({.limits = limits, .allow_unattributed = true}));
+  }
+
+  std::vector<std::unique_ptr<Model>> models(count);
+  std::vector<PreparedGenerationProfile> profiles(count);
+  if (count == 1) {
+    const bool overlap = prepared.front().overlap;
+    models[0] = instantiate_execution_profile(std::move(inputs.front()), std::move(prepared.front()),
+        config.execution.context, cpu_ffn_layers, budget);
+    profiles[0] = {models[0].get(), overlap};
+  } else {
+    auto weights = prepare_shared_weights(prepared.front().endpoint, std::move(*shared_roles), cpu_ffn_layers, budget);
+    std::map<std::filesystem::path, std::shared_ptr<VisionEncoder>> shared_vision;
     for (std::size_t j = 0; j < count; ++j) {
       const bool overlap = prepared[j].overlap;
-      const auto key=prepared[j].vision_path.empty()?std::filesystem::path{}:std::filesystem::canonical(prepared[j].vision_path);
-      auto encoder=key.empty()?std::shared_ptr<VisionEncoder>{}:shared_vision[key];
-      models[j] = instantiate_execution_profile(std::move(prepared[j]), config.execution.context, weights,std::move(encoder));
-      if(!key.empty())shared_vision[key]=models[j]->vision;
+      const auto key = inputs[j].vision_path.empty() ? std::filesystem::path{} : std::filesystem::canonical(inputs[j].vision_path);
+      auto encoder = key.empty() ? std::shared_ptr<VisionEncoder>{} : shared_vision[key];
+      models[j] = instantiate_execution_profile(std::move(inputs[j]), std::move(prepared[j]), config.execution.context,
+          cpu_ffn_layers, budget, weights, std::move(encoder));
+      if (!key.empty()) shared_vision[key] = models[j]->vision;
       profiles[j] = {models[j].get(), overlap};
     }
   }
+  std::vector<std::string> names;
+  names.reserve(count);
   for (const auto &profile : config.execution_profiles) names.push_back(profile.name);
   return std::make_unique<LoadedModelExecutor>(std::move(models), std::move(profiles), std::move(names),
       config.execution.prefill_rows, config.execution.prefix_cache_entries);

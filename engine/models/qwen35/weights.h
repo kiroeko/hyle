@@ -159,6 +159,12 @@ struct PreparedWeightSource {
   std::optional<PreparedDraftHeadSource> draft_head;
   hyle::inference::DraftVocabularyPreferences draft_preferences;
 };
+
+// Metal file copies use complete four-byte words. The prepared descriptor
+// and source range keep their original logical byte size.
+inline std::size_t streamed_weight_capacity(std::size_t bytes) {
+  return cache::add(bytes, (4 - bytes % 4) % 4);
+}
 namespace projection_detail {
 std::array<std::int64_t, 2> logical_shape(const ProjectionBinding &binding);
 }

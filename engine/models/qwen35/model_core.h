@@ -174,6 +174,15 @@ inline BackendSelection select_execution(BackendSelection selection, std::size_t
     throw std::runtime_error("--cpu-ffn-layers requires a GPU primary and the compiled CPU route");
   return selection;
 }
+
+// Known per-invocation workspace envelope. Native providers may own other
+// private allocations outside the graph storage domains.
+inline std::size_t model_workspace_envelope(const ModelGeometry &geometry, std::size_t rows) {
+  const auto layer_elements = cache::add(cache::multiply(16, geometry.intermediate), cache::multiply(32, geometry.hidden));
+  const auto elements = cache::add(cache::multiply(geometry.layers.size(), layer_elements), cache::multiply(2, geometry.vocabulary));
+  return cache::add(64u << 20, cache::multiply(cache::multiply(rows, elements), sizeof(float)));
+}
+
 inline Backend create_execution(const ModelGeometry &geometry, const cache::Plan &plan,
     const inference::CpuFfnLayers &cpu_ffn_layers, BackendSelection selection,
     const c::cpu::DefaultContextOptions *cpu_options = nullptr) {
@@ -186,13 +195,8 @@ inline Backend create_execution(const ModelGeometry &geometry, const cache::Plan
     if (cpu_options) return take(Backend::create(selection, {}, *cpu_options));
     return take(Backend::create(selection));
   }
-  // Conservative finite admission for this graph's known workspace only.
-  // Sum model-sized activation envelopes instead of assuming workspace reuse;
-  // unknown native-private storage remains explicitly outside this bound.
   const auto rows = static_cast<std::size_t>(plan.max_query_rows);
-  const auto activation_elements = cache::add(cache::multiply(geometry.layers.size(),
-      cache::add(cache::multiply(16, geometry.intermediate), cache::multiply(32, geometry.hidden))), cache::multiply(2, geometry.vocabulary));
-  const auto compute = cache::add(64u << 20, cache::multiply(cache::multiply(rows, activation_elements), sizeof(float)));
+  const auto compute = model_workspace_envelope(geometry, rows);
   if (selection.primary == BackendKind::kCpu) {
     std::cerr << "cpu_workspace_admission host=" << compute
         << " scope=known_per_invocation_workspace native_private_unknown=1 physical_memory_cap=0\n";

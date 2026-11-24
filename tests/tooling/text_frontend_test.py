@@ -303,7 +303,7 @@ class TextFrontendTest(unittest.TestCase):
     def test_unspecified_overlap_is_selected_by_model_preparation(self):
         options = dict(engine="hyle", inputs="model", backend="cuda", capacity=128,
                        max_sessions=1, active_sequences=1, draft_count=0, cpu_ffn_layers=0, prefill_chunk_tokens=None,
-                       sampling="greedy", draft_vocabulary=None, draft_head=None)
+                       sampling="greedy", draft_vocabulary=None, draft_head=None, device_budget_mib=None)
         self.assertNotIn("--overlap", make_worker_command(Namespace(**options, overlap=None)))
         for setting, value in ((True, "on"), (False, "off")):
             command = make_worker_command(Namespace(**options, overlap=setting))
@@ -312,11 +312,20 @@ class TextFrontendTest(unittest.TestCase):
     def test_unspecified_draft_count_uses_model_policy(self):
         options = dict(engine="hyle", inputs="model", backend="cuda", capacity=128,
                        max_sessions=1, active_sequences=1, overlap=None, cpu_ffn_layers=0, prefill_chunk_tokens=None,
-                       sampling="greedy", draft_vocabulary=None, draft_head=None)
+                       sampling="greedy", draft_vocabulary=None, draft_head=None, device_budget_mib=None)
         self.assertNotIn("--draft-count", make_worker_command(Namespace(**options, draft_count=None)))
         for count in (0, 1, 3):
             command = make_worker_command(Namespace(**options, draft_count=count))
             self.assertEqual(command[command.index("--draft-count") + 1], str(count))
+
+    def test_device_budget_preserves_unspecified_and_explicit_zero_ffn_placement(self):
+        options = ['serve', '--engine', 'hyle', '--inputs', 'model', '--tokenizer-dir', 'tokenizer',
+                   '--backend', 'apple', '--device-budget-mib', '4000']
+        fitted = make_worker_command(parse_arguments(options))
+        self.assertNotIn('--cpu-ffn-layers', fitted)
+        self.assertEqual(fitted[fitted.index('--device-budget-mib') + 1], '4000')
+        fixed = make_worker_command(parse_arguments(options + ['--cpu-ffn-layers', '0']))
+        self.assertEqual(fixed[fixed.index('--cpu-ffn-layers') + 1], '0')
 
     def test_reject_unsupported_request_instead_of_ignoring(self):
         for payload in ({"model": "hyle", "input": "x", "background": True},

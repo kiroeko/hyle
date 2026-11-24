@@ -72,8 +72,10 @@ struct ExecutionPreparation final {
   std::size_t prefill_rows = (std::numeric_limits<std::size_t>::max)();
   // Cold placement intent. The model owns FFN roles, graph boundaries and
   // legal sharing; unsupported placements must be rejected, never ignored.
-  // An empty selection retains the original single-endpoint preparation.
-  CpuFfnLayers cpu_ffn_layers;
+  // An explicit zero fixes GPU-only placement. An absent selection permits
+  // choosing FFN layers when a managed device allocation limit is supplied.
+  std::optional<CpuFfnLayers> cpu_ffn_layers;
+  std::optional<std::size_t> device_budget_bytes;
 };
 
 // Immutable bindings for one prepared algorithm. The provider interprets
