@@ -2,15 +2,14 @@
 
 ## 性能总表
 
-生成使用贪心采样。单会话容量为 32768，多请求负载及容量见分项。每格为同窗配对的 `100 × (Hyle 吞吐 ÷ llama.cpp 吞吐 − 1)` 的中位数，正数表示 Hyle 更快。每臂三个独立进程。
+每格为同窗配对的 `100 × (Hyle 吞吐 ÷ llama.cpp 吞吐 − 1)` 的中位数。两边使用贪心采样，每臂三个独立进程。并发格统一使用[长多轮开发助手负载](#长多轮开发助手)。单会话格保留既有八轮基线。
 
 ### 普通生成
 
-| 平台／后端／模型 | Prefill | Decode | 双请求<br>综合速度 |
+| 平台／后端／模型 | Prefill | Decode | 开发助手并发<br>综合速度 |
 | --- | ---: | ---: | ---: |
-| [macOS · Metal · M4](#macos-metal-bf16)<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | +4.4% | +3.9% | [−3.1%](#两路交错请求) |
-| [macOS · CPU · M4](#apple-cpu-bf16)<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | +47.2% | +147.4% | [+208.5%](#两路交错请求) |
-| macOS · CPU＋Metal · M4<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | — | — | [−2.2%](#两路交错请求) |
+| [macOS · Metal · M4](#macos-metal-bf16)<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | +4.4% | +3.9% | [两路 −7.5%](#长多轮开发助手) |
+| [macOS · CPU · M4](#apple-cpu-bf16)<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | +47.2% | +147.4% | — |
 | [Windows · CUDA · RTX 4070](#八轮对话同头比较k)<br>[Qwen3.5-2B BF16 GGUF](https://huggingface.co/Qwen/Qwen3.5-2B) | +69.5% | +2.1% | — |
 | [Windows · CUDA · RTX 4070](#八轮对话同头比较k)<br>[Qwen3.5-2B Q8_0 GGUF](https://huggingface.co/Qwen/Qwen3.5-2B) | +59.5% | +10.2% | — |
 | [Windows · CUDA · RTX 4070](#八轮对话同头比较k)<br>[Qwen3.5-2B Q4_K_M GGUF](https://huggingface.co/Qwen/Qwen3.5-2B) | +67.8% | +8.3% | — |
@@ -18,25 +17,24 @@
 
 ### MTP K1
 
-| 平台／后端／模型 | 全词表<br>含首轮 | 全词表<br>剔除首轮 | 子词表<br>含首轮 | 子词表<br>剔除首轮 | 双请求<br>全词表 | 双请求<br>子词表 |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| [macOS · CPU · M4](#apple-cpu-bf16)<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | +104.3% | +113.5% | +108.5% | +122.4% | [+199.1%](#两路交错请求) | [+200.5%](#两路交错请求) |
-| macOS · CPU＋Metal · M4<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | — | — | — | — | [+12.1%](#两路交错请求) | [+9.1%](#两路交错请求) |
-| [Windows · CUDA · RTX 4070](#八轮对话同头比较k)<br>[Qwen3.5-2B BF16 GGUF](https://huggingface.co/Qwen/Qwen3.5-2B) | +11.4% | +9.7% | — | — | — | — |
-| [Windows · CUDA · RTX 4070](#八轮对话同头比较k)<br>[Qwen3.5-2B Q8_0 GGUF](https://huggingface.co/Qwen/Qwen3.5-2B) | +17.2% | +15.8% | — | — | — | — |
-| [Windows · CUDA · RTX 4070](#八轮对话同头比较k)<br>[Qwen3.5-2B Q4_K_M GGUF](https://huggingface.co/Qwen/Qwen3.5-2B) | +8.7% | +6.8% | — | — | — | — |
-| [WSL2 · CUDA · RTX 4070](#wsl2-cuda-全词表-bf16)<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | −2.9% | +17.1% | — | — | — | — |
+| 平台／后端／模型 | 全词表<br>含首轮 | 全词表<br>剔除首轮 | 子词表<br>含首轮 | 子词表<br>剔除首轮 |
+| --- | ---: | ---: | ---: | ---: |
+| [macOS · CPU · M4](#apple-cpu-bf16)<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | +104.3% | +113.5% | +108.5% | +122.4% |
+| [Windows · CUDA · RTX 4070](#八轮对话同头比较k)<br>[Qwen3.5-2B BF16 GGUF](https://huggingface.co/Qwen/Qwen3.5-2B) | +11.4% | +9.7% | — | — |
+| [Windows · CUDA · RTX 4070](#八轮对话同头比较k)<br>[Qwen3.5-2B Q8_0 GGUF](https://huggingface.co/Qwen/Qwen3.5-2B) | +17.2% | +15.8% | — | — |
+| [Windows · CUDA · RTX 4070](#八轮对话同头比较k)<br>[Qwen3.5-2B Q4_K_M GGUF](https://huggingface.co/Qwen/Qwen3.5-2B) | +8.7% | +6.8% | — | — |
+| [WSL2 · CUDA · RTX 4070](#wsl2-cuda-全词表-bf16)<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | −2.9% | +17.1% | — | — |
 
 ### MTP K2
 
-| 平台／后端／模型 | 全词表<br>含首轮 | 全词表<br>剔除首轮 | 子词表<br>含首轮 | 子词表<br>剔除首轮 | 双请求<br>全词表 | 双请求<br>子词表 |
+| 平台／后端／模型 | 全词表<br>含首轮 | 全词表<br>剔除首轮 | 子词表<br>含首轮 | 子词表<br>剔除首轮 | 开发助手并发<br>全词表综合 | 开发助手并发<br>子词表综合 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| [macOS · Metal · M4](#macos-metal-bf16)<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | +6.8% | +13.1% | +15.9% | +24.4% | [−9.0%](#两路交错请求) | [−11.6%](#两路交错请求) |
+| [macOS · Metal · M4](#macos-metal-bf16)<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | +6.8% | +13.1% | +15.9% | +24.4% | [两路 −10.6%](#长多轮开发助手) | [两路 −11.3%](#长多轮开发助手) |
 
 - 普通生成关闭 MTP。K1、K2 分别使用双方相同的草稿上限。
 - 普通 Prefill 和 Decode 统计后七轮。Prefill 用新增输入 token 总数除以预填总时长，Hyle 计到首 token，llama.cpp 用服务端 prompt eval。Decode 按每轮首 token 之后的生成步数计。MTP 各格均为输出 token 数除以 prefill 与 decode 的合计时间。短对话含首轮统计八轮，剔除首轮统计第二至第八轮。加载、ready 与退出计入分项的完整进程指标。
 - 子词表用中、英、匈三语草稿词表，目标仍用全词表。对照为同窗同 K 的 llama.cpp 全词表。`—` 表示缺少本口径的正式同窗数据。
-- 双请求综合速度统计两路请求交付的输出 token 总数，计时自首请求提交至最后一个 token 交付。普通对照双方关闭 MTP，MTP 两行均对照 llama.cpp 同 K 的全词表。完整进程另计加载到退出。
+- 开发助手并发综合速度统计全部会话交付的输出 token，计时自首个正式请求提交至末个 token 交付。完整进程另计加载到退出。
 - 各行使用链接所列的测量窗口。Windows CUDA 为 `0b86c7d42` 的同头窗口，Hyle 使用 BF16 KV，参考使用 F16 KV。版本、完整进程、CPU 和其他负载见下方分项。
 
 连续接力可让相邻步骤重叠。逐步 `seconds` 用于诊断，吞吐按实际计时区间计算。完整进程覆盖启动到退出。
@@ -90,7 +88,23 @@ Hyle worker 选择 `--backend apple --capacity 32768 --max-sessions 1 --active-s
 
 同机另用 `2a97b1fb3` 做独立资源采样。八轮累计输入 30661 个 token，普通和全词表 K2 各实发 256 个，容量 32768。进程物理内存寿命峰值为 7.72／7.79 GiB，采样前后系统 swap 用量均为 1150.31 MiB。各采一次，decode 为 25.36／34.47 tok/s，完整进程为 3.81／3.85 tok/s。逐轮记录在 `.scratch/mac-metal-last-20261125/resource-window.txt`。
 
+## 长多轮开发助手
+
+MacBook Air M4 16 GiB，纯 Metal。Hyle `7739f7f3d` 与 llama.cpp `23b0202a1` 使用同源 Qwen3.5-2B BF16 权重和 BF16 KV，每会话容量 16384。两路各四轮，首轮分别输入 4096、6144 个 token，各路接着输入 1792、2304、2048 个 token。内容来自实际源码、diff 和测试输出。首路生成 48 个 token 后提交另一路，双方均复用各自会话的原状态。
+
+每进程交付 1536 个正式输出 token。每臂交错运行三个独立进程，含同一 Hyle A/A。子词表为 114688 行中英匈 BF16 草稿头，对照为 llama.cpp 全词表 K2，双方目标均为完整词表。服务综合计入所有正式轮次，包括首轮。模型加载与启动准备、独立的 8-token 预热和退出计入完整进程。两路同时 decode 指双方均已开始且仍在生成的时段，吞吐取两路之和。
+
+| 模式 | 服务综合（tok/s） | 两路同时 decode（tok/s） | 首字 P95（s） | 完整进程（tok/s） |
+| --- | ---: | ---: | ---: | ---: |
+| 普通 | 19.39／20.96 | 34.53／43.40 | 8.78／9.32 | 19.08／20.53 |
+| 全词表 K2 | 20.17／22.58 | 35.88／54.55 | 9.11／10.00 | 19.47／21.57 |
+| 子词表 K2 | 19.81／22.58 | 34.73／54.55 | 9.14／10.00 | 19.22／21.57 |
+
+表内为 Hyle／llama.cpp 进程中位数。普通、全词表 K2、子词表 K2 在两路同时 decode 时分别慢 20.5%、34.1%、36.3%。Hyle 合批执行目标验证，草稿链按请求运行。llama.cpp 按轮合批执行仍在起草的请求。逐进程记录见 `.scratch/mac-engine-survey-20261125/agent-load-long-n3.txt`。
+
 ## 两路交错请求
+
+此前短窗口，每个进程只接收两条请求。
 
 Hyle `7739f7f3d` 与同窗 llama.cpp `23b0202a1` 在 Mac16,12 上使用 BF16、BF16 KV、两路活跃会话和 8192 的启动容量。首请求输入 512 个 token，在交付 16 个输出后提交第二个 511-token 输入。每个进程交付 192＋32 个输出。每条路线的 Hyle、重复 Hyle 和 llama.cpp 每臂交错运行三个进程。CPU 对照用 `-t 4 -tb 4`。混合路线将前两层 FFN 放在 CPU，注意力与 KV 留在 Metal。表内为进程中位数，速度和时长均为 Hyle／llama.cpp。
 
