@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Measure concurrent multi-turn coding reviews on the Qwen3.5-2B Metal worker."""
+"""Measure long single-request and concurrent coding reviews on the Metal worker."""
 
 from collections import defaultdict, deque
 from concurrent.futures import ThreadPoolExecutor
@@ -100,8 +100,10 @@ def coding_review(worker, pool, prompts, quota, timeout):
         return samples
 
     anchor = start(prompts[0][0])
-    anchor.read_until(48, timeout)
-    active = [anchor, *(start(turns[0]) for turns in prompts[1:])]
+    active = [anchor]
+    if len(prompts) > 1:
+        anchor.read_until(48, timeout)
+        active.extend(start(turns[0]) for turns in prompts[1:])
     readers = [pool.submit(conversation, sample, turns[1:]) for sample, turns in zip(active, prompts)]
     streams = [sample for reader in readers for sample in reader.result()]
     durations, decoded = decode_by_width(streams)
@@ -113,9 +115,14 @@ def coding_review(worker, pool, prompts, quota, timeout):
     gaps = [end - begin for sample in streams for begin, end in intervals(sample)]
     emitted = sum(len(stream.tokens) for stream in streams)
     elapsed = max(stream.times[-1] for stream in streams) - anchor.submitted
-    return streams, {'combined_tps': emitted / elapsed, 'concurrent_decode_tps': decoded[depth] / overlap,
-                     'overlap_s': overlap, 'ttft_p50_ms': median(latency) * 1000,
-                     'ttft_p95_ms': p95(latency) * 1000, 'itl_p95_ms': p95(gaps) * 1000}
+    measurements = {'combined_tps': emitted / elapsed, 'ttft_p50_ms': median(latency) * 1000,
+                    'ttft_p95_ms': p95(latency) * 1000, 'itl_p95_ms': p95(gaps) * 1000}
+    if depth == 1:
+        measurements.update(prefill_tps=sum(map(len, prompts[0])) / sum(latency),
+                            decode_tps=decoded[1] / overlap, first_prefill_ms=latency[0] * 1000)
+    else:
+        measurements.update(concurrent_decode_tps=decoded[depth] / overlap, overlap_s=overlap)
+    return streams, measurements
 
 
 def run(engine, args, mode, prompts, vocabulary):
@@ -176,15 +183,15 @@ def main():
     parser.add_argument('--baseline', type=Path)
     parser.add_argument('--baseline-version')
     parser.add_argument('--inputs', type=Path, required=True)
-    parser.add_argument('--sessions', type=int, choices=(2, 3, 4), default=2,
-                        help='number of concurrent coding conversations')
+    parser.add_argument('--sessions', type=int, choices=(1, 2, 3, 4), default=2,
+                        help='one runs both single-turn and four-turn ordinary baselines')
     parser.add_argument('--agent-turns', type=Path,
                         help='four consecutive token inputs per conversation')
     parser.add_argument('--draft-vocabulary', type=Path,
                         help='add a K2 comparison using a prepared draft-vocabulary file')
     parser.add_argument('--repeats', type=int, default=3)
-    parser.add_argument('--output-tokens', type=int, default=192,
-                        help='per-turn output ceiling, at least 192')
+    parser.add_argument('--output-tokens', type=int,
+                        help='per-turn output ceiling (default: 256 for one session, 192 otherwise)')
     parser.add_argument('--timeout', type=int, default=120)
     parser.add_argument('--gpu-lock', type=Path, help='existing Mac validation GPU lock')
     args = parser.parse_args()
@@ -192,9 +199,13 @@ def main():
         parser.error('this benchmark requires native Metal on macOS')
     if args.repeats < 3:
         parser.error('the comparison requires at least three independent processes per arm')
+    if args.output_tokens is None:
+        args.output_tokens = 256 if args.sessions == 1 else 192
     if (not 192 <= args.output_tokens < 1024 or args.timeout < 1
             or bool(args.baseline) != bool(args.baseline_version)):
         parser.error('invalid timing configuration or baseline without its version')
+    if args.sessions == 1 and args.draft_vocabulary:
+        parser.error('the single-request baselines use ordinary generation')
     args.inputs = args.inputs.resolve(strict=True)
     current = args.engine.resolve(strict=True)
     arms = [('candidate', current)]
@@ -203,15 +214,21 @@ def main():
         arms.extend((('baseline', base), ('A/A', base)))
     count = 4 * args.sessions
     rows = token_prompts(args.agent_turns or FIXTURES / 'agent-review.ids',
-                         count if args.agent_turns else 16, 16384 - args.output_tokens)[:count]
+                         count if args.agent_turns else 16, 16384 - args.output_tokens)
+    start = 4 if args.sessions == 1 and not args.agent_turns else 0
+    rows = rows[start:start + count]
     prompts = tuple(rows[i:i + 4] for i in range(0, count, 4))
-    if (min(map(len, rows)) < 1500 or
+    if (min(map(len, rows)) < 1500 or any(len(request[0]) < 4096 for request in prompts) or
             any(sum(map(len, request)) + 4 * args.output_tokens > 16384 for request in prompts)):
-        parser.error('coding review requires inputs of at least 1500 tokens with each conversation fitting 16384')
-    label = f'coding-review-{args.sessions}'
-    cases = [(0, label, None), (2, label, None)]
+        parser.error('coding review requires at least 4096 initial and 1500 continuation tokens within 16384 per conversation')
+    if args.sessions == 1:
+        cases = [(0, 'coding-review-single-turn', None, (prompts[0][:1],)),
+                 (0, 'coding-review-four-turn', None, prompts)]
+    else:
+        label = f'coding-review-{args.sessions}'
+        cases = [(0, label, None, prompts), (2, label, None, prompts)]
     if args.draft_vocabulary:
-        cases.append((2, f'{label}-subset', args.draft_vocabulary.resolve(strict=True)))
+        cases.append((2, f'{label}-subset', args.draft_vocabulary.resolve(strict=True), prompts))
     (ROOT / '.scratch').mkdir(exist_ok=True)
     print('versions', args.engine_version, args.baseline_version or '-', 'backend apple',
           'input_lengths', list(map(len, rows)), 'n', args.repeats, flush=True)
@@ -225,10 +242,10 @@ def main():
         for block in range(args.repeats):
             indices = range(len(cases))
             for index in indices if block % 2 == 0 else reversed(indices):
-                mode, case, vocabulary = cases[index]
+                mode, case, vocabulary, case_prompts = cases[index]
                 offset = (index + block) % len(arms)
                 for arm, executable in arms[offset:] + arms[:offset]:
-                    timings, largest, count, ids = run(executable, args, mode, prompts, vocabulary)
+                    timings, largest, count, ids = run(executable, args, mode, case_prompts, vocabulary)
                     samples[mode, case, arm].append(timings)
                     print('sample', block + 1, f'K{mode}', case, arm, f'max_native_batch={largest}',
                           f'tokens={count}', f'ids={ids}',
@@ -240,7 +257,7 @@ def main():
             summary.append(f'{metric}={median(observations):.3f}[{min(observations):.3f},{max(observations):.3f}]')
         print('median[min,max]', f'K{mode}', case, arm, f'n={len(values)}', *summary)
     if args.baseline:
-        for mode, case, _ in cases:
+        for mode, case, _, _ in cases:
             blocks = list(zip(*(samples[mode, case, arm] for arm in ('candidate', 'baseline', 'A/A'))))
             for metric in blocks[0][0]:
                 changes = [100 * (new[metric] / (base[metric] * again[metric]) ** .5 - 1)

@@ -25,7 +25,7 @@
 可另报`(新增输入token＋生成token) / 会话耗时`，但必须标为总处理吞吐，不能替代有效生成吞吐。
 工作负载锁定每轮新增输入／输出长度、输入带、上下文容量及生成／MTP策略；逐轮列累计可见上下文。
 固定输入带的teacher-forced性能回放须明确标注，不冒充自由生成或模型质量验收。
-开发助手的性能对比与耗时归因使用同一组真实多轮代码任务。首轮提供完整任务背景，续轮加入新的源码、差异或工具输出，并沿原会话保留生成历史。并发测试分别记录整段综合吞吐和所有请求同时 decode 时的吞吐。
+推理性能验收使用贴近实际开发助手的长输入和输出。首轮提供完整任务背景，续轮加入新的源码、差异或工具输出，并沿原会话保留生成历史。固定单请求的单轮与多轮结果各列 Prefill 和 Decode。并发测试分别记录整段综合吞吐和所有请求同时 decode 时的吞吐。
 
 加载、冷图编译与ready耗时另列；同时保留进程启动到最后token可见的总耗时，以便观察冷启动。
 驻留会话从接收首轮输入到最后token可见；会话内仍发生的capture保留在阶段计时中，启动期录图另列并计入完整进程耗时。
@@ -45,18 +45,20 @@ GPU dedicated＋shared仅可在同一采样时刻相加，不能相加两项各�
 `capture-associated cold prep` 是发生录图那步的准备区间，不能当作纯录图耗时直接从 decode 扣除。
 把准备前移使 decode 变快，仍须检查启动到完成和首 token；增加私有模型计算可能使这两项退步。
 
-## Mac 纯 Metal 多请求回归
+## Mac 纯 Metal 长负载回归
 
-涉及纯 Metal 推理热路径或请求调度的改动，使用现有 Qwen3.5-2B BF16 制品运行多请求回归。
+涉及纯 Metal 推理热路径或请求调度的改动，使用现有 Qwen3.5-2B BF16 制品运行长负载回归。
+`--sessions 1` 运行性能总表的两个普通生成基准。单轮输入 6144 个 token，多轮使用同一首轮，之后依次新增 1792、2304、2048 个 token。两项均从首个正式请求开始，每轮最多输出 256 个 token。Prefill 从请求提交到首 token，Decode 从首 token 到末 token。多轮按各阶段实际工作量和总耗时汇总，全部计入首轮。输出另列完整进程、首轮预填和各轮交付的 token 数。
+
 默认两路中、英、匈代码评审，每路四轮，使用仓库实际源码、差异和测试输出。前两路首轮输入 4096 和 6144 个 token，各路续轮新增 1792、2304、2048 个 token。每轮最多输出 192 个 token。首请求生成 48 个 token 后提交其余请求，每路独立续接原会话。分别运行普通与全词表 K2。
 
 ```sh
 python3 -B scripts/inference-concurrency-bench.py \
   --engine /path/to/hyle --engine-version BUILD_COMMIT \
-  --inputs /path/to/prepared-qwen35-2b-bf16
+  --inputs /path/to/prepared-qwen35-2b-bf16 --sessions 1
 ```
 
-传入 `--sessions 3` 或 `--sessions 4`，第三、四路首轮输入 5120、4608 个 token。使用 `--draft-vocabulary FILE` 可另测中英匈子词表 K2。调用正式 worker 并核对 Metal 放置、草稿深度和实际批宽。输出包括各轮交付数、整体综合吞吐、所有会话同时 decode 的吞吐和持续时间、首字延迟及 p95 token 间隔。
+传入 `--sessions 2`、`--sessions 3` 或 `--sessions 4` 运行并发负载。第三、四路首轮输入 5120、4608 个 token。使用 `--draft-vocabulary FILE` 可另测中英匈子词表 K2。调用正式 worker 并核对 Metal 放置、草稿深度和实际批宽。并发结果包括各轮交付数、整体综合吞吐、所有会话同时 decode 的吞吐和持续时间、首字延迟及 p95 token 间隔。
 每格至少三个独立进程。传入 `--baseline` 和 `--baseline-version` 时，轮换运行冻结版本和它的 A/A 对照。模型和二进制使用本地制品。
 
 ## 对齐工作量

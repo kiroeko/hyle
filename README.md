@@ -18,7 +18,7 @@ Compute、Graph、内存、调度、I/O 等基础库；推理内核也不同于�
 
 ## 与 llama.cpp 相比
 
-[性能总表](docs/developer/performance/decode.md#性能总表)按平台、后端和格式列出普通 Prefill、Decode，以及全词表和子词表 MTP 的综合速度差距。表中分列含首轮、剔除首轮及子词表长上下文多轮结果。同页可查完整进程、版本与复现方法。
+[性能总表](docs/developer/performance/decode.md#性能总表)按平台、后端与模型列出普通生成的单请求单轮和多轮长提示 Prefill、Decode。并发及全词表、子词表 MTP 使用长负载对照。同页可查完整进程速度、实测版本与复现方法。
 
 | 想做什么 | 从这里开始 |
 |---|---|
