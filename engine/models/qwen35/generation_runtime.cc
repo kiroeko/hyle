@@ -2441,6 +2441,7 @@ struct ReusableGenerationPreparation final {
   std::weak_ptr<ColdResources> resources;
   std::size_t prefill_rows = 0;
   bool mtp = false, decode_overlap = false, ready = false, busy = false, failed = false;
+  bool inventory_prepared = false;
   std::vector<const Model *> profile_models;
   ReusableGenerationPreparation() = default;
   ReusableGenerationPreparation(const ReusableGenerationPreparation &) = delete;
@@ -2574,7 +2575,7 @@ struct GenerationProgramPlan final {
 };
 
 template<GenerationMode Mode>
-StartupPrefillWarmup prepare_generation_programs(Model &model, const GenerationProgramPlan &plan) {
+void prepare_generation_inventory(Model &model, const GenerationProgramPlan &plan) {
   constexpr bool mtp = Mode == GenerationMode::kMtp;
   const auto &requests = plan.requests;
   const auto &prefill = plan.prefill;
@@ -2583,11 +2584,9 @@ StartupPrefillWarmup prepare_generation_programs(Model &model, const GenerationP
   const auto &decode_bound = plan.decode_bound;
   const auto &restore_bound = plan.restore_bound;
   const auto &reuse = plan.reuse;
-  const auto &reuse_ready = plan.reuse_ready;
   const auto &first_turn_only = plan.first_turn_only;
   const auto &prefix_enabled = plan.prefix_enabled;
   const auto &warmup_planned_shapes = plan.warmup_planned_shapes;
-  const auto &decode_overlap = plan.decode_overlap;
   const auto prompt_role = [](std::size_t rows, bool lag = false) {
     if constexpr (!mtp) { (void)rows; (void)lag; return GraphRole::kText; }
     else return rows == 1 ? (lag ? GraphRole::kMtpCatchupSingle : GraphRole::kMtpSingle)
@@ -2596,8 +2595,6 @@ StartupPrefillWarmup prepare_generation_programs(Model &model, const GenerationP
   const std::array pair{model.max_drafts()+1};
   const std::array roles{GraphRole::kMtpRound, GraphRole::kMtpCatchupRound,
       GraphRole::kMtpSingle, GraphRole::kMtpCatchupSingle};
-  StartupPrefillWarmup startup_prefill_warmup;
-  if (!reuse_ready) {
   using PromptKey = std::pair<GraphRole, TextCompletion>;
   using Demands = inference::ColdDemandInventory<PromptKey>;
   Demands prompt_demand, carrier_demand;
@@ -2915,11 +2912,28 @@ StartupPrefillWarmup prepare_generation_programs(Model &model, const GenerationP
     std::cerr << "shape_warmup policy=planned shapes=" << shapes
               << " seconds=" << std::chrono::duration<double>(Clock::now() - begin).count() << '\n';
   }
-  }
-  const auto first_part = prefill.next(requests.front().prompt.size());
+}
+
+template<GenerationMode Mode>
+StartupPrefillWarmup prepare_generation_programs(Model &model, const GenerationProgramPlan &plan,
+    bool inventory_prepared) {
+  constexpr bool mtp = Mode == GenerationMode::kMtp;
+  const auto requests = plan.requests;
+  const auto first_turn_only = plan.first_turn_only;
+  const auto decode_bound = plan.decode_bound;
+  const auto decode_overlap = plan.decode_overlap;
+  const auto reuse_ready = plan.reuse_ready;
+  if (!reuse_ready && !inventory_prepared) prepare_generation_inventory<Mode>(model, plan);
+
+  const std::array pair{model.max_drafts() + 1};
+  const std::array roles{GraphRole::kMtpRound, GraphRole::kMtpCatchupRound,
+      GraphRole::kMtpSingle, GraphRole::kMtpCatchupSingle};
+  StartupPrefillWarmup startup_prefill_warmup;
+  const auto first_part = plan.prefill.next(requests.front().prompt.size());
   const std::array first_prefill{first_part.rows};
   const auto first_completion = first_part.complete ? TextCompletion::kEmitNext : TextCompletion::kStateOnly;
-  const auto first_role = prompt_role(first_prefill[0]);
+  const auto first_role = !mtp ? GraphRole::kText :
+      (first_prefill[0] == 1 ? GraphRole::kMtpSingle : GraphRole::kMtpPrefill);
   const auto first_capacity = model.prefill_capacity(first_prefill[0], first_completion, requests.front().sampling_index, 1, first_role);
   if (first_capacity) {
     const std::array carrier{first_capacity};
@@ -2964,7 +2978,7 @@ StartupPrefillWarmup prepare_generation_programs(Model &model, const GenerationP
           ? GraphRole::kMtpContinuation : GraphRole::kMtpCatchupRound);
     }
   if (!reuse_ready) {
-  auto warmed = prepare_cold_prefill(model, first_turn_only && !prefix_enabled, mtp, requests.front().sampling_index);
+  auto warmed = prepare_cold_prefill(model, first_turn_only && !plan.prefix_enabled, mtp, requests.front().sampling_index);
   if (warmed) startup_prefill_warmup = *warmed;
   else {
     if (!warmed.error().IsUnimplemented()) check(warmed.error());
@@ -2974,6 +2988,34 @@ StartupPrefillWarmup prepare_generation_programs(Model &model, const GenerationP
     (void)model.prepare_prefill_recordings(requests.front().sampling_index);
   }
   return startup_prefill_warmup;
+}
+
+bool prepares_inventory_on_load(const Model &model) {
+  return model.execution.kind() == BackendKind::kApple && !model.execution.has_cpu_assist();
+}
+
+// A loaded executor can compile the bounded families and reserve their storage
+// using only its configuration. The first request still chooses its carrier
+// and installs its own session, token bindings and recording state.
+void prepare_loaded_generation_inventory(Model &model, std::size_t prefill_rows, bool overlap, bool prefix_enabled) {
+  const auto rows = (std::min)({prefill_rows, std::size_t{512}, model.capacity});
+  const auto mtp = model.cache_plan.draft_cache;
+  if (!rows || model.cache_plan.max_query_rows / model.cache_plan.active_sequences < rows)
+    throw std::runtime_error("bounded generation requires configured query capacity");
+  if (mtp && rows < 2)
+    throw inference::EvaluationFailure(hyle::Status::Unimplemented("bounded MTP prefill requires a configured multirow carrier"));
+  const auto started = Clock::now();
+  model.bounded_prefill_rows = rows;
+  model.prepare_default_device_mtp_successor(mtp && overlap && !prefix_enabled);
+  const inference::PrefillPolicy prefill(rows);
+  const GenerationProgramPlan plan{.requests = {}, .prefill = prefill, .max_prefill_rows = rows,
+      .configured_bound = model.capacity, .decode_bound = model.capacity, .restore_bound = 0,
+      .reuse = true, .reuse_ready = false, .first_turn_only = true, .prefix_enabled = prefix_enabled,
+      .warmup_planned_shapes = false, .decode_overlap = overlap};
+  if (mtp) prepare_generation_inventory<GenerationMode::kMtp>(model, plan);
+  else prepare_generation_inventory<GenerationMode::kText>(model, plan);
+  std::cerr << "generation_inventory_prepared seconds="
+            << std::chrono::duration<double>(Clock::now() - started).count() << '\n';
 }
 
 template<GenerationMode Mode>
@@ -3050,6 +3092,7 @@ int execute_generation_sessions(Model &model, inference::GenerationBatch batch, 
       [](const auto &schedule) { return schedule.reports_turn_ends(); }), output_consumer);
   const auto configured_prefill = (std::min)({max_prefill_rows, std::size_t{512}, model.capacity});
   const bool reuse_ready = reuse && reuse->ready;
+  const bool inventory_prepared = reuse && reuse->inventory_prepared;
   if (reuse) {
     if (!first_turn_only || warmup_planned_shapes || !logits_providers.empty() ||
         !trace.empty() || trace_states)
@@ -3109,7 +3152,7 @@ int execute_generation_sessions(Model &model, inference::GenerationBatch batch, 
   }
   if (first_turn_only) {
     if (model.active_step || model.successor_step || model.carrier_borrowed ||
-        (model.execution_workspace.valid() && !reuse_ready))
+        (model.execution_workspace.valid() && !reuse_ready && !inventory_prepared))
       throw std::logic_error("bounded prefill policy must be configured before original execution");
     max_prefill_rows = (std::min)({max_prefill_rows, std::size_t{512}, configured_bound});
     if constexpr (mtp) if (max_prefill_rows < 2)
@@ -3122,9 +3165,11 @@ int execute_generation_sessions(Model &model, inference::GenerationBatch batch, 
               << " configured_sessions=" << model.cache_plan.resident_sessions
               << " configured_active_sequences=" << model.cache_plan.active_sequences << " query_capacity=" << model.cache_plan.max_query_rows
               << " configured_prefill_rows=" << max_prefill_rows << " future_shape_hints=0\n";
-  if constexpr (mixed) for (const auto &profile : options.profiles)
-    profile.model->prepare_default_device_mtp_successor(profile.model->cache_plan.draft_cache && profile.overlap && !profile.prefix);
-  else model.prepare_default_device_mtp_successor(mtp && decode_overlap && !prefix_enabled && logits_providers.empty());
+  if (!inventory_prepared) {
+    if constexpr (mixed) for (const auto &profile : options.profiles)
+      profile.model->prepare_default_device_mtp_successor(profile.model->cache_plan.draft_cache && profile.overlap && !profile.prefix);
+    else model.prepare_default_device_mtp_successor(mtp && decode_overlap && !prefix_enabled && logits_providers.empty());
+  }
   if (!max_prefill_rows) throw std::runtime_error("prefill rows require a positive quantum");
   const inference::PrefillPolicy prefill(max_prefill_rows);
   if (!stop_policies.empty() && stop_policies.size() != schedules.size())
@@ -3197,14 +3242,14 @@ int execute_generation_sessions(Model &model, inference::GenerationBatch batch, 
       auto plan = program_plan;
       plan.requests = warm; plan.decode_overlap = profile.overlap; plan.prefix_enabled = bool(profile.prefix);
       if (profile.model->cache_plan.draft_cache) {
-        (void)prepare_generation_programs<GenerationMode::kMtp>(*profile.model, plan);
+        (void)prepare_generation_programs<GenerationMode::kMtp>(*profile.model, plan, inventory_prepared);
         prepare_generation_recordings<GenerationMode::kMtp>(*profile.model, plan);
       } else {
-        (void)prepare_generation_programs<GenerationMode::kText>(*profile.model, plan);
+        (void)prepare_generation_programs<GenerationMode::kText>(*profile.model, plan, inventory_prepared);
         prepare_generation_recordings<GenerationMode::kText>(*profile.model, plan);
       }
     }
-  } else startup_prefill_warmup = prepare_generation_programs<Mode>(model, program_plan);
+  } else startup_prefill_warmup = prepare_generation_programs<Mode>(model, program_plan, inventory_prepared);
   const std::array packed_prefill_offset{cache::add(packed_before[0], startup_prefill_warmup.calls),
       cache::add(packed_before[1], startup_prefill_warmup.target_rows),
       cache::add(packed_before[2], startup_prefill_warmup.physical_rows)};
@@ -3630,6 +3675,10 @@ class PreparedModelExecutor final : public inference::ModelExecutor {
 public:
   PreparedModelExecutor(Model &model, bool mtp, std::size_t prefill_rows, bool overlap, cache::PrefixCache *prefix = nullptr)
       : model_(model), mtp_(mtp), overlap_(overlap), prefill_rows_(prefill_rows), prefix_(prefix) {}
+  void prepare_inventory() {
+    prepare_loaded_generation_inventory(model_, prefill_rows_, overlap_, prefix_ != nullptr);
+    preparation_.inventory_prepared = true;
+  }
   inference::ModelDescription describe() const override {
     inference::ModelDescription description{static_cast<std::size_t>(model_.vocabulary), model_.capacity,
         {model_eos_tokens.begin(), model_eos_tokens.end()}};
@@ -3697,6 +3746,14 @@ public:
     }
     if (models_.size() == 1) single_ = std::make_unique<PreparedModelExecutor>(
         *models_[0], models_[0]->cache_plan.draft_cache, prefill_rows, profiles_[0].overlap, profiles_[0].prefix);
+    if (std::ranges::all_of(models_, [](const auto &model) { return prepares_inventory_on_load(*model); })) {
+      if (single_) single_->prepare_inventory();
+      else {
+        for (const auto &profile : profiles_)
+          prepare_loaded_generation_inventory(*profile.model, prefill_rows_, profile.overlap, profile.prefix != nullptr);
+        preparation_.inventory_prepared = true;
+      }
+    }
   }
   inference::ModelDescription describe() const override {
     inference::ModelDescription description{static_cast<std::size_t>(models_[0]->vocabulary), models_[0]->capacity,
