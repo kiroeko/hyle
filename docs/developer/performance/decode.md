@@ -19,12 +19,6 @@
 | [macOS · Metal · M4](#单请求长提示-mtp)<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | K1 | −4.0% | +6.4% | −3.3% | +16.2% |
 | [macOS · Metal · M4](#单请求长提示-mtp)<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | K2 | −3.6% | +5.0% | −3.2% | +21.9% |
 
-#### CPU＋Metal MTP K1
-
-| 平台／后端／模型 | 16K 八轮<br>全词表综合 | 32K 八轮<br>全词表综合 |
-| --- | ---: | ---: |
-| [macOS · CPU＋Metal · M4](#macos-cpumetal-全词表-bf16)<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | +7.9% | +20.6% |
-
 ### 多用户
 
 | 平台／后端／模型 | 模式 | 2 用户<br>整体吞吐 | 3 用户<br>整体吞吐 | 4 用户<br>整体吞吐 |
