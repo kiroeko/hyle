@@ -26,7 +26,7 @@
 | 平台／后端／模型 | 模式 | 2 用户<br>整体吞吐 | 3 用户<br>整体吞吐 | 4 用户<br>整体吞吐 |
 | --- | --- | ---: | ---: | ---: |
 | [macOS · Metal · M4](#长多轮开发助手)<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | 普通 | −7.5% | — | — |
-| [macOS · Metal · M4](#长多轮开发助手)<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | 全词表 K2 | −10.6% | −12.6% | −15.4% |
+| [macOS · Metal · M4](#长多轮开发助手)<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | 全词表 K2 | −8.5% | −12.6% | −15.4% |
 | [macOS · Metal · M4](#长多轮开发助手)<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | 子词表 K2 | −11.3% | — | — |
 
 - 普通生成关闭 MTP。K1、K2 分别使用双方相同的草稿上限。
