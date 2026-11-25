@@ -21,6 +21,13 @@
 | [macOS · Metal · M4](#单请求长提示-mtp)<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | K1 | +4.0% | +6.4% | +3.3% | +16.2% |
 | [macOS · Metal · M4](#单请求长提示-mtp)<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | K2 | +3.6% | +5.0% | +3.2% | +21.9% |
 
+##### 全词表多轮 K2
+
+| 平台／后端／模型 | 负载 | 首轮首字耗时节省 | Decode | 含首轮综合 | 后续轮综合 | 完整进程 |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| [macOS · Metal · M4](#单请求全词表多轮-k2)<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | 16K 四轮 | +12.3% | +17.5% | +13.9% | +14.3% | +13.1% |
+| [macOS · Metal · M4](#单请求全词表多轮-k2)<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | 32K 八轮 | +7.0% | +33.3% | +18.6% | +19.9% | +19.1% |
+
 ### 多用户
 
 | 平台／后端／模型 | 模式 | 2 用户<br>整体吞吐 | 3 用户<br>整体吞吐 | 4 用户<br>整体吞吐 |
@@ -83,6 +90,21 @@ Hyle 的子词表使用 114688 行中英匈原始 BF16 草稿投影。两边目�
 | 第四轮 | 3.20／3.78 | 3.34／3.80 | 35.85／29.66 | 41.76／29.78 |
 
 复用普通生成的放置参数。Hyle 设 `--draft-count 1` 或 `--draft-count 2`，子词表另加 `--draft-vocabulary zh-en-hu.ids`。参考设 `--spec-type draft-mtp --spec-draft-n-max K --spec-draft-type-k bf16 --spec-draft-type-v bf16`。逐进程记录见 `.scratch/mac-engine-survey-20261125/mtp-long-single-request-n3.txt`。
+
+### 单请求全词表多轮 K2
+
+MacBook Air M4 16 GiB，Qwen3.5-2B，同源 BF16 权重、BF16 KV 和 248320 行全词表。Hyle `aeeaf719a`、基线 `8e73ea0a1` 和 llama.cpp `23b0202a1` 都用纯 Metal、单会话、贪心 K2，每臂三个独立进程同窗交错。Hyle 使用 token worker，llama.cpp 使用本机流式 HTTP，两边都按客户端收到 token 的时刻计时。
+
+16K 四轮代码评审累计新增输入 12288 个 token，交付 512 个输出。32K 八轮累计新增 30661 个输入，交付 1024 个输出。两个负载每轮均交付 128 个 token。
+
+| 负载 | 首轮首字（s） | Prefill（输入 tok/s） | Decode（tok/s） | 含首轮综合（tok/s） | 后续轮综合（tok/s） | 完整进程（tok/s） |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 16K 四轮 | 8.95／10.22 | 591.62／527.55 | 36.41／31.02 | 14.75／12.91 | 17.48／15.35 | 14.16／12.40 |
+| 32K 八轮 | 4.91／5.44 | 554.79／469.20 | 39.29／29.48 | 12.62／10.26 | 12.32／9.92 | 12.33／10.02 |
+
+数值是 Hyle／llama.cpp 各自的进程中位数。Prefill 用新增输入数除以各轮首字耗时之和。后续轮综合仅统计第二轮起的输入处理与生成。完整进程包含加载、准备与退出。
+
+相对同窗 Hyle 基线，16K 的 decode、含首轮综合及完整进程分别提升 2.1%、0.01% 和 1.2%，首轮首字中位数从 8.70 秒增至 8.95 秒。32K 分别提升 9.6%、4.8% 和 6.8%。两组的 Hyle 输出 ID 均逐项一致。逐进程及逐轮记录见 `.scratch/metal-mtp-lookup-delivery-20261125/` 下的 `varied-standard.txt` 和 `deep-standard.txt`。
 
 ### 中英匈长上下文多轮 K2
 
