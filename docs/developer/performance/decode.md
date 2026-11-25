@@ -4,24 +4,36 @@
 
 生成使用贪心采样。单会话容量为 32768，多请求负载及容量见分项。每格为同窗配对的 `100 × (Hyle 吞吐 ÷ llama.cpp 吞吐 − 1)` 的中位数，正数表示 Hyle 更快。每臂三个独立进程。
 
-### MTP K2 对照
+### 普通生成
 
-| 平台／后端／模型 | 普通<br>Prefill | 普通<br>Decode | 全词表 MTP K2<br>含首轮 | 全词表 MTP K2<br>剔除首轮 | 子词表 MTP K2<br>含首轮 | 子词表 MTP K2<br>剔除首轮 | 子词表 MTP K2<br>长上下文多轮 | 双请求综合速度<br>普通／MTP K2 |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| [macOS · Metal · M4](#macos-metal-bf16)<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | +4.4% | +3.9% | +6.8% | +13.1% | +15.9% | +24.4% | +10.5% | [普通 −3.1%<br>全词表 MTP −9.0%<br>子词表 MTP −11.6%](#两路交错请求) |
+| 平台／后端／模型 | Prefill | Decode | 双请求<br>综合速度 |
+| --- | ---: | ---: | ---: |
+| [macOS · Metal · M4](#macos-metal-bf16)<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | +4.4% | +3.9% | [−3.1%](#两路交错请求) |
+| [macOS · CPU · M4](#apple-cpu-bf16)<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | +47.2% | +147.4% | [+208.5%](#两路交错请求) |
+| macOS · CPU＋Metal · M4<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | — | — | [−2.2%](#两路交错请求) |
+| [Windows · CUDA · RTX 4070](#八轮对话同头比较k)<br>[Qwen3.5-2B BF16 GGUF](https://huggingface.co/Qwen/Qwen3.5-2B) | +69.5% | +2.1% | — |
+| [Windows · CUDA · RTX 4070](#八轮对话同头比较k)<br>[Qwen3.5-2B Q8_0 GGUF](https://huggingface.co/Qwen/Qwen3.5-2B) | +59.5% | +10.2% | — |
+| [Windows · CUDA · RTX 4070](#八轮对话同头比较k)<br>[Qwen3.5-2B Q4_K_M GGUF](https://huggingface.co/Qwen/Qwen3.5-2B) | +67.8% | +8.3% | — |
+| [WSL2 · CUDA · RTX 4070](#wsl2-cuda-全词表-bf16)<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | +89.9% | +7.1% | — |
 
-### MTP K1 对照
+### MTP K1
 
-| 平台／后端／模型 | 普通<br>Prefill | 普通<br>Decode | 全词表 MTP K1<br>含首轮 | 全词表 MTP K1<br>剔除首轮 | 子词表 MTP K1<br>含首轮 | 子词表 MTP K1<br>剔除首轮 | 子词表 MTP K1<br>长上下文多轮 | 双请求综合速度<br>普通／MTP K1 |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| [macOS · CPU · M4](#apple-cpu-bf16)<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | +47.2% | +147.4% | +104.3% | +113.5% | +108.5% | +122.4% | — | [普通 +208.5%<br>全词表 MTP +199.1%<br>子词表 MTP +200.5%](#两路交错请求) |
-| macOS · CPU＋Metal · M4<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | — | — | — | — | — | — | — | [普通 −2.2%<br>全词表 MTP +12.1%<br>子词表 MTP +9.1%](#两路交错请求) |
-| [Windows · CUDA · RTX 4070](#八轮对话同头比较k)<br>[Qwen3.5-2B BF16 GGUF](https://huggingface.co/Qwen/Qwen3.5-2B) | +69.5% | +2.1% | +11.4% | +9.7% | — | — | — | — |
-| [Windows · CUDA · RTX 4070](#八轮对话同头比较k)<br>[Qwen3.5-2B Q8_0 GGUF](https://huggingface.co/Qwen/Qwen3.5-2B) | +59.5% | +10.2% | +17.2% | +15.8% | — | — | — | — |
-| [Windows · CUDA · RTX 4070](#八轮对话同头比较k)<br>[Qwen3.5-2B Q4_K_M GGUF](https://huggingface.co/Qwen/Qwen3.5-2B) | +67.8% | +8.3% | +8.7% | +6.8% | — | — | — | — |
-| [WSL2 · CUDA · RTX 4070](#wsl2-cuda-全词表-bf16)<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | +89.9% | +7.1% | −2.9% | +17.1% | — | — | — | — |
+| 平台／后端／模型 | 全词表<br>含首轮 | 全词表<br>剔除首轮 | 子词表<br>含首轮 | 子词表<br>剔除首轮 | 双请求<br>全词表 | 双请求<br>子词表 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| [macOS · CPU · M4](#apple-cpu-bf16)<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | +104.3% | +113.5% | +108.5% | +122.4% | [+199.1%](#两路交错请求) | [+200.5%](#两路交错请求) |
+| macOS · CPU＋Metal · M4<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | — | — | — | — | [+12.1%](#两路交错请求) | [+9.1%](#两路交错请求) |
+| [Windows · CUDA · RTX 4070](#八轮对话同头比较k)<br>[Qwen3.5-2B BF16 GGUF](https://huggingface.co/Qwen/Qwen3.5-2B) | +11.4% | +9.7% | — | — | — | — |
+| [Windows · CUDA · RTX 4070](#八轮对话同头比较k)<br>[Qwen3.5-2B Q8_0 GGUF](https://huggingface.co/Qwen/Qwen3.5-2B) | +17.2% | +15.8% | — | — | — | — |
+| [Windows · CUDA · RTX 4070](#八轮对话同头比较k)<br>[Qwen3.5-2B Q4_K_M GGUF](https://huggingface.co/Qwen/Qwen3.5-2B) | +8.7% | +6.8% | — | — | — | — |
+| [WSL2 · CUDA · RTX 4070](#wsl2-cuda-全词表-bf16)<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | −2.9% | +17.1% | — | — | — | — |
 
-- 普通模式关闭 MTP。MTP 表头的 K 是双方相同的草稿上限。
+### MTP K2
+
+| 平台／后端／模型 | 全词表<br>含首轮 | 全词表<br>剔除首轮 | 子词表<br>含首轮 | 子词表<br>剔除首轮 | 双请求<br>全词表 | 双请求<br>子词表 | 子词表<br>长上下文多轮 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| [macOS · Metal · M4](#macos-metal-bf16)<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | +6.8% | +13.1% | +15.9% | +24.4% | [−9.0%](#两路交错请求) | [−11.6%](#两路交错请求) | +10.5% |
+
+- 普通生成关闭 MTP。K1、K2 分别使用双方相同的草稿上限。
 - 普通 Prefill 和 Decode 统计后七轮。Prefill 用新增输入 token 总数除以预填总时长，Hyle 计到首 token，llama.cpp 用服务端 prompt eval。Decode 按每轮首 token 之后的生成步数计。MTP 各格均为输出 token 数除以 prefill 与 decode 的合计时间。短对话含首轮统计八轮，剔除首轮统计第二至第八轮。加载、ready 与退出计入分项的完整进程指标。
 - 子词表用中、英、匈三语草稿词表，目标仍用全词表。对照为同窗同 K 的 llama.cpp 全词表。长上下文格统计同一会话持续累积时的完整多轮综合，含首轮，并在分项记录轮数、输入和峰值上下文。`—` 表示缺少本口径的正式同窗数据。
 - 双请求综合速度统计两路请求交付的输出 token 总数，计时自首请求提交至最后一个 token 交付。普通对照双方关闭 MTP，MTP 两行均对照 llama.cpp 同 K 的全词表。完整进程另计加载到退出。
