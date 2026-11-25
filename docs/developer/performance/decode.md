@@ -4,9 +4,9 @@
 
 生成使用贪心采样。单会话容量为 32768，多请求负载及容量见分项。每格为同窗配对的 `100 × (Hyle 吞吐 ÷ llama.cpp 吞吐 − 1)` 的中位数，正数表示 Hyle 更快。每臂三个独立进程。
 
-| 平台／后端／模型 | 普通<br>Prefill | 普通<br>Decode | 全词表 MTP · K1／K2<br>含首轮 | 全词表 MTP · K1／K2<br>剔除首轮 | 子词表 MTP · K1／K2<br>含首轮 | 子词表 MTP · K1／K2<br>剔除首轮 | 子词表 MTP · K1／K2<br>长上下文多轮 | 多请求<br>综合速度 |
+| 平台／后端／模型 | 普通<br>Prefill | 普通<br>Decode | 全词表 MTP · K1／K2<br>含首轮 | 全词表 MTP · K1／K2<br>剔除首轮 | 子词表 MTP · K1／K2<br>含首轮 | 子词表 MTP · K1／K2<br>剔除首轮 | 子词表 MTP · K1／K2<br>长上下文多轮 | 双请求<br>综合速度 · MTP K1／K2 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| [macOS · Metal · M4](#macos-metal-bf16)<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | +4.4% | +3.9% | +6.8% | +13.1% | +15.9% | +24.4% | +10.5% | [普通 −3.1%](#两路交错请求) |
+| [macOS · Metal · M4](#macos-metal-bf16)<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | +4.4% | +3.9% | +6.8% | +13.1% | +15.9% | +24.4% | +10.5% | [普通 −3.1%<br>全词表 MTP −9.0%<br>子词表 MTP −11.6%](#两路交错请求) |
 | [macOS · CPU · M4](#apple-cpu-bf16)<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | +47.2% | +147.4% | +104.3% | +113.5% | +108.5% | +122.4% | — | [普通 +208.5%](#两路交错请求) |
 | macOS · CPU＋Metal · M4<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | — | — | — | — | — | — | — | [普通 −2.2%](#两路交错请求) |
 | [Windows · CUDA · RTX 4070](#八轮对话同头比较k)<br>[Qwen3.5-2B BF16 GGUF](https://huggingface.co/Qwen/Qwen3.5-2B) | +69.5% | +2.1% | +11.4% | +9.7% | — | — | — | — |
@@ -17,7 +17,7 @@
 - 普通模式关闭 MTP。MTP 列的 K 为双方的草稿上限，macOS 纯 Metal 为 K2，其余路线为 K1。
 - 普通 Prefill 和 Decode 统计后七轮。Prefill 用新增输入 token 总数除以预填总时长，Hyle 计到首 token，llama.cpp 用服务端 prompt eval。Decode 按每轮首 token 之后的生成步数计。MTP 各格均为输出 token 数除以 prefill 与 decode 的合计时间。短对话含首轮统计八轮，剔除首轮统计第二至第八轮。加载、ready 与退出计入分项的完整进程指标。
 - 子词表用中、英、匈三语草稿词表，目标仍用全词表。对照为同窗同 K 的 llama.cpp 全词表。长上下文格统计同一会话持续累积时的完整多轮综合，含首轮，并在分项记录轮数、输入和峰值上下文。`—` 表示缺少本口径的正式同窗数据。
-- 多请求综合速度统计全部请求交付的输出 token 数，除以首个请求提交到最后一个 token 交付的时间。该列使用普通模式并计入首次 prefill。完整进程另计加载到退出。
+- 双请求综合速度统计两路请求交付的输出 token 总数，计时自首请求提交至最后一个 token 交付。普通对照双方关闭 MTP，MTP 两行均对照 llama.cpp 同 K 的全词表。完整进程另计加载到退出。
 - 各行使用链接所列的测量窗口。Windows CUDA 为 `0b86c7d42` 的同头窗口，Hyle 使用 BF16 KV，参考使用 F16 KV。版本、完整进程、CPU 和其他负载见下方分项。
 
 连续接力可让相邻步骤重叠。逐步 `seconds` 用于诊断，吞吐按实际计时区间计算。完整进程覆盖启动到退出。
@@ -73,15 +73,17 @@ Hyle worker 选择 `--backend apple --capacity 32768 --max-sessions 1 --active-s
 
 ## 两路交错请求
 
-Hyle `7739f7f3d` 与同窗 llama.cpp `23b0202a1` 在 Mac16,12 上使用普通 BF16、BF16 KV、两路活跃会话和 8192 的启动容量。首请求输入 512 个 token，在交付 16 个输出后提交第二个 511-token 输入。每个进程交付 192＋32 个输出。每条路线的 Hyle、重复 Hyle 和 llama.cpp 每臂交错运行三个进程。CPU 对照用 `-t 4 -tb 4`。混合路线将前两层 FFN 放在 CPU，注意力与 KV 留在 Metal。表内为进程中位数，速度和时长均为 Hyle／llama.cpp。
+Hyle `7739f7f3d` 与同窗 llama.cpp `23b0202a1` 在 Mac16,12 上使用 BF16、BF16 KV、两路活跃会话和 8192 的启动容量。首请求输入 512 个 token，在交付 16 个输出后提交第二个 511-token 输入。每个进程交付 192＋32 个输出。每条路线的 Hyle、重复 Hyle 和 llama.cpp 每臂交错运行三个进程。CPU 对照用 `-t 4 -tb 4`。混合路线将前两层 FFN 放在 CPU，注意力与 KV 留在 Metal。表内为进程中位数，速度和时长均为 Hyle／llama.cpp。
 
-| 路线 | 双请求综合（tok/s） | 完整进程（tok/s） | 启动就绪至首请求首字（ms） | 第二请求首字（ms） |
-| --- | ---: | ---: | ---: | ---: |
-| Metal | 24.99／25.75 | 23.74／20.02 | 1149／642 | 649／762 |
-| CPU | 11.08／3.62 | 10.70／3.41 | 3222／2369 | 3078／3323 |
-| CPU＋Metal | 19.84／20.27 | 17.55／16.13 | 1445／719 | 724／874 |
+| 路线 | 模式 | 双请求综合（tok/s） | 完整进程（tok/s） | 启动就绪至首请求首字（ms） | 第二请求首字（ms） |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Metal | 普通 | 24.99／25.75 | 23.74／20.02 | 1149／642 | 649／762 |
+| Metal | 全词表 K2 | 27.36／29.91 | 24.09／21.50 | 1885／693 | 701／889 |
+| Metal | 子词表 K2 | 26.57／29.91 | 24.28／21.50 | 1906／693 | 707／889 |
+| CPU | 普通 | 11.08／3.62 | 10.70／3.41 | 3222／2369 | 3078／3323 |
+| CPU＋Metal | 普通 | 19.84／20.27 | 17.55／16.13 | 1445／719 | 724／874 |
 
-以两个 Hyle 对照的几何均值逐组配对，CPU 的两请求综合快 208.5%，Metal 与 CPU＋Metal 分别慢 3.1% 和 2.2%。两条 Metal 路线的完整进程范围重叠。逐进程记录见 `.scratch/mac-engine-survey-20261125/` 下的 `mixed-n3.txt` 和 `nonmetal-n3.txt`。
+普通与全词表 MTP 用两个 Hyle 对照的几何均值逐组配对。子词表使用 BF16 原生 114688 行中英匈草稿头，两边目标都是完整的 248320 行。Metal 的子词表与全词表在首请求第 53 个 token 首次分叉，同前缀 BF16 参考的前两名相差 0.0711。逐进程记录见 `.scratch/mac-engine-survey-20261125/` 下的 `mixed-n3.txt`、`nonmetal-n3.txt` 和 `two-request-mtp-metal.txt`。
 
 ## macOS CPU＋Metal 全词表 BF16
 
