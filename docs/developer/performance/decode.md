@@ -35,6 +35,15 @@ MacBook Air Mac16,12（M4，16 GiB），Qwen3.5-2B，同源原始 BF16 权重和
 
 Hyle worker 选择 `--backend apple --capacity 32768 --max-sessions 1 --active-sequences 1`。普通用 `--draft-count 0`，K2 用 `--draft-count 2`。参考使用 `--device MTL0 -ngl 99 -fa on -np 1 -c 32768 --port 2048 --metrics --override-tensor '^token_embd\.weight$=MTL0'`，目标 KV 用 `--cache-type-k bf16 --cache-type-v bf16`。普通用 `--spec-type none`。K2 用 `--spec-type draft-mtp --spec-draft-n-max 2 --spec-draft-type-k bf16 --spec-draft-type-v bf16`。
 
+同机用 `2a97b1fb3` 和同一上游版本对照八轮中英匈代码评审。每轮新增 512 个输入 token，最多生成 32 个，保留自然结束。两边实发 252–253 个输出。每臂三进程轮换，另有同一 Hyle 二进制对照。两边从客户端计时到首个 token。下表为 Hyle／llama.cpp 的进程中位数，完整进程计入加载与退出。
+
+| 模式 | Prefill（输入 tok/s） | Decode（tok/s） | 含首轮综合（tok/s） | 剔除首轮综合（tok/s） | 完整进程（tok/s） |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 普通 | 728.48／760.43 | 27.12／26.11 | 17.25／17.11 | 17.51／17.04 | 16.00／15.87 |
+| 全词表 K2 | 704.93／707.72 | 38.64／33.92 | 20.80／19.41 | 21.69／19.12 | 19.36／16.53 |
+
+以两个 Hyle 对照的几何均值逐组配对，普通模式 prefill 慢 5.3%，decode 快 3.7%，完整进程耗时范围重叠。全词表 K2 含首轮综合快 8.0%，完整进程快 18.0%，三个完整进程比较均有收益。逐轮记录在 `.scratch/mac-metal-last-20261125/stock-natural-eos.txt`。
+
 较早的冷期开销对照中，`bfe48782a` 相对冻结的 `234dc4073` 将内置 MLX 图前缀追踪移到冷期，普通和 K2 的首字中位数从 2.583／4.957 秒降到 0.630／1.000 秒，完整进程配对中位数提高 7.26%／20.52%。K2 有一组首字为 14.014／8.556 秒，计入结果。发布检查覆盖原生首次执行失败及取消、普通和 K1／K2／K3 的续轮与复用、固定种子随机采样、CLI 和三种文本 API。
 
 同机另做全词表 K2 长续轮对照。每个进程先做一轮短请求，再追加 16384 个输入 token。这两轮各输出 16 个 token，后续两轮各输出 128 个。`4438b96f7`、`c189c7846` 和同一 llama.cpp 交错运行，每臂三个独立进程。512 行 BF16 prefill 在 GPU 上收集活跃 KV 页，收集缓冲区每请求合计最多 64 MiB。三行长上下文验证共读 KV。单请求 prefill 的 GDN 递归按块在工作组内共享 Q/K，F32 状态按实际序列长度续接。
@@ -56,6 +65,8 @@ Hyle worker 选择 `--backend apple --capacity 32768 --max-sessions 1 --active-s
 | llama.cpp 全词表 K2 | 29.91 | 11.52 | 11.33 | 11.08 |
 
 含首轮综合的配对中位数，Hyle 全词表相对 llama.cpp 快 4.9%，子词表快 10.5%（三组为 8.9%–13.3%）。子词表相对 Hyle 全词表快 3.8%。两种 Hyle K2 路线的 512 个输出 ID 逐项一致。
+
+同机另用 `2a97b1fb3` 做独立资源采样。八轮累计输入 30661 个 token，普通和全词表 K2 各实发 256 个，容量 32768。进程物理内存寿命峰值为 7.72／7.79 GiB，采样前后系统 swap 用量均为 1150.31 MiB。各采一次，decode 为 25.36／34.47 tok/s，完整进程为 3.81／3.85 tok/s。逐轮记录在 `.scratch/mac-metal-last-20261125/resource-window.txt`。
 
 ## macOS CPU＋Metal 全词表 BF16
 
