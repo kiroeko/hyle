@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Measure the local Qwen3.5-2B worker under pure Metal request concurrency."""
+"""Measure concurrent multi-turn coding reviews on the Qwen3.5-2B Metal worker."""
 
 from collections import defaultdict, deque
 from concurrent.futures import ThreadPoolExecutor
@@ -29,23 +29,14 @@ class RequestSample:
     tokens: list[int] = field(default_factory=list)
     times: list[float] = field(default_factory=list)
 
-    def read(self, timeout, until=None):
-        while until is None or len(self.tokens) < until:
+    def read_until(self, count, timeout):
+        while len(self.tokens) < count:
             event = self.request.read(timeout)
-            if event.kind == 'completed':
-                if not self.tokens or until is not None:
-                    raise RuntimeError('request finished before the benchmark observed the required output')
-                return
             if event.kind != 'token':
-                raise RuntimeError(f'request ended during the benchmark: {event.kind} {event.message}')
+                raise RuntimeError(f'anchor ended before other users arrived: {event.kind} {event.message}')
             self.tokens.append(event.token)
             self.times.append(monotonic())
             self.request.acknowledge()
-
-
-def submit(worker, prompt, quota):
-    submitted = monotonic()
-    return RequestSample(worker.submit(prompt, quota, seed=42), submitted)
 
 
 def p95(values):
@@ -56,45 +47,84 @@ def intervals(sample):
     return zip(sample.times, sample.times[1:])
 
 
-def work(worker, pool, width, prompts, long_prompt, quota, timeout):
-    if width is None:
-        anchor = submit(worker, prompts[0], 256)
-        anchor.read(timeout, until=16)
-        newcomer = submit(worker, long_prompt, 32)
-        active = pool.submit(anchor.read, timeout)
-        newcomer.read(timeout)
-        active.result()
-        gaps = [end - start for start, end in intervals(anchor)
-                if start <= newcomer.times[0] and end >= newcomer.submitted]
-        if not gaps or not any(newcomer.submitted < t < newcomer.times[0] for t in anchor.times):
-            raise RuntimeError('long prefill did not overlap the anchor decode')
-        return [anchor, newcomer], {'active_itl_p95_ms': p95(gaps) * 1000,
-                                   'active_itl_max_ms': max(gaps) * 1000,
-                                   'new_request_ttft_ms': (newcomer.times[0] - newcomer.submitted) * 1000}
-
-    streams = []
-    decoded, duration = 0, 0.0
-    for start in range(0, len(prompts), width):
-        burst = [submit(worker, prompt, quota) for prompt in prompts[start:start + width]]
-        readers = [pool.submit(sample.read, timeout) for sample in burst]
-        for reader in readers:
-            reader.result()
-        streams.extend(burst)
-        decoded += sum(len(sample.tokens) - 1 for sample in burst)
-        duration += max(s.times[-1] for s in burst) - min(s.times[0] for s in burst)
-    ttft = [s.times[0] - s.submitted for s in streams]
-    gaps = [end - start for sample in streams for start, end in intervals(sample)]
-    if not gaps or duration <= 0:
-        raise RuntimeError('benchmark emitted too few tokens to measure decode')
-    return streams, {'decode_tps': decoded / duration, 'ttft_p50_ms': median(ttft) * 1000,
-                     'ttft_p95_ms': p95(ttft) * 1000, 'itl_p95_ms': p95(gaps) * 1000}
+def decode_by_width(streams):
+    """Count delivery time and tokens while exactly N turns are decoding."""
+    events = defaultdict(lambda: [0, 0])
+    for stream in streams:
+        events[stream.times[0]][0] += 1
+        events[stream.times[-1]][0] -= 1
+        for timestamp in stream.times[1:]:
+            events[timestamp][1] += 1
+    durations, tokens = defaultdict(float), defaultdict(int)
+    active = 0
+    previous = min(events)
+    for timestamp, (change, delivered) in sorted(events.items()):
+        durations[active] += timestamp - previous
+        tokens[active] += delivered
+        active += change
+        previous = timestamp
+    return durations, tokens
 
 
-def run(engine, args, mode, width, prompts, long_prompt):
-    slots, capacity = (2, 8192) if width is None else (width, 1024)
+def coding_review(worker, pool, prompts, quota, timeout):
+    """Replay independent live conversations after the worker is ready."""
+    def start(prompt):
+        submitted = monotonic()
+        return RequestSample(worker.open_session(prompt, quota, seed=42), submitted)
+
+    def conversation(sample, followups):
+        request = sample.request
+        samples = []
+        for turn in (*followups, None):
+            while True:
+                event = request.read(timeout)
+                if event.kind == 'turn_end':
+                    request.acknowledge()
+                    if len(sample.tokens) < 2:
+                        raise RuntimeError('review turn produced too few tokens for throughput')
+                    samples.append(sample)
+                    break
+                if event.kind != 'token':
+                    raise RuntimeError(f'coding review ended during a turn: {event.kind} {event.message}')
+                sample.tokens.append(event.token)
+                sample.times.append(monotonic())
+                request.acknowledge()
+            if turn is None:
+                request.finish_input(timeout=timeout)
+            else:
+                sample = RequestSample(request, monotonic())
+                request.append(turn, quota, timeout=timeout)
+        event = request.read(timeout)
+        if event.kind != 'completed':
+            raise RuntimeError(f'coding review did not complete: {event.kind} {event.message}')
+        return samples
+
+    anchor = start(prompts[0][0])
+    anchor.read_until(48, timeout)
+    active = [anchor, *(start(turns[0]) for turns in prompts[1:])]
+    readers = [pool.submit(conversation, sample, turns[1:]) for sample, turns in zip(active, prompts)]
+    streams = [sample for reader in readers for sample in reader.result()]
+    durations, decoded = decode_by_width(streams)
+    depth = len(prompts)
+    overlap = durations[depth]
+    if overlap <= 0 or not decoded[depth]:
+        raise RuntimeError(f'the {depth} conversations did not all decode concurrently')
+    latency = [stream.times[0] - stream.submitted for stream in streams]
+    gaps = [end - begin for sample in streams for begin, end in intervals(sample)]
+    emitted = sum(len(stream.tokens) for stream in streams)
+    elapsed = max(stream.times[-1] for stream in streams) - anchor.submitted
+    return streams, {'combined_tps': emitted / elapsed, 'concurrent_decode_tps': decoded[depth] / overlap,
+                     'overlap_s': overlap, 'ttft_p50_ms': median(latency) * 1000,
+                     'ttft_p95_ms': p95(latency) * 1000, 'itl_p95_ms': p95(gaps) * 1000}
+
+
+def run(engine, args, mode, prompts, vocabulary):
+    slots, capacity = len(prompts), 16384
     command = [engine, '--engine-worker', '--inputs', args.inputs, '--backend', 'apple',
                '--active-sequences', str(slots), '--max-sessions', str(slots),
                '--capacity', str(capacity), '--draft-count', str(mode)]
+    if vocabulary:
+        command.extend(('--draft-vocabulary', vocabulary))
     with TemporaryFile(mode='w+t', dir=ROOT / '.scratch', encoding='utf-8', errors='replace') as diagnostics:
         try:
             started = monotonic()
@@ -109,8 +139,7 @@ def run(engine, args, mode, width, prompts, long_prompt):
                         or worker.vocabulary != 248320):
                     raise RuntimeError('prepared worker differs from the requested Metal or drafting configuration')
                 with ThreadPoolExecutor(max_workers=slots) as pool:
-                    streams, measurements = work(worker, pool, width, prompts, long_prompt,
-                                                 args.output_tokens, args.timeout)
+                    streams, measurements = coding_review(worker, pool, prompts, args.output_tokens, args.timeout)
             finally:
                 worker.close()
             elapsed = monotonic() - started
@@ -125,8 +154,8 @@ def run(engine, args, mode, width, prompts, long_prompt):
             if match:
                 batches[tuple(map(int, match.groups()))] += 1
     largest = max((shape[0] for shape in batches), default=0)
-    if largest < 1 or (width is not None and width > 1 and largest < 2):
-        raise RuntimeError(f'benchmark did not observe the intended native batch: {dict(batches)}')
+    if not largest:
+        raise RuntimeError('worker emitted no native generation batch diagnostics')
     tokens = [len(sample.tokens) for sample in streams]
     measurements.update(full_tps=sum(tokens) / elapsed, ready_ms=(ready - started) * 1000)
     ids = sha256(repr([s.tokens for s in streams]).encode('ascii')).hexdigest()[:16]
@@ -147,18 +176,23 @@ def main():
     parser.add_argument('--baseline', type=Path)
     parser.add_argument('--baseline-version')
     parser.add_argument('--inputs', type=Path, required=True)
-    parser.add_argument('--prompts', type=Path, default=FIXTURES / 'batch.ids',
-                        help='eight prepared prompts, space-separated token IDs per line')
-    parser.add_argument('--arrival-prompt', type=Path, default=FIXTURES / 'arrival.ids',
-                        help='one long prompt in the same token format')
+    parser.add_argument('--sessions', type=int, choices=(2, 3, 4), default=2,
+                        help='number of concurrent coding conversations')
+    parser.add_argument('--agent-turns', type=Path,
+                        help='four consecutive token inputs per conversation')
+    parser.add_argument('--draft-vocabulary', type=Path,
+                        help='add a K2 comparison using a prepared draft-vocabulary file')
     parser.add_argument('--repeats', type=int, default=3)
-    parser.add_argument('--output-tokens', type=int, default=64)
+    parser.add_argument('--output-tokens', type=int, default=192,
+                        help='per-turn output ceiling, at least 192')
     parser.add_argument('--timeout', type=int, default=120)
     parser.add_argument('--gpu-lock', type=Path, help='existing Mac validation GPU lock')
     args = parser.parse_args()
     if sys.platform != 'darwin':
         parser.error('this benchmark requires native Metal on macOS')
-    if (args.repeats < 1 or not 2 <= args.output_tokens < 1024 or args.timeout < 1
+    if args.repeats < 3:
+        parser.error('the comparison requires at least three independent processes per arm')
+    if (not 192 <= args.output_tokens < 1024 or args.timeout < 1
             or bool(args.baseline) != bool(args.baseline_version)):
         parser.error('invalid timing configuration or baseline without its version')
     args.inputs = args.inputs.resolve(strict=True)
@@ -167,15 +201,21 @@ def main():
     if args.baseline:
         base = args.baseline.resolve(strict=True)
         arms.extend((('baseline', base), ('A/A', base)))
-    prompts = token_prompts(args.prompts, 8, 1024 - args.output_tokens)
-    long_prompt, = token_prompts(args.arrival_prompt, 1, 8192 - 32)
-    if len(long_prompt) <= 512:
-        parser.error('the arrival case needs a prompt longer than one default prefill chunk')
+    count = 4 * args.sessions
+    rows = token_prompts(args.agent_turns or FIXTURES / 'agent-review.ids',
+                         count if args.agent_turns else 16, 16384 - args.output_tokens)[:count]
+    prompts = tuple(rows[i:i + 4] for i in range(0, count, 4))
+    if (min(map(len, rows)) < 1500 or
+            any(sum(map(len, request)) + 4 * args.output_tokens > 16384 for request in prompts)):
+        parser.error('coding review requires inputs of at least 1500 tokens with each conversation fitting 16384')
+    label = f'coding-review-{args.sessions}'
+    cases = [(0, label, None), (2, label, None)]
+    if args.draft_vocabulary:
+        cases.append((2, f'{label}-subset', args.draft_vocabulary.resolve(strict=True)))
     (ROOT / '.scratch').mkdir(exist_ok=True)
     print('versions', args.engine_version, args.baseline_version or '-', 'backend apple',
-          'input_lengths', list(map(len, prompts)), 'arrival_length', len(long_prompt), 'n', args.repeats, flush=True)
-    print('prompts_sha256', sha256(repr((prompts, long_prompt)).encode('ascii')).hexdigest(), flush=True)
-    cases = [(mode, width) for mode in (0, 1) for width in (1, 4, 8, None)]
+          'input_lengths', list(map(len, rows)), 'n', args.repeats, flush=True)
+    print('prompts_sha256', sha256(repr(prompts).encode('ascii')).hexdigest(), flush=True)
     samples = defaultdict(list)
     with ExitStack() as stack:
         if args.gpu_lock:
@@ -185,11 +225,10 @@ def main():
         for block in range(args.repeats):
             indices = range(len(cases))
             for index in indices if block % 2 == 0 else reversed(indices):
-                mode, width = cases[index]
+                mode, case, vocabulary = cases[index]
                 offset = (index + block) % len(arms)
-                case = f'width{width}' if width else 'arrival'
                 for arm, executable in arms[offset:] + arms[:offset]:
-                    timings, largest, count, ids = run(executable, args, mode, width, prompts, long_prompt)
+                    timings, largest, count, ids = run(executable, args, mode, prompts, vocabulary)
                     samples[mode, case, arm].append(timings)
                     print('sample', block + 1, f'K{mode}', case, arm, f'max_native_batch={largest}',
                           f'tokens={count}', f'ids={ids}',
@@ -201,8 +240,7 @@ def main():
             summary.append(f'{metric}={median(observations):.3f}[{min(observations):.3f},{max(observations):.3f}]')
         print('median[min,max]', f'K{mode}', case, arm, f'n={len(values)}', *summary)
     if args.baseline:
-        for mode, width in cases:
-            case = f'width{width}' if width else 'arrival'
+        for mode, case, _ in cases:
             blocks = list(zip(*(samples[mode, case, arm] for arm in ('candidate', 'baseline', 'A/A'))))
             for metric in blocks[0][0]:
                 changes = [100 * (new[metric] / (base[metric] * again[metric]) ** .5 - 1)
