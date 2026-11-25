@@ -16,10 +16,10 @@
 namespace qwen35 {
 
 struct DraftProgramKey final {
-  std::size_t rows, sampling_index, steps;
+  std::size_t rows, sampling_index, steps, requests;
   bool head;
-  DraftProgramKey(std::size_t r, bool h, std::size_t sampling, std::size_t k = 1)
-      : rows(r), sampling_index(sampling), steps(k), head(h) {}
+  DraftProgramKey(std::size_t r, bool h, std::size_t sampling, std::size_t k = 1, std::size_t width = 1)
+      : rows(r), sampling_index(sampling), steps(k), requests(width), head(h) {}
   DraftProgramKey(std::tuple<std::size_t, bool, std::size_t> original)
       : DraftProgramKey(std::get<0>(original), std::get<1>(original), std::get<2>(original)) {}
   friend auto operator<=>(const DraftProgramKey &, const DraftProgramKey &) = default;
@@ -119,6 +119,7 @@ struct DraftProgramRequest final {
   g::ReplayMode replay_mode = g::ReplayMode::kCommands;
   std::size_t verification_rows = 0;
   std::size_t steps = 1;
+  std::size_t requests = 1;
 };
 struct DraftProgramFacts final {
   const c::BatchSchema &attention_schema;

@@ -589,6 +589,14 @@ struct DraftProposal final {
   std::int32_t id = -1;
   c::ReadLease hidden, log_probabilities, next_counts;
 };
+inline constexpr std::size_t kBatchedDraftProposals = 2;
+inline constexpr std::size_t kMaximumBatchedDraftRequests = 4;
+
+struct GreedyDraftLane final {
+  DraftWork *work = nullptr;
+  std::array<std::int32_t, 2> tokens{};
+  std::array<c::ReadLease, 2> hidden;
+};
 // Call-local linear proposal resolution. Row zero was resolved before request
 // admission; later rows are retained once and frozen for the original verifier.
 struct ConditionalLogitsProposal final {
@@ -1864,13 +1872,13 @@ public:
   }
 
   void prepare_draft_program(std::size_t rows, bool head, std::size_t sampling_index = 0,
-      std::size_t planned_uses = 1, std::size_t steps = 1) {
+      std::size_t planned_uses = 1, std::size_t steps = 1, std::size_t width = 1) {
     preparation_started_ = true;
     if (state_storage_prepared || !cache_plan.draft_cache || !rows || rows > capacity)
       throw std::runtime_error("prepare a positive NextN width before selected cache storage");
     const auto selected_index = head ? sampling_index : 0;
     const auto &selected_sampler = sampling_configuration(selected_index).configuration;
-    const DraftProgramKey key{rows, head, selected_index, steps};
+    const DraftProgramKey key{rows, head, selected_index, steps, width};
     if (draft_programs.contains(key)) return;
     prepare_cache();
     // Optional source transform remains with its original cold Model owner.
@@ -1879,19 +1887,18 @@ public:
     // bound can select capture; writer-only repair retains its ready-leaf path.
     const auto replay_mode = !selected_sampler.modifiers.history.empty() && head ? g::ReplayMode::kCommands
         : select_replay_mode(replay_policy, head ? planned_uses : 1);
-    const auto packet_rows = head && draft_packet_enabled(selected_sampler) ? max_drafts() + 1 : 0;
-    auto built = build_draft_program({rows, selected_index, head, replay_mode, packet_rows, steps},
+    const auto packet_rows = width == 1 && head && draft_packet_enabled(selected_sampler) ? max_drafts() + 1 : 0;
+    auto built = build_draft_program({rows, selected_index, head, replay_mode, packet_rows, steps, width},
         {geometry, precision, weights, projections, weight_meanings, ffn_placement.layers()},
         {attention_schema, cache_plan.hidden_slots, cache_plan.active_sequences, cache_plan.candidate_boundaries,
          prepared_draft_projection(subset)}, selected_sampler,
         {execution, allocation_budget, execution_budget, cache_budget});
     auto prepared = std::move(built.program); auto &program = *prepared;
-    merge_execution_plan(built.plan);
-    input_scratch.draft_positions.reserve(rows + steps - 1);
+    input_scratch.draft_positions.reserve(cache::multiply(rows + steps - 1, width));
     program.guard.execution.configure(draft_bank + 2 * steps);
     const auto dirty_bound = cache::add(rows + steps - 1, cache::Plan::page_rows - 2) / cache::Plan::page_rows + 1;
     for (std::size_t bank = draft_bank; bank < draft_bank + 2 * steps; ++bank)
-      program.guard.execution.dirty[bank].reserve(dirty_bound);
+      program.guard.execution.dirty[bank].reserve(cache::multiply(dirty_bound, width));
     if (steps == 1) {
       program.guard.execution.nodes[draft_bank] = program.append.key;
       program.guard.execution.nodes[draft_bank + 1] = program.append.value;
@@ -1900,6 +1907,7 @@ public:
       program.guard.execution.nodes[draft_bank + 2 * i + 1] = program.chain[i].append_value;
     }
     initialize_draft_program(program);
+    merge_execution_plan(built.plan);
     draft_programs.emplace(key, std::move(prepared));
   }
 
@@ -2241,6 +2249,121 @@ public:
     }
   }
 
+  // All lanes own private drafts. The original append, slot and retirement
+  // owners are shared with the one-lane path.
+  void execute_greedy_draft_batch(std::span<GreedyDraftLane> lanes, std::size_t rows, std::size_t sampler,
+      std::span<DraftProposal> outputs) {
+    const auto width = lanes.size();
+    auto &program = *draft_programs.at({rows, true, sampler, 1, width});
+    auto &episode = program.guard.execution;
+    if (episode.cleanup_pending) {
+      if (!take(recover_draft_program(program))) throw std::runtime_error("draft batch is still retiring");
+      episode.cleanup_pending = false;
+      episode.terminal = {};
+    }
+    if (!program.carrier.initialized()) initialize_draft_program(program);
+    auto &run = *take(program.carrier.borrow());
+    episode.run = &run; episode.carrier = &program.carrier;
+    auto &transactions = program.hidden_transactions;
+    episode.state_transactions = &transactions;
+    struct Append final {
+      cache::DraftState next;
+      c::BatchLayoutVersion layout;
+      std::array<c::PagedArenaCommit, 2> commits;
+      std::array<c::PagedPageAppender, 2> tails;
+    };
+    std::array<Append, kMaximumBatchedDraftRequests> appends;
+    try {
+      std::array<std::int32_t, 2 * kMaximumBatchedDraftRequests> tokens{};
+      auto &positions = input_scratch.draft_positions;
+      positions.clear();
+      std::array<std::size_t, kMaximumBatchedDraftRequests> session_rows{};
+      for (std::size_t i = 0; i < width; ++i) {
+        auto &lane = lanes[i];
+        auto &next = appends[i].next;
+        next.frontier = lane.work->state.frontier + rows;
+        if (!next.paged.frames.try_resize(lane.work->state.paged.frames.size())) throw std::bad_alloc{};
+        session_rows[i] = cache::add(lane.work->session->submitted_draft_rows, rows);
+        std::copy_n(lane.tokens.begin(), rows, tokens.begin() + i * rows);
+        std::copy_n(lane.hidden.begin(), rows, transactions.sources(0).begin() + i * rows);
+        transactions.writers(0)[i] = take(hidden_pool.allocate(transactions.writer_bytes(0), cache::state_pool_alignment));
+        for (std::size_t row = 0; row < rows; ++row)
+          positions.push_back(static_cast<std::int32_t>(lane.work->state.frontier + row));
+      }
+      const auto member_at = [&](std::size_t i) noexcept -> inference::PagedAppendMember {
+        auto &work = *lanes[i].work; auto &append = appends[i];
+        return {work.state.paged, &append.next.paged, append.layout, work.state.frontier, rows, work.tails, true};
+      };
+      const auto layout = take(inference::prepare_paged_append(attention_schema, width,
+          inference::PagedAppendBanks{draft_inventory, std::span(episode.dirty.data() + draft_bank, 2),
+              std::span(episode.tails.data() + draft_bank, 2), std::span(episode.appends.data() + draft_bank, 2)},
+          input_scratch.paged_appends, member_at,
+          {.capacity_rows = capacity, .append_options = {.resource_budget = cache_budget}}));
+      program.token_values.write<std::int32_t>(std::span(tokens).first(width * rows));
+      program.position_values.write<std::int32_t>(positions);
+      check(transactions.stage(0));
+      const std::array layouts{g::batch::NodeLayout{program.attention, layout}};
+      const std::array cache_inputs{program.key, program.value};
+      check(episode.prepare_appends(program.graph, layouts, draft_bank, 2, cache_inputs,
+          {.host_workspace = execution.staging()}));
+      check(episode.bind_consumers(program.programs.child(0).resource_graph()));
+      check(episode.prepare_replay({.mode = program.replay_mode, .host_wait = g::HostWaitPolicy::kAllow}));
+      const auto next_rows = cache::add(submitted_draft_rows, width * rows);
+      check(episode.submit(resources_));
+      submitted_draft_rows = next_rows;
+      for (std::size_t i = 0; i < width; ++i) lanes[i].work->session->submitted_draft_rows = session_rows[i];
+      check(episode.finish_success(draft_bank, 2, take(program.io.withdrawal_values()),
+          [&]() noexcept { ++draft_program_graph_calls; },
+          [&]() -> hyle::Status {
+            std::array<std::int32_t, kMaximumBatchedDraftRequests> ids{};
+            check(program.io.read(run, program.id_value, std::as_writable_bytes(std::span(ids).first(width))));
+            for (std::size_t i = 0; i < width; ++i) {
+              if (ids[i] < 0 || ids[i] >= vocabulary) throw std::runtime_error("batched draft is outside vocabulary");
+              outputs[i].id = ids[i];
+            }
+            return hyle::Status::Ok();
+          }, [&]() -> hyle::Status {
+            auto writers = take(transactions.returned(0));
+            for (std::size_t i = 0; i < width; ++i) outputs[i].hidden = take(writers[i].publish());
+            check(transactions.clear(0));
+            const auto finish_at = [&](std::size_t i) noexcept -> inference::PagedAppendFinishMember {
+              auto &append = appends[i];
+              return {lanes[i].work->state.paged, append.next.paged, append.commits, append.layout,
+                  append.next.paged.pages.back().page(), static_cast<std::uint32_t>(append.next.frontier % cache::Plan::page_rows),
+                  append.tails};
+            };
+            check(inference::prepare_paged_append_commits(
+                std::span(episode.appends.data() + draft_bank, 2), width, finish_at));
+            check(inference::return_paged_append_tails(episode.append_transactions().subspan(draft_bank, 2),
+                2, width, input_scratch.paged_appends, finish_at));
+            return hyle::Status::Ok();
+          }));
+      for (std::size_t i = 0; i < width; ++i) {
+        auto &append = appends[i]; auto &work = *lanes[i].work;
+        inference::PagedSequenceEdit edit(work.state.paged, append.next.paged, append.commits);
+        take(edit.prepare_publication()).publish(&work.state.paged);
+        work.tails = std::move(append.tails); work.state = std::move(append.next);
+        ++work.session->proposal_graph_calls;
+      }
+      for (auto &pages : episode.appends) pages = {};
+      for (auto &bank : episode.dirty) bank.clear();
+      for (auto &bank : episode.tails) bank.clear();
+      episode.run = nullptr; episode.carrier = nullptr; episode.state_transactions = nullptr;
+    } catch (inference::EvaluationFailure &failure) {
+      episode.cleanup_pending = true;
+      const auto recovered = recover_draft_program(program);
+      if (!recovered) inference::record_retirement_status(episode.terminal, recovered.error());
+      failure.observe_retirement({recovered && *recovered, episode.terminal});
+      if (recovered && *recovered) { episode.cleanup_pending = false; episode.terminal = {}; }
+      throw;
+    } catch (...) {
+      episode.cleanup_pending = true;
+      const auto recovered = recover_draft_program(program);
+      if (recovered && *recovered) { episode.cleanup_pending = false; episode.terminal = {}; }
+      throw;
+    }
+  }
+
   void prepare_prefix_sampling(std::size_t proposals, std::size_t sampling_index = 0, bool conditional = false) {
     preparation_started_ = true;
     const auto &selected_sampler = sampling_configuration(sampling_index).configuration;
@@ -2284,7 +2407,7 @@ public:
   // Target family widths and replay counts stay with the finite request plan;
   // every recursive consumer shares this model's actual NextN/sampler programs.
   void prepare_recursive_round_programs(std::size_t sampling_index = 0, bool conditional = false,
-      std::size_t planned_uses = 1, std::size_t maximum_proposals = SIZE_MAX) {
+      std::size_t planned_uses = 1, std::size_t maximum_proposals = SIZE_MAX, std::size_t batch_requests = 1) {
     const auto &selected_sampler = sampling_configuration(sampling_index).configuration;
     const auto maximum_rows = maximum_proposals == SIZE_MAX ? cache_plan.candidate_boundaries
         : (std::min)(maximum_proposals, max_drafts()) + 1;
@@ -2298,10 +2421,37 @@ public:
     }
     prepare_draft_program(1, true, sampling_index, planned_uses);
     if (capacity > 1) prepare_draft_program(2, true, sampling_index, planned_uses);
+    if (!conditional && maximum_proposals == kBatchedDraftProposals && !selected_sampler.enabled &&
+        selected_sampler.modifiers.empty()) prepare_batched_drafts(sampling_index, planned_uses, batch_requests);
     if (!conditional && greedy_draft_chain_enabled(selected_sampler))
       for (std::size_t steps = 2; steps <= maximum_proposals; ++steps)
         for (std::size_t rows = 1; rows <= 2; ++rows)
           prepare_draft_program(rows, true, sampling_index, planned_uses, steps);
+  }
+
+  void prepare_batched_drafts(std::size_t sampling_index, std::size_t planned_uses, std::size_t batch_requests) {
+    const auto limit = (std::min)({batch_requests, cache_plan.active_sequences, kMaximumBatchedDraftRequests});
+    if (limit < 2 || max_drafts() != kBatchedDraftProposals || execution.kind() != BackendKind::kApple ||
+        execution.has_cpu_assist() || precision.activation_type() != Type::kBFloat16 ||
+        resources_->draft_vocabulary || resources_->draft_head) return;
+    const auto projection = projections.find(geometry.head_role());
+    const auto *stored = projection == projections.end() ? nullptr : std::get_if<StoredProjection>(&projection->second);
+    if (!stored || !stored->weight || !stored->weight->description.is_plain() ||
+        stored->weight->description.data_type() != Type::kBFloat16) return;
+
+    for (std::size_t width = 2; width <= limit; ++width) {
+      try {
+        prepare_draft_program(1, true, sampling_index, planned_uses, 1, width);
+        prepare_draft_program(2, true, sampling_index, planned_uses, 1, width);
+      } catch (const inference::EvaluationFailure &failure) {
+        const auto &status = failure.status();
+        if (status.has_native_error() || (!status.IsUnimplemented() && !status.IsResourceExhausted())) throw;
+        // Both lag shapes are required. Keep only complete widths, including
+        // every smaller cohort that can remain after a stop proposal.
+        draft_programs.erase({1, true, sampling_index, 1, width});
+        break;
+      }
+    }
   }
 
   PrefixSamplingResult sample_recursive_prefix(c::ConstTensorView logits,
@@ -5146,6 +5296,95 @@ public:
       if (dynamic) (void)resources_->retire(false);
       throw;
     }
+  }
+
+  struct BatchDraftRequest final {
+    Session *session;
+    const inference::RequestStopPolicy *stop;
+  };
+
+  using BatchedDraftTokens = std::array<std::vector<std::int32_t>, kMaximumBatchedDraftRequests>;
+
+  std::optional<BatchedDraftTokens> try_propose_greedy_batch(
+      std::span<const BatchDraftRequest> requests, std::span<const std::int32_t> eos) {
+    const auto width = requests.size();
+    if (width < 2 || width > kMaximumBatchedDraftRequests || !state_storage_prepared || active_step || carrier_borrowed)
+      return std::nullopt;
+    const auto sampler = requests.front().session->sampling_configuration().index;
+    if (!draft_programs.contains({1, true, sampler, 1, width})) return std::nullopt;
+
+    std::array<std::array<std::size_t, kMaximumBatchedDraftRequests>, 2> first_stage{};
+    std::array<std::size_t, 2> first_count{};
+    std::size_t potential_pages = 0;
+    for (std::size_t i = 0; i < width; ++i) {
+      const auto &session = *requests[i].session;
+      if (session.model_ != this || session.pending || session.stopping || session.failed || !session.head ||
+          !session.head->draft || session.sampling_configuration().index != sampler ||
+          session.length() >= capacity || capacity - session.length() <= kBatchedDraftProposals) return std::nullopt;
+      validate_mtp_snapshot(*session.head);
+      inference::request_stop_policy(requests[i].stop).validate(vocabulary);
+      if (session.head->next_id < 0 || session.head->next_id >= vocabulary ||
+          inference::request_token_stopped(session.head->next_id, eos, requests[i].stop)) return std::nullopt;
+      const auto &draft = *session.head->draft;
+      first_stage[draft.lag][first_count[draft.lag]++] = i;
+      const auto page_rows = cache::Plan::page_rows;
+      const auto midpoint = draft.frontier + draft.lag + 1;
+      // Budget both private appends, including both COW tails where applicable.
+      potential_pages += (midpoint + page_rows - 1) / page_rows - draft.frontier / page_rows;
+      potential_pages += (midpoint + page_rows) / page_rows - midpoint / page_rows;
+    }
+    if (potential_pages > draft_inventory.free_ids.size()) return std::nullopt;
+
+    std::array<DraftWork, kMaximumBatchedDraftRequests> work;
+    std::array<c::ReadLease, kMaximumBatchedDraftRequests> hidden;
+    BatchedDraftTokens packets;
+    for (std::size_t i = 0; i < width; ++i) {
+      auto &session = *requests[i].session;
+      work[i].state = fork_draft(*session.head->draft);
+      work[i].session = &session;
+      packets[i].reserve(kBatchedDraftProposals + 1);
+      packets[i].push_back(session.head->next_id);
+      session.proposal_graph_calls = 0;
+    }
+    const auto stage = [&](std::span<const std::size_t> members, std::size_t lag, bool followup) {
+      if (members.empty()) return;
+      const auto rows = lag + 1;
+      std::array<GreedyDraftLane, kMaximumBatchedDraftRequests> lanes;
+      std::array<DraftProposal, kMaximumBatchedDraftRequests> proposals;
+      for (std::size_t k = 0; k < members.size(); ++k) {
+        const auto i = members[k];
+        const auto &head = *requests[i].session->head;
+        lanes[k].work = &work[i];
+        if (lag) {
+          lanes[k].tokens[0] = work[i].state.catchup_token;
+          lanes[k].hidden[0] = head.prior_hidden;
+        }
+        lanes[k].tokens[lag] = packets[i].back();
+        lanes[k].hidden[lag] = followup ? std::move(hidden[i]) : head.carry_hidden;
+      }
+      if (members.size() == 1) {
+        auto &lane = lanes.front();
+        proposals[0] = execute_draft(*lane.work, std::span(lane.tokens).first(rows),
+            std::span(lane.hidden).first(rows), true, {}, sampler);
+        ++lane.work->session->proposal_graph_calls;
+      } else {
+        execute_greedy_draft_batch(std::span(lanes).first(members.size()), rows, sampler,
+            std::span(proposals).first(members.size()));
+      }
+      for (std::size_t k = 0; k < members.size(); ++k) {
+        const auto i = members[k];
+        packets[i].push_back(proposals[k].id);
+        hidden[i] = std::move(proposals[k].hidden);
+      }
+    };
+    stage(std::span(first_stage[0]).first(first_count[0]), 0, false);
+    stage(std::span(first_stage[1]).first(first_count[1]), 1, false);
+    std::array<std::size_t, kMaximumBatchedDraftRequests> next{};
+    std::size_t next_count = 0;
+    for (std::size_t i = 0; i < width; ++i)
+      if (!inference::request_token_stopped(packets[i].back(), eos, requests[i].stop)) next[next_count++] = i;
+    stage(std::span(next).first(next_count), 0, true);
+    return packets;
   }
 
   void repair_recursive_draft(StepState &step) {

@@ -2022,6 +2022,34 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
         peer.verification_prepared = false;
       }
     };
+    if (calls.size() > 1 && calls.size() <= kMaximumBatchedDraftRequests && !trace_states &&
+        std::ranges::all_of(calls, [](const auto &call) {
+          return call.generation && call.role == GraphRole::kVerify && call.maximum == kBatchedDraftProposals &&
+              call.verification_ids.empty() && !call.logits_provider && call.conditional_logits.empty() &&
+              call.request->trace.empty();
+        })) {
+      std::array<Model::BatchDraftRequest, kMaximumBatchedDraftRequests> requests_to_draft{};
+      for (std::size_t i = 0; i < calls.size(); ++i)
+        requests_to_draft[i] = {calls[i].request->session.get(), &calls[i].request->ledger->stop_policy()};
+      const auto begin = Clock::now();
+      try {
+        if (auto packets = model.try_propose_greedy_batch(std::span(requests_to_draft).first(calls.size()), eos)) {
+          const auto elapsed = std::chrono::duration<double>(Clock::now() - begin).count();
+          for (std::size_t i = 0; i < calls.size(); ++i) {
+            calls[i].verification_ids = std::move((*packets)[i]);
+            calls[i].verification_prepared = false;
+            calls[i].draft_log_probabilities.clear();
+            calls[i].proposal_seconds = elapsed / static_cast<double>(calls.size());
+          }
+        }
+      } catch (const inference::EvaluationFailure &failure) {
+        if (failure.retirement_observed() && failure.retirement().retired) discard_proposals();
+        throw;
+      } catch (...) {
+        if (model.try_retire_owned_resources().retired) discard_proposals();
+        throw;
+      }
+    }
     for (auto &call : calls) {
       if (!call.generation || call.role != GraphRole::kVerify)
         throw std::runtime_error("recursive MTP batch requires generation verifiers only");
@@ -2895,14 +2923,20 @@ void prepare_generation_inventory(Model &model, const GenerationProgramPlan &pla
   // plans. The caller can build its independent tail programs before joining;
   // it alone merges plans and mutates auxiliary carriers. ColdFamilyGuard joins
   // every worker before these owners retire on either success or failure.
-  if (mtp && decode_bound)
-    for (std::size_t index = 0; index < model.sampling_configuration_count(); ++index)
-      for (const bool dynamic : {false, true})
-        if ((dynamic || model.recursive_mtp()) && ((reuse && !dynamic) || std::ranges::any_of(requests, [index, dynamic, first_turn_only](const auto &request) {
-            return request.sampling_index == index && bool(request.logits_provider) == dynamic &&
-                (first_turn_only || std::ranges::any_of(request.progress.turns(), [](const auto &turn) { return turn.max_outputs > 1; }));
-          }))) model.prepare_recursive_round_programs(index, dynamic, decode_bound,
-              dynamic ? model.max_drafts() : standalone_draft_limit(index));
+  if (mtp && decode_bound) {
+    for (std::size_t index = 0; index < model.sampling_configuration_count(); ++index) {
+      for (const bool dynamic : {false, true}) {
+        if (!dynamic && !model.recursive_mtp()) continue;
+        const auto consumers = reuse && !dynamic ? model.cache_plan.active_sequences :
+            static_cast<std::size_t>(std::ranges::count_if(requests, [index, dynamic, first_turn_only](const auto &request) {
+              return request.sampling_index == index && bool(request.logits_provider) == dynamic &&
+                  (first_turn_only || std::ranges::any_of(request.progress.turns(), [](const auto &turn) { return turn.max_outputs > 1; }));
+            }));
+        if (consumers) model.prepare_recursive_round_programs(index, dynamic, decode_bound,
+            dynamic ? model.max_drafts() : standalone_draft_limit(index), consumers);
+      }
+    }
+  }
   model.finish_cold_families();
   model.freeze_shape_plan();
   if (first_turn_only) model.prepare_execution_storage();

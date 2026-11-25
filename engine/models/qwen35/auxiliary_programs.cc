@@ -40,7 +40,7 @@ AuxiliaryProgramResult<DraftProgram> build_draft_chain(
     const DraftProgramRequest &request, const FamilyModelFacts &model,
     const DraftProgramFacts &facts, const SamplingConfiguration &sampling,
     const AuxiliaryCompileContext &context) {
-  if (!request.head || request.rows < 1 || request.rows > 2 || request.steps < 2 || request.steps > 3 ||
+  if (!request.head || request.requests != 1 || request.rows < 1 || request.rows > 2 || request.steps < 2 || request.steps > 3 ||
       request.steps >= facts.candidate_boundaries ||
       sampling.enabled || !sampling.modifiers.empty())
     throw std::runtime_error("draft chain requires bounded unmodified greedy original inputs");
@@ -126,16 +126,26 @@ AuxiliaryProgramResult<DraftProgram> build_draft_program(
   const auto &cache_budget = context.cache_budget;
   const auto &attention_schema = draft_facts.attention_schema;
   const auto rows = build_request.rows, selected_index = build_request.sampling_index;
+  const auto width = build_request.requests;
   const auto head = build_request.head;
+  if (!width || (width > 1 && (!head || selected_sampler.enabled || !selected_sampler.modifiers.empty() ||
+      build_request.verification_rows || draft_facts.projection.indexed_rows)))
+    throw std::invalid_argument("batched draft preparation requires an original unmodified greedy projection");
+  const auto packed = cache::multiply(rows, width);
+  const auto slots = static_cast<std::int64_t>(width);
   const auto hidden = geometry.hidden;
     auto prepared = std::make_unique<DraftProgram>(); auto &program = *prepared;
     program.rows = rows; program.head = head; program.sampling_index = selected_index;
     program.replay_mode = build_request.replay_mode;
     GraphAssembly assembly(execution, precision, allocation_budget);
-    Recipe r(weights, projections, assembly, geometry, rows, 1, &weight_meanings);
+    Recipe r(weights, projections, assembly, geometry, rows, width, &weight_meanings);
     const auto count = f(static_cast<std::int64_t>(rows));
-    program.tokens = r.input(dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
-    program.positions = r.input(dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
+    const auto physical = f(static_cast<std::int64_t>(packed));
+    program.tokens = r.input(dense(Type::kInt32, {static_cast<std::int64_t>(packed)}));
+    const auto position_rows = static_cast<std::int64_t>(rows);
+    const auto positions = width == 1 ? dense(Type::kInt32, {position_rows})
+                                      : dense(Type::kInt32, {slots, position_rows});
+    program.positions = r.input(positions);
     V shifted;
     g::slots::Schema hidden_schema;
     if (head) {
@@ -145,10 +155,10 @@ AuxiliaryProgramResult<DraftProgram> build_draft_program(
               cache::state_pool_padding(cache::multiply(static_cast<std::size_t>(hidden), precision.activation_bytes())))));
       auto &port = program.hidden_state;
       port.pool = r.input(take(hidden_schema.capacity_description()));
-      port.source_ids = r.input(dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
-      port.destination_ids = r.input(dense(Type::kInt32, {1}));
+      port.source_ids = r.input(dense(Type::kInt32, {static_cast<std::int64_t>(packed)}));
+      port.destination_ids = r.input(dense(Type::kInt32, {slots}));
       shifted = r.one(c::Gather{.axis = 0, .bounds = c::IndexBoundsPolicy::kChecked},
-          {port.pool, port.source_ids}, r.dense_spec(precision.activation_type(), {count, f(hidden)}), &port.gather);
+          {port.pool, port.source_ids}, r.dense_spec(precision.activation_type(), {physical, f(hidden)}), &port.gather);
     } else {
       // This maintenance graph only reads hidden and writes draft KV. Keep
       // its original ready-leaf Commands path; no dummy Store or pool reader.
@@ -162,7 +172,7 @@ AuxiliaryProgramResult<DraftProgram> build_draft_program(
     auto &frequency_literal = assembly.literal_at(assembly.primary(), dense(Type::kFloat32, {geometry.rotary / 2}));
     frequency_literal.write<float>(frequency);
     const auto frequencies = r.constant(frequency_literal);
-    const mtp::Geometry row_geometry{1, count, count};
+    const mtp::Geometry row_geometry{width, count, physical};
     const auto projection = mtp::input_projection(r, program.tokens, shifted);
     const auto kv = mtp::project_kv(r, projection, program.positions, frequencies, row_geometry);
     if (head) {
@@ -182,7 +192,7 @@ AuxiliaryProgramResult<DraftProgram> build_draft_program(
       if (!selected_sampler.enabled) {
         if (selected_sampler.modifiers.empty()) program.id = original_draft_id(r,
             r.op(c::Operation(c::TopK{.count = 1}), {result.logits},
-                {r.dense_spec(Type::kFloat32, {f(1), f(1)}), r.dense_spec(Type::kInt32, {f(1), f(1)})})[1], draft_facts.projection);
+                {r.dense_spec(Type::kFloat32, {f(slots), f(1)}), r.dense_spec(Type::kInt32, {f(slots), f(1)})})[1], draft_facts.projection);
         else {
           const auto selection = sampling::processed_selection(r, processed, std::optional<V>{}, selected_sampler.policy);
           program.id = selection.id; program.valid = r.host_predicate(*selection.valid);
@@ -232,8 +242,8 @@ AuxiliaryProgramResult<DraftProgram> build_draft_program(
     check(program.carrier.prepare(compiled_program, execution.queue_bindings()));
     const auto plan = inspect_execution_plan(execution, model.cpu_ffn_layers.count(), compiled_program.report, assembly.constants());
     program.literals = std::move(assembly.literals);
-    program.token_values = auxiliary_tensor(allocation_budget, execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
-    program.position_values = auxiliary_tensor(allocation_budget, execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
+    program.token_values = auxiliary_tensor(allocation_budget, execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(packed)}));
+    program.position_values = auxiliary_tensor(allocation_budget, execution.device(), positions);
     if (program.verification_prefix) {
       const auto prefix_rows = static_cast<std::int64_t>(build_request.verification_rows - 1);
       program.verification_prefix_values = auxiliary_tensor(allocation_budget, execution.device(), dense(Type::kInt32, {prefix_rows}));
@@ -291,7 +301,7 @@ AuxiliaryProgramResult<DraftProgram> build_draft_program(
     check(program.io.seal());
     if (head) {
       const std::array specs{inference::SlotTransactionSpec{program.hidden_state.store,
-          rows, 1, {.resource_budget = cache_budget}}};
+          packed, width, {.resource_budget = cache_budget}}};
       check(program.hidden_transactions.prepare(specs));
     }
   return {std::move(prepared), plan};
