@@ -2056,6 +2056,26 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
       if (call.verification_ids.empty()) {
         call.verification_prepared = false;
         const auto begin = Clock::now();
+        auto &lookup = call.request->prefix_draft_lookup;
+        if (lookup && call.maximum == 2) {
+          const auto *stop = &call.request->ledger->stop_policy();
+          try {
+            const auto pair = lookup->propose(call.request->progress);
+            if (pair && std::ranges::none_of(*pair, [&](auto id) {
+                  return inference::request_token_stopped(id, eos, stop);
+                })) {
+              call.verification_ids = {call.pending, (*pair)[0], (*pair)[1]};
+              call.draft_log_probabilities.clear();
+              call.request->session->proposal_graph_calls = 0;
+              call.proposal_seconds = std::chrono::duration<double>(Clock::now() - begin).count();
+              continue;
+            }
+          } catch (const std::bad_alloc &) {
+            // The lookup is optional and has no effect on the committed prefix.
+            call.verification_ids.clear();
+            lookup.reset();
+          }
+        }
         try {
           std::optional<ConditionalLogitsProposal> dynamic;
           if (call.logits_provider) {
@@ -2577,7 +2597,8 @@ bool admit_waiting_generation(Model &model, inference::RequestLoop &loop,
         .model = selected, .prepared_model = profiles.empty() ? nullptr : &selected,
         .prefix = profiles.empty() ? prefix : profiles[schedule.execution_profile].prefix,
         .output_capacity = bound, .turn_capacity = bound, .record_capacity = record_bound,
-        .open_turns = true, .sampling_index = next.sampling_index, .stop = std::move(next.stop),
+        .open_turns = true, .prepared_inference = !profiles.empty(),
+        .sampling_index = next.sampling_index, .stop = std::move(next.stop),
         .arrival = Clock::now()});
     outputs = cache::add(outputs, visible_turns.front().max_outputs);
     return requests[slot].request_key;
@@ -3249,7 +3270,7 @@ int execute_generation_sessions(Model &model, inference::GenerationBatch batch, 
         .model = request_model, .prepared_model = mixed ? &request_model : nullptr,
         .prefix = selected_prefix(schedule.execution_profile), .output_capacity = first_turn_only ? configured_bound : outputs,
         .turn_capacity = (first_turn_only || schedule.accepts_live_input()) ? configured_bound : visible_turns.size(),
-        .record_capacity = ledger_capacity, .open_turns = first_turn_only,
+        .record_capacity = ledger_capacity, .open_turns = first_turn_only, .prepared_inference = !Diagnostic,
         .sampling_index = sampling_indices.empty() ? 0 : sampling_indices[requests.size()],
         .stop = stop_policies.empty() ? inference::RequestStopPolicy{} : stop_policies[requests.size()],
         .trace = trace.empty() ? trace : trace / ("session" + std::to_string(requests.size()) + "_" + schedule.id),

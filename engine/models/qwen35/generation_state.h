@@ -6,6 +6,7 @@
 #include "../../inference/request_progress.h"
 #include "../../inference/request_stop_policy.h"
 #include "../../inference/logits_inputs.h"
+#include "../../inference/prefix_draft_lookup.h"
 
 namespace qwen35 {
 struct GenerationRestoreStats final {
@@ -68,6 +69,7 @@ struct GenerationRequest {
   std::uint64_t cache_sharing_domain = 0;
   LogitsInputs logits; // One [1,V] snapshot for every conditional row in an output episode.
   inference::LogitsInputProvider logits_provider;
+  std::unique_ptr<inference::PrefixDraftLookup> prefix_draft_lookup;
   Clock::time_point admission_start{};
   GenerationRestoreStats restored;
   std::size_t restore_count = 0, idle_evictions = 0;

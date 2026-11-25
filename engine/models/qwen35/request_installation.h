@@ -4,6 +4,8 @@
 #include "../../inference/model_executor.h"
 #include "../../inference/request_admission.h"
 
+#include <new>
+
 namespace qwen35 {
 
 // Admission-only inputs. The caller chooses the visible turn span and explicit
@@ -17,6 +19,7 @@ struct RequestInstallation final {
   cache::PrefixCache *prefix = nullptr;
   std::size_t output_capacity, turn_capacity, record_capacity;
   bool open_turns = false;
+  bool prepared_inference = false;
   std::size_t sampling_index = 0;
   inference::RequestStopPolicy stop;
   std::filesystem::path trace;
@@ -49,6 +52,15 @@ inline GenerationRequest install_generation_request(RequestInstallation inputs) 
     request.progress.bind_open_turns(turns, inputs.turn_capacity, inputs.turn_capacity);
   else request.progress.bind_turns(turns);
   request.logits_provider = std::move(inputs.logits_provider);
+  const auto &model = inputs.model;
+  if (inputs.prepared_inference && ceiling == 2 && request.max_draft_tokens == ceiling &&
+      model.execution.native_generated_storage() && !model.execution.has_cpu_assist() &&
+      model.cache_plan.resident_sessions == 1 && model.cache_plan.active_sequences == 1 &&
+      !request.logits_provider && request.trace.empty()) {
+    const auto &sampling = model.sampling_configuration(inputs.sampling_index).configuration;
+    if (!sampling.enabled && sampling.modifiers.empty())
+      request.prefix_draft_lookup.reset(new (std::nothrow) inference::PrefixDraftLookup(model.capacity));
+  }
   request.progress.initial_sampling = inference::initial_sampling_cursor(schedule, inputs.model.sampling_seed);
   request.turn_observations.reserve(inputs.turn_capacity);
   request.turn_observations.resize(turns.size());

@@ -1,5 +1,6 @@
 // Host request semantics only. No model, native route, or test framework.
 #include "../../engine/inference/request_progress.h"
+#include "../../engine/inference/prefix_draft_lookup.h"
 #include "../../engine/inference/request_stop_policy.h"
 #include "../../engine/inference/request_window.h"
 #include "../../engine/inference/prompt_transport.h"
@@ -45,6 +46,43 @@ template<class Operation> void rejects(Operation operation) {
   try { operation(); }
   catch (const std::exception &) { return; }
   throw std::runtime_error("invalid request progress transition was accepted");
+}
+
+void prefix_drafts_only_read_committed_request_tokens() {
+  using hyle::inference::PrefixDraftLookup;
+  const std::array turns{
+      GenerationTurn{{1, 2, 3, 4, 5, 6, 7, 8, 50, 51, 5, 6, 7, 8, 60, 61, 1, 2, 3, 4, 5, 6, 7}, 6},
+      GenerationTurn{{8, 52}, 1},
+      GenerationTurn{{1, 2, 3, 4, 5, 6, 7}, 1},
+      GenerationTurn{{1, 2, 3, 4, 5, 6, 7, 8, 90, 91}, 1}};
+  RequestProgress progress(9);
+  progress.bind_turns(turns);
+  auto first_prompt = turns[0].prompt;
+  progress.begin_turn(first_prompt);
+  PrefixDraftLookup lookup(64), skipped(64), small(8);
+  const std::array<std::int32_t, 1> eight{8}, fifty_three{53};
+  require(!lookup.propose(progress), "draft lookup read a prompt before prefill");
+  progress.apply_outputs(eight, true, true, false);
+  const PrefixDraftLookup::Pair first{50, 51};
+  require(lookup.propose(progress) == first && lookup.propose(progress) == first && skipped.propose(progress) == first,
+      "draft lookup missed the longest committed match or read a future prompt");
+  require(!small.propose(progress), "draft lookup exceeded the request context bound");
+  const std::array<std::int32_t, 5> tail{52, 53, 54, 55, 56};
+  progress.apply_outputs(tail, true, false, false);
+  progress.advance_turn();
+  std::array<std::int32_t, 3> second{-1, 8, 52};
+  progress.begin_turn(second, 56);
+  progress.apply_outputs(fifty_three, true, true, false);
+  require(lookup.propose(progress) == PrefixDraftLookup::Pair{54, 55},
+      "draft lookup lost the previous turn's last committed outputs");
+  progress.advance_turn();
+  std::array<std::int32_t, 8> third{-1, 1, 2, 3, 4, 5, 6, 7};
+  progress.begin_turn(third, 53);
+  progress.apply_outputs(eight, true, true, false);
+  require(lookup.propose(progress) == PrefixDraftLookup::Pair{52, 53} && !skipped.propose(progress),
+      "draft lookup used history across an unobserved turn boundary");
+  PrefixDraftLookup newly_admitted(64);
+  require(!newly_admitted.propose(progress), "new request inherited an earlier lookup index");
 }
 
 std::vector<std::int32_t> delivered_journey(bool batched) {
@@ -468,6 +506,8 @@ void prompt_conditioning_transport_preserves_order_and_rejects_invalid_extents()
 
 int main() {
   try {
+    prefix_drafts_only_read_committed_request_tokens();
+    std::puts("PASS draft lookup uses only committed request history within the context bound");
     require(delivered_journey(false) == delivered_journey(true), "batching changed host delivery semantics");
     std::puts("PASS ordinary/batched outputs, quota/stop and pending-only turn continuation");
     invalid_transitions_are_atomic();

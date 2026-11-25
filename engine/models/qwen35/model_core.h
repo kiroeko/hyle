@@ -4304,7 +4304,14 @@ public:
           ? std::span<const std::int32_t>(decode_ahead->positions.data(), decode_ahead->positions.size())
           : std::span<const std::int32_t>(positions);
       if (!io.ordinary_io.packet()) {
-        if (!relay && !recording_imported && !token_source) io.tokens.template write<std::int32_t>(token_values);
+        if (!relay && !recording_imported && !token_source) {
+          io.tokens.template write<std::int32_t>(token_values);
+          // A prior device draft packet can release this input when its
+          // Source retires. A host draft uses the original fixed token view.
+          if (role == GraphRole::kVerify && width == 1 && execution.native_generated_storage() &&
+              draft_packet_enabled(selected_sampler))
+            check(run.bind(phase.token_port, io.tokens.read()));
+        }
         if(!device_input_choice)io.positions.template write<std::int32_t>(position_values);
       }
       if (selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify) {
