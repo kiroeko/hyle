@@ -4,30 +4,34 @@
 
 总表使用实际长输入。百分比为同窗配对的 `100 × (Hyle 指标 ÷ llama.cpp 指标 − 1)` 的中位数。首字列的负值表示用时减少。两边使用贪心采样，每臂三个独立进程。单请求固定测单轮长提示和多轮长提示，并发使用[长多轮开发助手负载](#长多轮开发助手)。
 
-### 普通生成
+### 单用户
 
-| 平台／后端／模型 | 单轮长提示<br>Prefill | 单轮长提示<br>Decode | 多轮长提示<br>Prefill | 多轮长提示<br>Decode | 开发助手并发<br>综合速度 |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| [macOS · Metal · M4](#macos-metal-bf16)<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | +0.3% | +4.6% | +2.4% | +5.4% | [两路 −7.5%](#长多轮开发助手) |
+#### 基础数据
 
-### 单请求 MTP
+| 平台／后端／模型 | 单轮长提示<br>Prefill | 单轮长提示<br>Decode | 多轮长提示<br>Prefill | 多轮长提示<br>Decode |
+| --- | ---: | ---: | ---: | ---: |
+| [macOS · Metal · M4](#macos-metal-bf16)<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | +0.3% | +4.6% | +2.4% | +5.4% |
+
+#### MTP
 
 | 平台／后端／模型 | 草稿数 | 全词表单轮<br>首字 | 全词表单轮<br>整体 | 子词表四轮<br>首轮首字 | 子词表四轮<br>整体 |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | [macOS · Metal · M4](#单请求长提示-mtp)<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | K1 | −4.0% | +6.4% | −3.3% | +16.2% |
 | [macOS · Metal · M4](#单请求长提示-mtp)<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | K2 | −3.6% | +5.0% | −3.2% | +21.9% |
 
-### CPU＋Metal MTP K1
+#### CPU＋Metal MTP K1
 
 | 平台／后端／模型 | 16K 八轮<br>全词表综合 | 32K 八轮<br>全词表综合 |
 | --- | ---: | ---: |
 | [macOS · CPU＋Metal · M4](#macos-cpumetal-全词表-bf16)<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | +7.9% | +20.6% |
 
-### 多请求 MTP K2
+### 多用户
 
-| 平台／后端／模型 | 全词表综合 | 子词表综合 |
-| --- | ---: | ---: |
-| [macOS · Metal · M4](#长多轮开发助手)<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | 两路 −10.6%<br>三路 −12.6%<br>四路 −15.4% | 两路 −11.3% |
+| 平台／后端／模型 | 模式 | 2 用户<br>整体吞吐 | 3 用户<br>整体吞吐 | 4 用户<br>整体吞吐 |
+| --- | --- | ---: | ---: | ---: |
+| [macOS · Metal · M4](#长多轮开发助手)<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | 普通 | −7.5% | — | — |
+| [macOS · Metal · M4](#长多轮开发助手)<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | 全词表 K2 | −10.6% | −12.6% | −15.4% |
+| [macOS · Metal · M4](#长多轮开发助手)<br>[Qwen3.5-2B BF16](https://huggingface.co/Qwen/Qwen3.5-2B) | 子词表 K2 | −11.3% | — | — |
 
 - 普通生成关闭 MTP。K1、K2 分别使用双方相同的草稿上限。
 - 普通 Prefill 按实际新增输入计，双方均从提交请求到收到首 token。Decode 按各轮首 token 后的交付数和首末 token 间的总时间计。单请求 MTP 的整体吞吐从首轮提交计到末个 token，计入全部轮次。加载、ready 与退出计入分项的完整进程指标。
