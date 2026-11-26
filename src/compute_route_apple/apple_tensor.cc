@@ -1226,9 +1226,9 @@ bool packed_bfloat_projection_eligible(
       activation.data_type() != DataType::kBFloat16 || weights.data_type() != DataType::kBFloat16)
     return false;
   const auto x = activation.dimensions(), w = weights.dimensions();
-  // The short projection and the twelve-row Steel tile use the same
-  // immutable lossless companion, with F32 output for either shape.
-  return x[0] > 0 && (x[0] <= 4 || x[0] == 12) && fixed_bfloat_head(w[0], w[1]) && w[1] == x[1];
+  // A single 16-row Steel tile can cover these prepared query batches.
+  const bool rows = x[0] > 0 && (x[0] <= 4 || x[0] == 6 || x[0] == 9 || x[0] == 12);
+  return rows && fixed_bfloat_head(w[0], w[1]) && w[1] == x[1];
 }
 
 bool packed_bfloat_matmul_eligible(
@@ -1394,7 +1394,7 @@ auto make_projection_kernel(bool bfloat_output, bool indexed, bool packed, bool 
 
 namespace {
 
-mx::array lower_bfloat_head12(const PreparedBFloatProjection &projection,
+mx::array lower_bfloat_tiled_head(const PreparedBFloatProjection &projection,
     const mx::array &original, const mx::array &activation, mx::Stream stream) {
   static const std::string header = std::string(mx::metal::gemm()) + R"METAL(
     inline bfloat4 hyle_head_unpack(uint mantissa, uint exponent, uint origin, uint shift) {
@@ -1404,9 +1404,9 @@ mx::array lower_bfloat_head12(const PreparedBFloatProjection &projection,
       return as_type<bfloat4>(ushort4(((bits & 128u) << 8) | (exp << 7) | (bits & 127u)));
     }
   )METAL";
-  static const auto kernel = mx::fast::metal_kernel("hyle_bf16_target_head12",
+  static const auto kernel = mx::fast::metal_kernel("hyle_bf16_target_head_tile",
       {"activation", "matrix", "words", "exponents"}, {"output"}, R"METAL(
-    // One threadgroup covers the twelve live rows and 64 adjacent vocabulary rows.
+    // One threadgroup covers the live query rows and 64 adjacent vocabulary rows.
     // MLX Steel preserves BF16 inputs and uses FP32 accumulators and outputs.
     using Gemm = mlx::steel::GEMMKernel<bfloat16_t, float,
         16, 64, BLOCK_K, 1, 4, false, true, false, true>;
@@ -1430,7 +1430,7 @@ mx::array lower_bfloat_head12(const PreparedBFloatProjection &projection,
 
     for (uint k = 0; k < INPUT_WIDTH; k += BLOCK_K) {
       threadgroup_barrier(mem_flags::mem_threadgroup);
-      load_a.load_safe(short2(BLOCK_K, 12));
+      load_a.load_safe(short2(BLOCK_K, LIVE_ROWS));
       const uint vector = (weight_offset + k) / 4;
       const uint block = vector / 16;
       const uint position = vector % 16;
@@ -1453,13 +1453,14 @@ mx::array lower_bfloat_head12(const PreparedBFloatProjection &projection,
       load_a.next();
     }
     threadgroup_barrier(mem_flags::mem_none);
-    accumulator.store_result_safe(output + start_column, OUTPUT_WIDTH, short2(64, 12));
+    accumulator.store_result_safe(output + start_column, OUTPUT_WIDTH, short2(64, LIVE_ROWS));
   )METAL", header, true);
   const auto columns = original.shape(0);
+  const auto rows = activation.shape(0);
   return kernel({activation, original, projection.packed[0], projection.packed[1]},
-      {{12, columns}}, {mx::float32}, {columns * 2, 1, 1}, {128, 1, 1},
+      {{rows, columns}}, {mx::float32}, {columns * 2, 1, 1}, {128, 1, 1},
       {{"INPUT_WIDTH", activation.shape(1)}, {"OUTPUT_WIDTH", columns},
-       {"BLOCK_K", 32}}, std::nullopt, false, stream)[0];
+       {"BLOCK_K", 32}, {"LIVE_ROWS", rows}}, std::nullopt, false, stream)[0];
 }
 
 } // namespace
@@ -1470,7 +1471,7 @@ mx::array lower_packed_bfloat_projection(
   const auto rows = original.shape(0);
   const auto inner = original.shape(1);
   const bool bfloat_output = output == mx::bfloat16;
-  if (!bfloat_output && input.shape(0) == 12) return lower_bfloat_head12(projection, original, input, stream);
+  if (!bfloat_output && input.shape(0) > 4) return lower_bfloat_tiled_head(projection, original, input, stream);
   static const auto scores = make_projection_kernel(false, false, true);
   static const auto matmul = make_projection_kernel(true, false, true);
   const auto &kernel = bfloat_output ? matmul : scores;
