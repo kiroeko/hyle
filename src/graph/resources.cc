@@ -142,6 +142,17 @@ const compute::ReadLease&binding_ready(const LeaseBinding&binding,std::size_t me
   return binding.ready_registration?binding.ready_registration->guards[member]:binding.read;
 }
 
+struct InputLeaseRange final {
+  mem::MemoryResourceRef resource;
+  void *handle;
+  std::size_t begin;
+  std::size_t end;
+  std::size_t prefix_end;
+  std::size_t order;
+  const compute::ReadLease *read;
+  const compute::detail::ReadLeaseGroup *group;
+};
+
 struct ResourceEpisode final {
   struct MetadataQueue final {
     const void *context = nullptr;
@@ -152,6 +163,7 @@ struct ResourceEpisode final {
       : allocator(selected), bindings(mem::StdAllocator<LeaseBinding>(selected)),
         binding_slots(mem::StdAllocator<std::uint32_t>(selected)),
         input_lease_candidates(mem::StdAllocator<std::uint32_t>(selected)),
+        input_lease_ranges(mem::StdAllocator<InputLeaseRange>(selected)),
         unbind_steps(mem::StdAllocator<std::uint8_t>(selected)),
         unbind_instances(mem::StdAllocator<std::uint8_t>(selected)),
         nominated_writers(mem::StdAllocator<std::uint32_t>(selected)),
@@ -166,9 +178,9 @@ struct ResourceEpisode final {
   // projected-page guards are appended/erased after it. Slots index identity,
   // never permissions, leases, addresses or readiness from an old episode.
   std::vector<std::uint32_t, mem::StdAllocator<std::uint32_t>> binding_slots;
-  // Call-scoped ordinals into bindings, rebuilt under preparation_uses. The
-  // original lookup still checks every selected lease and actual range live.
+  // Both lookup tables borrow the current bindings under preparation_uses.
   std::vector<std::uint32_t, mem::StdAllocator<std::uint32_t>> input_lease_candidates;
+  std::vector<InputLeaseRange, mem::StdAllocator<InputLeaseRange>> input_lease_ranges;
   // Fixed cold scratch; selective withdrawal never grows metadata or changes
   // InvocationState/PreparedRegion layout in other modules.
   std::vector<std::uint8_t, mem::StdAllocator<std::uint8_t>> unbind_steps;
@@ -202,6 +214,17 @@ struct ResourceEpisode final {
   ResourcePayloadValidationFn payload_validation = nullptr;
   void *payload = nullptr;
 };
+
+static void reserve_input_lease_ranges(ResourceEpisode &episode) noexcept {
+  // Binding capacity includes the flat capacity of compact registrations.
+  // Keep the original lookup available with a constrained metadata allocator.
+  const auto capacity = episode.bindings.capacity();
+  if (capacity > episode.input_lease_ranges.max_size()) return;
+  try {
+    episode.input_lease_ranges.reserve(capacity);
+  } catch (const std::bad_alloc &) {}
+}
+
 namespace {
 Status validate_immutable_group(const ResourceEpisode&,compute::ConstTensorView,
     const compute::detail::ReadLeaseGroup&,
@@ -1029,6 +1052,7 @@ Status RegionAccess::reserve_reads(Invocation &invocation, std::uint32_t extra,
   HYLE_RETURN_IF_ERROR(episode->permissions.reserve(required));
   episode->uses = std::move(uses);
   episode->permission_capacity = required;
+  reserve_input_lease_ranges(*episode);
   return Status::Ok();
 }
 Status RegionAccess::bind_projected_impl(Invocation&invocation,ValueId value,
@@ -2534,6 +2558,58 @@ const compute::TensorDesc &output_description(const InvocationState &state,
       : state.plan->instance_descriptions[instance];
 }
 
+static std::size_t input_range_end(mem::ConstBufferView view) noexcept {
+  return view.offset() + (std::min)(view.size(), SIZE_MAX - view.offset());
+}
+
+static void index_input_leases(ResourceEpisode &episode) noexcept {
+  auto &ranges = episode.input_lease_ranges;
+  ranges.clear();
+  for (const auto index : episode.input_lease_candidates) {
+    const auto &binding = episode.bindings[index];
+    const auto count = binding_ready_count(binding);
+    const auto grouped = binding.immutable.valid();
+    if (count + grouped > ranges.capacity() - ranges.size()) {
+      ranges.clear();
+      return;
+    }
+    if (grouped) {
+      // All pages in a group share one backing and are ordered. Keep one
+      // envelope here and let find() check the actual blocks, including holes.
+      const auto first = binding.immutable.page(0)->view();
+      const auto last = binding.immutable.page(binding.immutable.size() - 1)->view();
+      if (!first || !last) {
+        ranges.clear();
+        return;
+      }
+      ranges.push_back({first->resource(), first->native_handle(), first->offset(),
+          input_range_end(*last), 0, ranges.size(), nullptr, &binding.immutable});
+    }
+    for (std::size_t member = 0; member < count; ++member) {
+      const auto &read = binding_ready(binding, member);
+      if (auto view = read.view())
+        ranges.push_back({view->resource(), view->native_handle(), view->offset(),
+            input_range_end(*view), 0, ranges.size(), &read, nullptr});
+    }
+  }
+  const std::less<void *> less;
+  std::sort(ranges.begin(), ranges.end(), [&](const auto &left, const auto &right) {
+    if (left.handle != right.handle) return less(left.handle, right.handle);
+    return left.begin < right.begin;
+  });
+  // Prefix maxima let lookup skip earlier ranges even when grants overlap.
+  void *handle = nullptr;
+  std::size_t greatest_end = 0;
+  for (auto &range : ranges) {
+    if (range.handle != handle) {
+      handle = range.handle;
+      greatest_end = 0;
+    }
+    greatest_end = (std::max)(greatest_end, range.end);
+    range.prefix_end = greatest_end;
+  }
+}
+
 Result<std::span<const std::uint32_t>>
 collect_input_lease_candidates(InvocationState &invocation) noexcept {
   if (invocation.preparation_uses.load(std::memory_order_acquire) == 0)
@@ -2558,20 +2634,21 @@ collect_input_lease_candidates(InvocationState &invocation) noexcept {
     if (!binding.exclusive && (binding_ready_count(binding)||binding.immutable.valid()))
       candidates.push_back(static_cast<std::uint32_t>(index));
   }
+  index_input_leases(episode);
   return std::span<const std::uint32_t>(candidates);
 }
 void clear_input_lease_candidates(InvocationState &invocation) noexcept {
-  if (invocation.resources)
-    invocation.resources.get()->input_lease_candidates.clear();
+  if (!invocation.resources) return;
+  auto &episode = *invocation.resources.get();
+  episode.input_lease_ranges.clear();
+  episode.input_lease_candidates.clear();
 }
 
-const compute::ReadLease *input_lease(const InvocationState &invocation,
-    compute::ConstTensorView tensor,
+static const compute::ReadLease *linear_input_lease(const ResourceEpisode &episode,
+    mem::ConstBufferView wanted,
     std::span<const std::uint32_t> candidates) noexcept {
-  if (!invocation.resources || !tensor.valid()) return nullptr;
-  const auto wanted = tensor.storage();
   for (const auto index : candidates) {
-    const auto &binding = invocation.resources.get()->bindings[index];
+    const auto &binding = episode.bindings[index];
     // Exclusive bindings publish a read after success, but submit upgrades it
     // back to the original writer. A captured native read would prevent that
     // upgrade on a later cold rebind; the episode's write use owns this input.
@@ -2587,6 +2664,41 @@ const compute::ReadLease *input_lease(const InvocationState &invocation,
     }
   }
   return nullptr;
+}
+
+const compute::ReadLease *input_lease(const InvocationState &invocation,
+    compute::ConstTensorView tensor, std::span<const std::uint32_t> candidates) noexcept {
+  if (!invocation.resources || !tensor.valid()) return nullptr;
+  const auto &episode = *invocation.resources.get();
+  const auto &ranges = episode.input_lease_ranges;
+  const auto wanted = tensor.storage();
+  if (ranges.empty() || wanted.size() > SIZE_MAX - wanted.offset())
+    return linear_input_lease(episode, wanted, candidates);
+
+  const auto handle = wanted.native_handle();
+  const auto begin = wanted.offset();
+  const auto end = begin + wanted.size();
+  const std::less<void *> less;
+  auto first = std::lower_bound(ranges.begin(), ranges.end(), handle,
+      [&](const auto &range, auto key) { return less(range.handle, key); });
+  auto last = std::upper_bound(first, ranges.end(), handle,
+      [&](auto key, const auto &range) { return less(key, range.handle); });
+  last = std::upper_bound(first, last, begin,
+      [](auto offset, const auto &range) { return offset < range.begin; });
+  first = std::lower_bound(first, last, end,
+      [](const auto &range, auto limit) { return range.prefix_end < limit; });
+  const compute::ReadLease *found = nullptr;
+  std::size_t order = SIZE_MAX;
+  for (auto entry = first; entry != last; ++entry) {
+    if (entry->end < end || entry->order >= order || entry->resource != wanted.resource())
+      continue;
+    // Preserve the first covering original guard, including for aliased inputs.
+    if (const auto *read = entry->group ? entry->group->find(wanted) : entry->read) {
+      found = read;
+      order = entry->order;
+    }
+  }
+  return found;
 }
 
 Result<compute::ConstTensorView> output_tensor(const InvocationState &state,
@@ -5543,6 +5655,7 @@ Status Invocation::prepare_resources(ResourceOptions options) noexcept {
     }
   } catch (...) { return Status::ResourceExhausted("graph fixed resource metadata"); }
   HYLE_RETURN_IF_ERROR(detail::prepare_submission_lifetime(*state_, allocator));
+  detail::reserve_input_lease_ranges(*episode);
   state_->resources = std::move(candidate);
   return Status::Ok();
 }
