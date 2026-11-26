@@ -16,6 +16,7 @@
 #include <utility>
 #include <variant>
 
+#include <mlx/backend/metal/jit/includes.h>
 #include <mlx/device.h>
 #include <mlx/fast.h>
 #include <mlx/fast_primitives.h>
@@ -1224,10 +1225,10 @@ bool packed_bfloat_projection_eligible(
       !activation.is_plain() || !weights.is_plain() || !weights.is_dense() ||
       activation.data_type() != DataType::kBFloat16 || weights.data_type() != DataType::kBFloat16)
     return false;
-  // The measured fixed shape and short query path. Other dense heads retain
-  // their existing carrier selection.
   const auto x = activation.dimensions(), w = weights.dimensions();
-  return x[0] > 0 && x[0] <= 4 && fixed_bfloat_head(w[0], w[1]) && w[1] == x[1];
+  // The short projection and the twelve-row Steel tile use the same
+  // immutable lossless companion, with F32 output for either shape.
+  return x[0] > 0 && (x[0] <= 4 || x[0] == 12) && fixed_bfloat_head(w[0], w[1]) && w[1] == x[1];
 }
 
 bool packed_bfloat_matmul_eligible(
@@ -1391,12 +1392,85 @@ auto make_projection_kernel(bool bfloat_output, bool indexed, bool packed, bool 
 
 } // namespace
 
+namespace {
+
+mx::array lower_bfloat_head12(const PreparedBFloatProjection &projection,
+    const mx::array &original, const mx::array &activation, mx::Stream stream) {
+  static const std::string header = std::string(mx::metal::gemm()) + R"METAL(
+    inline bfloat4 hyle_head_unpack(uint mantissa, uint exponent, uint origin, uint shift) {
+      const uint4 bits = (uint4(mantissa) >> uint4(0, 8, 16, 24)) & 255u;
+      const uint4 code = (uint4(exponent) >> (shift + uint4(0, 4, 8, 12))) & 15u;
+      const uint4 exp = select(origin + code, uint4(0), code == 15u);
+      return as_type<bfloat4>(ushort4(((bits & 128u) << 8) | (exp << 7) | (bits & 127u)));
+    }
+  )METAL";
+  static const auto kernel = mx::fast::metal_kernel("hyle_bf16_target_head12",
+      {"activation", "matrix", "words", "exponents"}, {"output"}, R"METAL(
+    // One threadgroup covers the twelve live rows and 64 adjacent vocabulary rows.
+    // MLX Steel preserves BF16 inputs and uses FP32 accumulators and outputs.
+    using Gemm = mlx::steel::GEMMKernel<bfloat16_t, float,
+        16, 64, BLOCK_K, 1, 4, false, true, false, true>;
+    using InputLoader = typename Gemm::loader_a_t;
+    using Accumulator = typename Gemm::mma_t;
+    constexpr uint weight_stride = BLOCK_K + Gemm::tgp_padding_b;
+    constexpr uint vectors_per_thread = BLOCK_K / 8;
+    const uint simd = simdgroup_index_in_threadgroup;
+    const uint lane = thread_index_in_simdgroup;
+    const uint thread_index = simd * 32 + lane;
+    const uint start_column = threadgroup_position_in_grid.x * 64;
+    threadgroup bfloat16_t a_tile[Gemm::tgp_mem_size_a];
+    threadgroup bfloat16_t b_tile[Gemm::tgp_mem_size_b];
+    thread InputLoader load_a(activation, INPUT_WIDTH, a_tile, simd, lane);
+    thread Accumulator accumulator(simd, lane);
+    const uint weight_row = thread_index / 2;
+    const uint weight_column = (thread_index % 2) * (BLOCK_K / 2);
+    const uint weight_offset = (start_column + weight_row) * INPUT_WIDTH + weight_column;
+    const auto packed_destination = reinterpret_cast<threadgroup bfloat4 *>(
+        b_tile + weight_row * weight_stride + weight_column);
+
+    for (uint k = 0; k < INPUT_WIDTH; k += BLOCK_K) {
+      threadgroup_barrier(mem_flags::mem_threadgroup);
+      load_a.load_safe(short2(BLOCK_K, 12));
+      const uint vector = (weight_offset + k) / 4;
+      const uint block = vector / 16;
+      const uint position = vector % 16;
+      const uint origin = exponents[block];
+      if (origin == 255u) {
+        const auto raw = reinterpret_cast<const device bfloat4 *>(matrix) + vector;
+        #pragma unroll
+        for (uint i = 0; i < vectors_per_thread; ++i) packed_destination[i] = raw[i];
+      } else {
+        const auto payload = words + 24 * block;
+        #pragma unroll
+        for (uint i = 0; i < vectors_per_thread; i += 2) {
+          const uint code = payload[16 + (position + i) / 2];
+          packed_destination[i] = hyle_head_unpack(payload[position + i], code, origin, 0);
+          packed_destination[i + 1] = hyle_head_unpack(payload[position + i + 1], code, origin, 16);
+        }
+      }
+      threadgroup_barrier(mem_flags::mem_threadgroup);
+      accumulator.mma(a_tile, b_tile);
+      load_a.next();
+    }
+    threadgroup_barrier(mem_flags::mem_none);
+    accumulator.store_result_safe(output + start_column, OUTPUT_WIDTH, short2(64, 12));
+  )METAL", header, true);
+  const auto columns = original.shape(0);
+  return kernel({activation, original, projection.packed[0], projection.packed[1]},
+      {{12, columns}}, {mx::float32}, {columns * 2, 1, 1}, {128, 1, 1},
+      {{"INPUT_WIDTH", activation.shape(1)}, {"OUTPUT_WIDTH", columns},
+       {"BLOCK_K", 32}}, std::nullopt, false, stream)[0];
+}
+
+} // namespace
+
 mx::array lower_packed_bfloat_projection(
     const PreparedBFloatProjection &projection, const mx::array &original,
     const mx::array &input, mx::Dtype output, mx::Stream stream) {
   const auto rows = original.shape(0);
   const auto inner = original.shape(1);
   const bool bfloat_output = output == mx::bfloat16;
+  if (!bfloat_output && input.shape(0) == 12) return lower_bfloat_head12(projection, original, input, stream);
   static const auto scores = make_projection_kernel(false, false, true);
   static const auto matmul = make_projection_kernel(true, false, true);
   const auto &kernel = bfloat_output ? matmul : scores;
