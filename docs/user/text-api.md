@@ -162,6 +162,8 @@ SDK 是可选客户端依赖，服务端不依赖它们。上述 key 只满足�
 
 `prefix_cache.entries` 控制模型原状态预算内的完整前缀目录，不另造 KV 银行。前缀包含 KV、卷积、递归等模型完整续算状态，修改继续使用原 COW 与退休机制。默认 `shared: false`，服务为每条会话分配独立共享域；客户端不能提交共享域 ID。`shared: true` 只适合一个可信共享域，不提供租户认证。执行方案和采样数学仍分别限定复用。
 
+Qwen 文本会话在前缀目录和原生驻留状态预算都至少为 3 时，可以保留最后一个预填分块之前的已提交状态。例如设置 `prefix_cache.entries = 3`、`--max-sessions 3`，单会话服务仍可保留 `sessions.kv_capacity = 1`。模板改写历史时，服务重新渲染输入，原生引擎按实际 token 匹配并从命中的状态继续计算后缀。该检查点需要后续输入才能产出首个 token，也受目录淘汰和共享域限制。
+
 Responses SSE 按[官方事件定义](https://developers.openai.com/api/reference/resources/responses/streaming-events)交付文本和终止事件。达到额度返回 `response.incomplete`；调用方应处理 `response.completed`、`response.incomplete` 和 `error`。旧版 SDK 的 `responses.stream(...).get_final_response()` 可能只接受 completed；可用 `responses.create(..., stream=True)` 处理截断。
 
 无效选择在流开始前返回 400；模型／传输失败返回服务错误，流已开始则交付 `error`。断连或写入失败会取消未完成生成并等待原生终止。TCP 半关闭与优雅完全关闭不能仅靠读 EOF 区分，后者有时需等写入失败。服务关闭先唤醒接纳及连接处理线程，再退休保留会话并关闭模型进程。

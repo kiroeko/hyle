@@ -732,6 +732,7 @@ struct PreparedGenerationCall final {
   std::vector<std::int32_t> verification_ids;
   std::vector<c::ReadLease> draft_log_probabilities;
   bool generation = false, full_hit = false, initial_prefix = false, prefill_complete = true;
+  bool retain_prefill_checkpoint = false;
   bool verification_prepared = false;
   EvaluationDisposition disposition = EvaluationDisposition::kNotPublished;
   LogitsInputs logits; // Snapshot the caller's input leases for this prepared episode.
@@ -1085,6 +1086,9 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
         request.session = std::move(adopted);
         request.reused_tokens = reused_tokens; request.prefix_hits = 1;
         request.prefix_full_hits = full_hit ? 1 : 0;
+        if (!full_hit)
+          std::cerr << "prefix_hit name=prefill reused_tokens=" << reused_tokens
+                    << " visible=" << request.session->length() << '\n';
         call.name = std::move(hit_name);
         if (sampler.enabled || !sampler.modifiers.empty() || model.sampling_configuration_count() > 1) {
           request.prefix_sampling_calls = suffix == 0 ? 1 : 0;
@@ -1111,6 +1115,12 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
     }
     call.input_begin = part.begin;
     call.prefill_complete = part.complete;
+    // A live text turn can be rendered differently when it becomes history.
+    // Keep one earlier native boundary alongside the existing complete prompt
+    // and turn entries when both budgets have room for all three versions.
+    call.retain_prefill_checkpoint = call.initial_prefix && !part.complete && request.progress.input_open() &&
+        (std::min)(prefix->capacity(), model.cache_plan.resident_sessions) >= 3 &&
+        prefill.next(request.prompt.size(), part.begin + part.ids.size()).complete;
     call.completion = call.prefill_complete ? TextCompletion::kEmitNext : TextCompletion::kStateOnly;
     call.prompt = part.ids;
     const auto lag = request.session && request.session->head->draft ? request.session->head->draft->lag : 0;
@@ -2166,22 +2176,30 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
 }
 
 void publish_generation_prompt(Model &model, PreparedGenerationCall &call, cache::PrefixCache *prefix) {
-  if (!call.initial_prefix || call.full_hit || !call.prefill_complete ||
+  if (!call.initial_prefix || call.full_hit || (!call.prefill_complete && !call.retain_prefill_checkpoint) ||
       call.disposition != EvaluationDisposition::kPublished) return;
   auto &request = *call.request;
   if (!request.ledger) throw std::runtime_error("generation request requires its cold-prepared commit ledger");
   for (const auto &record : std::span(request.ledger->records).first(request.ledger->committed_count)) {
     if (record.imported || record.generation || record.turn != 0) continue;
+    // An earlier publication can own a shorter immutable prefix of this
+    // history. Appending new chunks never changes the chunks it exposes.
+    if (record.input_begin < request.history->length &&
+        record.accepted <= request.history->length - record.input_begin) continue;
     if (record.input_begin != request.history->length)
       throw std::runtime_error("complete prompt is missing its actual committed prefill chunk");
     request.history->append(request.input, record.input_begin, record.accepted, record.after.next_id,
         record.completion == TextCompletion::kStateOnly);
   }
-  if (request.history->length != request.prompt.size())
-    throw std::runtime_error("committed prefill chunks do not cover the complete prompt");
+  const auto length = request.session->length();
+  if (request.history->length != length || (call.prefill_complete && length != request.prompt.size()))
+    throw std::runtime_error("committed prefill chunks do not cover the actual checkpoint");
   if (request.session->head->draft && request.session->head->draft->lag)
     throw std::runtime_error("only a complete lag0 MTP prompt may enter the directory");
-  prefix->publish(request.input, request.session->checkpoint(), {request.history, request.history->chunks.size(), request.prompt.size()}, request.cache_sharing_domain);
+  const bool published = prefix->publish(request.input, request.session->checkpoint(),
+      {request.history, request.history->chunks.size(), length}, request.cache_sharing_domain);
+  if (published && call.retain_prefill_checkpoint)
+    std::cerr << "prefix_checkpoint name=prefill length=" << length << " state_only=1\n";
   (void)model;
 }
 

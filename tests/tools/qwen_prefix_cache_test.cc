@@ -306,20 +306,20 @@ bool publish(p::PrefixCache &cache, const p::TokenPlanRef &input, const p::Snaps
 }
 
 void sampling_cursor_addresses_are_transactional() {
-  const p::SamplingCursor base{0x1111111122222222ULL, 0x3333333344444444ULL, 0xffffffffULL};
-  require(base.identity() == std::array<std::uint32_t,4>{0x66666666u,0x22222222u,0xffffffffu,0u},
-      "sampling key and draw words must preserve the explicit 64-bit address");
-  require(base.identity(1) == std::array<std::uint32_t,4>{0x66666666u,0x22222222u,0u,1u},
-      "draw offsets must carry into the high address word");
+  constexpr auto maximum = p::SamplingCursor::maximum_coordinate;
+  const p::SamplingCursor base{0x1111111122222222ULL, 0x44444444u, maximum - 3};
+  require(base.identity() == std::array<std::uint32_t, 4>{0x22222222u, 0x11111111u, UINT32_MAX - 3, 0x44444444u},
+      "seed words, draw and stream must preserve their separate coordinates");
+  require(base.identity(3) == std::array<std::uint32_t, 4>{0x22222222u, 0x11111111u, UINT32_MAX, 0x44444444u},
+      "draw offsets must stay in the draw coordinate");
   const auto candidate = base.advanced(3);
-  require(candidate.seed == base.seed && candidate.stream == base.stream && candidate.draw == 0x100000002ULL,
+  require(candidate.seed == base.seed && candidate.stream == base.stream && candidate.draw == maximum,
       "advancing a candidate must preserve its seed/stream");
-  require(base.draw == 0xffffffffULL && base.identity() != candidate.identity(),
+  require(base.draw == maximum - 3 && base.identity() != candidate.identity(),
       "preparing or abandoning a candidate must not publish its cursor");
-  const auto maximum = (std::numeric_limits<std::uint64_t>::max)();
-  const p::SamplingCursor exhausted{7,13,maximum};
+  const p::SamplingCursor exhausted{7, maximum, maximum};
   require(exhausted.advanced(0) == exhausted && exhausted.identity()[2] == UINT32_MAX &&
-      exhausted.identity()[3] == UINT32_MAX, "the final exact draw address remains representable");
+      exhausted.identity()[3] == UINT32_MAX, "the final exact draw and stream coordinates remain representable");
   bool identity_rejected = false, advance_rejected = false;
   try { (void)exhausted.identity(1); } catch (const std::runtime_error &) { identity_rejected = true; }
   try { (void)exhausted.advanced(1); } catch (const std::runtime_error &) { advance_rejected = true; }
@@ -927,6 +927,31 @@ void batch_state_capacity() {
   rejects([&] { return p::plan(geometry, bf16_cache_rows(geometry), 1, max_index, 1, 0, 1); });
 }
 
+void state_only_checkpoint_requires_suffix() {
+  int model = 0, math = 0;
+  p::PrefixCache cache(3);
+  const auto input = tokens({1, 2, 3, 4});
+  const auto prefix = snapshot(2, &model, &math, -1);
+  auto history = std::make_shared<p::ReplayHistory>(4);
+  history->append(input, 0, 2, -1, true);
+  const p::ReplayPrefix replay{history, 1, 2};
+  require(cache.publish(input, prefix, replay), "a real state-only checkpoint must be retained");
+  require(!cache.lookup(*input, 2, 1, &model, &math) &&
+      !cache.match_length(*input, 2, 1, &model, &math), "a state-only checkpoint cannot deliver a full prompt hit");
+  const auto older = snapshot(1, &model, &math);
+  require(publish(cache, input, older), "an earlier evaluated frontier can be published");
+  require(cache.lookup(*input, 2, 1, &model, &math).payload.snapshot == older &&
+      cache.match_length(*input, 2, 1, &model, &math) == 1,
+      "an ineligible exact hit must leave the real earlier frontier eligible");
+  require(cache.lookup(*input, 4, 1, &model, &math).payload.snapshot == prefix &&
+      cache.match_length(*input, 4, 1, &model, &math) == 2,
+      "the real state-only checkpoint can seed a longer request");
+  const auto evaluated = snapshot(2, &model, &math);
+  require(publish(cache, input, evaluated) && !cache.publish(input, prefix, replay) &&
+      cache.lookup(*input, 2, 1, &model, &math).payload.snapshot == evaluated,
+      "an evaluated frontier must take precedence over state-only at the same boundary");
+}
+
 void exact_boundaries_and_domains() {
   int model = 0, other_model = 0, math = 0, other_math = 0;
   p::PrefixCache cache(8);
@@ -1145,6 +1170,7 @@ int main() {
     batch_state_capacity(); std::puts("PASS R1/R2 state/page capacity and rejected invalid/overflow limits");
     aligned_state_pool_capacity(); std::puts("PASS aligned hidden/history capacity, independent live rows and reuse");
     exact_boundaries_and_domains(); std::puts("PASS exact boundaries, replay chunks and model/math domains");
+    state_only_checkpoint_requires_suffix(); std::puts("PASS state-only checkpoints require an actual suffix");
     shared_pins_and_lru(); std::puts("PASS shared read-only pins, bounded admission and LRU");
     sampling_cursor_addresses_are_transactional(); std::puts("PASS transactional sampling addresses and overflow");
     sampling_wrappers_share_one_state_version(); std::puts("PASS independent sampler metadata and canonical state-version retirement");
@@ -1174,6 +1200,7 @@ TEST(QwenBatchSchedule, ColdShapesUseOnlyReachableWaveMembers) { schedule_shape_
 TEST(QwenSessionState, BatchCapacityPreservesSingleAndBoundsAllCandidates) { batch_state_capacity(); }
 TEST(QwenSessionState, AlignedStatePoolsHoldEveryConfiguredLiveRow) { aligned_state_pool_capacity(); }
 TEST(QwenPrefixCache, ExactSnapshotBoundariesAndDomains) { exact_boundaries_and_domains(); }
+TEST(QwenPrefixCache, StateOnlyCheckpointRequiresSuffix) { state_only_checkpoint_requires_suffix(); }
 TEST(QwenPrefixCache, SharedPinsAndLru) { shared_pins_and_lru(); }
 TEST(QwenSessionState, SamplingCursorAddressesAreTransactional) { sampling_cursor_addresses_are_transactional(); }
 TEST(QwenPrefixCache, SamplingWrappersShareOneStateVersion) { sampling_wrappers_share_one_state_version(); }

@@ -27,6 +27,9 @@ class PrefixDirectory final {
       std::is_nothrow_move_constructible_v<Payload> && std::is_nothrow_move_assignable_v<Payload> &&
       std::is_nothrow_destructible_v<Payload>, "prefix payload lifecycle must not throw during commit or retirement");
   static constexpr auto none = (std::numeric_limits<std::size_t>::max)();
+  struct AcceptAll final {
+    constexpr bool operator()(const Payload &, bool) const noexcept { return true; }
+  };
   // Each domain has an empty root. Every other node is a payload boundary or
   // a branching point; payload-free unary nodes are merged after eviction.
   // Thus P payloads occupy at most 2P nodes, including all domain roots.
@@ -235,21 +238,27 @@ public:
     for (const auto &entry : entries_) if (entry.node != none) visitor(entry.payload);
   }
   std::size_t size() const noexcept { return size_; }
+  std::size_t capacity() const noexcept { return limit_; }
   bool evict_one() noexcept {
     const auto victim = evictable(); if (victim == none) return false;
     erase_entry(victim); ++evictions; return true;
   }
   // Pure single-owner preview; it neither pins nor changes LRU/payload state.
-  std::size_t match_length(CacheDomain identity, const TokenPlan &input, std::size_t target, std::size_t minimum) const {
-    const auto best = find_match(identity, input, target, minimum);
+  template<class Accept = AcceptAll>
+  std::size_t match_length(CacheDomain identity, const TokenPlan &input, std::size_t target, std::size_t minimum,
+                           Accept accept = {}) const {
+    const auto best = find_match(identity, input, target, minimum, accept);
     return best == none ? 0 : nodes_[entries_[best].node].depth;
   }
-  Hit lookup(CacheDomain identity, const TokenPlan &input, std::size_t target, std::size_t minimum) {
-    const auto best = find_match(identity, input, target, minimum);
+  template<class Accept = AcceptAll>
+  Hit lookup(CacheDomain identity, const TokenPlan &input, std::size_t target, std::size_t minimum, Accept accept = {}) {
+    const auto best = find_match(identity, input, target, minimum, accept);
     return best == none ? Hit{} : Hit(*this, best);
   }
 private:
-  std::size_t find_match(CacheDomain identity, const TokenPlan &input, std::size_t target, std::size_t minimum) const {
+  template<class Accept>
+  std::size_t find_match(CacheDomain identity, const TokenPlan &input, std::size_t target, std::size_t minimum,
+                         const Accept &accept) const {
     const auto domain = domain_position(identity);
     if (!same_domain(domain, identity)) return none;
     const auto limit = (std::min)(target, input.ids.size());
@@ -262,7 +271,8 @@ private:
           edge.input->ids.begin() + static_cast<std::ptrdiff_t>(edge.first + edge.count),
           input.ids.begin() + static_cast<std::ptrdiff_t>(position))) break;
       position += edge.count; current = child;
-      if (edge.entry != none && position >= minimum) best = edge.entry;
+      if (edge.entry != none && position >= minimum && accept(entries_[edge.entry].payload, position == limit))
+        best = edge.entry;
     }
     return best;
   }

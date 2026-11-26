@@ -105,6 +105,11 @@ struct PrefixPayload final {
 class PrefixCache final {
   using Directory = hyle::inference::PrefixDirectory<PrefixPayload>;
   Directory directory_;
+  static bool usable(const PrefixPayload &payload, bool at_target) noexcept {
+    // A state-only prefill checkpoint needs a real suffix to evaluate before
+    // there is a next token to deliver. It can never finish the prompt alone.
+    return payload.snapshot && (!at_target || payload.snapshot->next_id >= 0);
+  }
 public:
   using Hit = Directory::Hit;
   explicit PrefixCache(std::size_t limit) : directory_(limit) {}
@@ -119,6 +124,7 @@ public:
     });
   }
   std::size_t size() const noexcept { return directory_.size(); }
+  std::size_t capacity() const noexcept { return directory_.capacity(); }
   std::size_t retained_versions() const {
     std::vector<const State *> unique;
     unique.reserve(size());
@@ -132,22 +138,22 @@ public:
   bool evict_one() noexcept { return directory_.evict_one(); }
   std::size_t match_length(const TokenPlan &input, std::size_t target, std::size_t minimum,
                            const void *model, const void *math, std::uint64_t sharing = 0) const {
-    return directory_.match_length({model, math, sharing}, input, target, minimum);
+    return directory_.match_length({model, math, sharing}, input, target, minimum, usable);
   }
   Hit lookup(const TokenPlan &input, std::size_t target, std::size_t minimum,
              const void *model, const void *math, std::uint64_t sharing = 0) {
-    auto hit = directory_.lookup({model, math, sharing}, input, target, minimum);
+    auto hit = directory_.lookup({model, math, sharing}, input, target, minimum, usable);
     if (hit) {
       const auto &head = hit.payload.snapshot;
       // Published payloads are immutable. Recheck the original model contract
       // once and fail closed if a caller violates that prerequisite.
-      if (head && head->model == model && head->math == math && head->next_id >= 0 &&
+      if (head && head->model == model && head->math == math && head->next_id >= -1 &&
           head->length == hit.complete_length()) return hit;
     }
     return {};
   }
   bool publish(TokenPlanRef input, const SnapshotRef &snapshot, const ReplayPrefix &replay, std::uint64_t sharing = 0) {
-    if (!input || !snapshot || !snapshot->length || snapshot->next_id < 0 ||
+    if (!input || !snapshot || !snapshot->length || snapshot->next_id < -1 ||
         snapshot->length > input->ids.size() || !replay.history || replay.length != snapshot->length ||
         replay.chunks == 0 || replay.chunks > replay.history->chunks.size() ||
         replay.history->chunks[replay.chunks - 1].next_id != snapshot->next_id)
@@ -165,6 +171,8 @@ public:
       covered += part.count;
     }
     if (covered != snapshot->length) throw std::runtime_error("prefix rebuild history does not cover its snapshot");
+    if (snapshot->next_id == -1 && match_length(*input, covered, covered, snapshot->model, snapshot->math, sharing))
+      return false; // Preserve a complete frontier already published at this key.
     return directory_.publish({snapshot->model, snapshot->math, sharing}, std::move(input), snapshot->length,
         PrefixPayload{snapshot, replay});
   }
