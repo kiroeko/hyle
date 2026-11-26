@@ -91,10 +91,11 @@ if((_cpu OR _HYLE_COMPUTE_HAVE_CUDA OR _HYLE_COMPUTE_HAVE_APPLE) AND NOT _cpu_up
     "${_cpu_port}/patches.json" "${CMAKE_CURRENT_SOURCE_DIR}/prepare_mixed_cpu_manifest.py")
 endif()
 if(_HYLE_COMPUTE_HAVE_APPLE)
+  # Keep Metal-only shader policy out of the common patch identity used by CUDA.
+  set(_metal_projection_libraries "${CMAKE_CURRENT_SOURCE_DIR}/metal-projection-libraries.json")
   set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
-    "${_patch_root}/metal-patches.json")
-  list(APPEND _manifests "${_patch_root}/metal-patches.json")
-  list(APPEND _patch_args --manifest "${_patch_root}/metal-patches.json")
+    "${_patch_root}/metal-patches.json" "${_metal_projection_libraries}")
+  list(APPEND _manifests "${_patch_root}/metal-patches.json" "${_metal_projection_libraries}")
   hyle_audit_in_tree_dependencies(ggml_metal_iq1)
   set(_metal_iq1_root "${HYLE_SOURCE_DIR}/third_party/ggml_metal_iq1")
   set(_metal_manifest "${CMAKE_CURRENT_BINARY_DIR}/metal-iq1-patches.json")
@@ -113,7 +114,9 @@ if(_HYLE_COMPUTE_HAVE_APPLE)
   set(_manifests "${_metal_manifest}")
   set(_patch_args --manifest "${_metal_manifest}")
   file(SHA256 "${CMAKE_CURRENT_SOURCE_DIR}/prepare_metal_iq1_manifest.py" _metal_tool_sha)
-  string(APPEND _source_identity "${HYLE_DEP_GGML_METAL_IQ1_VENDORED_TREE_SHA256}${_metal_tool_sha}")
+  file(SHA256 "${_metal_projection_libraries}" _metal_projection_sha)
+  string(APPEND _source_identity
+    "${HYLE_DEP_GGML_METAL_IQ1_VENDORED_TREE_SHA256}${_metal_tool_sha}${_metal_projection_sha}")
   list(APPEND _locked ggml_metal_iq1)
   list(APPEND _licenses
     "${_metal_iq1_root}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-metal-IQ1-LICENSE"

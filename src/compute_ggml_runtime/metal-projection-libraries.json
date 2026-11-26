@@ -1,0 +1,32 @@
+{
+  "upstream_revision": "456172ec733a135778adcd32d00e576a58232e45",
+  "files": [
+    {
+      "path": "src/ggml-metal/ggml-metal-device.m",
+      "before_sha256": "3732763d3b4f9a9131cc7ffa31fa89f490fb905f179c5b4238826032885dcca9",
+      "after_sha256": "b51f7443d55f0f20947ef4b546f6f5a2140d4309e95b07da503dc63287cce3e2",
+      "edits": [
+        {
+          "before": "static bool ggml_metal_prepare_embedded_mv(ggml_metal_library_t lib) {\n    const int kind = GGML_METAL_LIB_MUL_MV;",
+          "after": "static bool ggml_metal_prepare_embedded_kind(ggml_metal_library_t lib, int kind) {"
+        },
+        {
+          "before": "        GGML_LOG_ERROR(\"%s: could not compile embedded mul_mv: %s\\n\", __func__,\n                       error ? [[error description] UTF8String] : \"unknown Metal error\");",
+          "after": "        GGML_LOG_ERROR(\"%s: could not compile embedded %s: %s\\n\", __func__, k_lib_names[kind],\n                       error ? [[error description] UTF8String] : \"unknown Metal error\");"
+        },
+        {
+          "before": "    GGML_LOG_INFO(\"%s: compiled embedded mul_mv in %.3f sec\\n\", __func__, (ggml_time_us() - started) / 1e6);\n    return true;\n}\n#endif",
+          "after": "    GGML_LOG_INFO(\"%s: compiled embedded %s in %.3f sec\\n\", __func__, k_lib_names[kind],\n                  (ggml_time_us() - started) / 1e6);\n    return true;\n}\n\n// These function namespaces are defined in the corresponding embedded source.\n// The compiled library still confirms the exact symbol before we use it.\nstatic int ggml_metal_embedded_library_hint(NSString * function) {\n    if ([function hasPrefix:@\"kernel_cpy_\"])    return GGML_METAL_LIB_QUANTIZE;\n    if ([function hasPrefix:@\"kernel_mul_mv_\"]) return GGML_METAL_LIB_MUL_MV;\n    if ([function hasPrefix:@\"kernel_mul_mm_\"]) return GGML_METAL_LIB_MUL_MM;\n    return -1;\n}\n#endif"
+        },
+        {
+          "before": "        bool selected_embedded_mv = false;\n#if GGML_METAL_EMBED_LIBRARY\n        if (lib->pending_embedded_macros) {\n            if ([base_func hasPrefix:@\"kernel_mul_mv_\"]) {\n                if (!ggml_metal_prepare_embedded_mv(lib)) {\n                    [lib->lock unlock];\n                    return res;\n                }\n                selected_embedded_mv = [[lib->objs[GGML_METAL_LIB_MUL_MV] functionNames] containsObject:base_func];\n            }\n            if (selected_embedded_mv) {\n                lib_idx = GGML_METAL_LIB_MUL_MV;\n            } else {",
+          "after": "        bool selected_embedded_library = false;\n#if GGML_METAL_EMBED_LIBRARY\n        if (lib->pending_embedded_macros) {\n            const int kind = ggml_metal_embedded_library_hint(base_func);\n            if (kind >= 0) {\n                if (!ggml_metal_prepare_embedded_kind(lib, kind)) {\n                    [lib->lock unlock];\n                    return res;\n                }\n                selected_embedded_library = [[lib->objs[kind] functionNames] containsObject:base_func];\n            }\n            if (selected_embedded_library) {\n                lib_idx = kind;\n            } else {"
+        },
+        {
+          "before": "        } else if (!lib->single_library && !selected_embedded_mv) {",
+          "after": "        } else if (!lib->single_library && !selected_embedded_library) {"
+        }
+      ]
+    }
+  ]
+}
