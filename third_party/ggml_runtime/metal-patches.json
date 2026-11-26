@@ -35,7 +35,7 @@
     {
       "path": "src/ggml-metal/ggml-metal-device.m",
       "before_sha256": "1c129311f152c88bb455e14a720aac731196a76450e4b0da0791f1cce2bcbc47",
-      "after_sha256": "165aa29183097d6a6345adaae2de7c8a4b29c83bc9fc82c0f2437657e9cc46f0",
+      "after_sha256": "3732763d3b4f9a9131cc7ffa31fa89f490fb905f179c5b4238826032885dcca9",
       "edits": [
         {
           "before": "void ggml_metal_buffer_free(ggml_metal_buffer_t buf) {",
@@ -184,6 +184,38 @@
         {
           "before": "                };\n            }\n        case GGML_OP_GET_ROWS:\n            return op->src[0]->type != GGML_TYPE_NVFP4 &&\n                   op->src[0]->type != GGML_TYPE_TQ1_0;\n        case GGML_OP_SET_ROWS:\n            {\n                if (op->src[0]->type == GGML_TYPE_F16) {\n",
           "after": "                };\n            }\n        case GGML_OP_GET_ROWS:\n            if (op->src[0]->type == GGML_TYPE_NVFP4) {\n                return op->src[1]->type == GGML_TYPE_I32 && op->type == GGML_TYPE_F32 &&\n                    op->src[0]->ne[0] > 0 && op->src[0]->ne[0] % ggml_blck_size(GGML_TYPE_NVFP4) == 0 &&\n                    op->src[0]->nb[0] == ggml_type_size(GGML_TYPE_NVFP4);\n            }\n            return op->src[0]->type != GGML_TYPE_TQ1_0;\n        case GGML_OP_SET_ROWS:\n            {\n                if (op->src[0]->type == GGML_TYPE_F16) {\n"
+        },
+        {
+          "before": "    NSSet<NSString *> * override_fns;\n\n    ggml_metal_device_t dev;",
+          "after": "    NSSet<NSString *> * override_fns;\n#if GGML_METAL_EMBED_LIBRARY\n    NSDictionary * pending_embedded_macros;\n#endif\n\n    ggml_metal_device_t dev;"
+        },
+        {
+          "before": "    for (int kind = 0; kind < GGML_METAL_LIB_COUNT; ++kind) {\n        dispatch_group_async(group, queue, ^{",
+          "after": "    for (int kind = 0; kind < GGML_METAL_LIB_COUNT; ++kind) {\n        if (res->objs[kind]) continue;\n        dispatch_group_async(group, queue, ^{"
+        },
+        {
+          "before": "    // start/end symbols emitted by CMake (see CMakeLists.txt), one pair per kind\n#define X(e, s) extern const char ggml_metallib_##s##_start[]; extern const char ggml_metallib_##s##_end[];\n    GGML_METAL_LIBS\n#undef X\n\n    static const char * const lib_start[GGML_METAL_LIB_COUNT] = {\n#define X(e, s) [GGML_METAL_LIB_##e] = ggml_metallib_##s##_start,\n    GGML_METAL_LIBS\n#undef X\n    };\n    static const char * const lib_end[GGML_METAL_LIB_COUNT] = {\n#define X(e, s) [GGML_METAL_LIB_##e] = ggml_metallib_##s##_end,\n    GGML_METAL_LIBS\n#undef X\n    };\n\n    const bool ok = ggml_metal_library_compile_all(res, device, prep,\n        ^NSString * (int kind, NSError ** err) {\n            (void) err;\n            return [[NSString alloc] initWithBytes:lib_start[kind]\n                                            length:(lib_end[kind] - lib_start[kind])\n                                          encoding:NSUTF8StringEncoding];\n        }, \"embedded data\");\n\n    if (!ok) {\n        ggml_metal_library_free(res);\n        return NULL;\n    }\n",
+          "after": "    res->pending_embedded_macros = [prep copy];\n    if (!res->pending_embedded_macros) { ggml_metal_library_free(res); return NULL; }"
+        },
+        {
+          "before": "ggml_metal_library_t ggml_metal_library_init(ggml_metal_device_t dev) {\n    id<MTLDevice> device = ggml_metal_device_get_obj(dev);\n",
+          "after": "#if GGML_METAL_EMBED_LIBRARY\nstatic NSString * ggml_metal_embedded_source(int kind) {\n    // start/end symbols emitted by CMake (see CMakeLists.txt), one pair per kind\n#define X(e, s) extern const char ggml_metallib_##s##_start[]; extern const char ggml_metallib_##s##_end[];\n    GGML_METAL_LIBS\n#undef X\n\n    static const char * const lib_start[GGML_METAL_LIB_COUNT] = {\n#define X(e, s) [GGML_METAL_LIB_##e] = ggml_metallib_##s##_start,\n    GGML_METAL_LIBS\n#undef X\n    };\n    static const char * const lib_end[GGML_METAL_LIB_COUNT] = {\n#define X(e, s) [GGML_METAL_LIB_##e] = ggml_metallib_##s##_end,\n    GGML_METAL_LIBS\n#undef X\n    };\n\n    return [[NSString alloc] initWithBytes:lib_start[kind]\n                                    length:(lib_end[kind] - lib_start[kind])\n                                  encoding:NSUTF8StringEncoding];\n}\n\n// The caller holds the pipeline lock. Function ownership is confirmed on the\n// compiled Metal library before committing to the small embedded family.\nstatic bool ggml_metal_prepare_embedded_mv(ggml_metal_library_t lib) {\n    const int kind = GGML_METAL_LIB_MUL_MV;\n    if (lib->objs[kind]) return true;\n    NSString * source = ggml_metal_embedded_source(kind);\n    if (!source) return false;\n    const int64_t started = ggml_time_us();\n    MTLCompileOptions * options = [MTLCompileOptions new];\n    options.preprocessorMacros = lib->pending_embedded_macros;\n    ggml_metal_compile_options_set_lang(options, ggml_metal_device_get_props(lib->dev)->has_tensor);\n    NSError * error = nil;\n    id<MTLDevice> device = ggml_metal_device_get_obj(lib->dev);\n    lib->objs[kind] = [device newLibraryWithSource:source options:options error:&error];\n    [options release];\n    [source release];\n    if (!lib->objs[kind]) {\n        GGML_LOG_ERROR(\"%s: could not compile embedded mul_mv: %s\\n\", __func__,\n                       error ? [[error description] UTF8String] : \"unknown Metal error\");\n        return false;\n    }\n    GGML_LOG_INFO(\"%s: compiled embedded mul_mv in %.3f sec\\n\", __func__, (ggml_time_us() - started) / 1e6);\n    return true;\n}\n#endif\n\nggml_metal_library_t ggml_metal_library_init(ggml_metal_device_t dev) {\n"
+        },
+        {
+          "before": "    return res;\n#else\n#ifdef SWIFT_PACKAGE",
+          "after": "    return res;\n#else\n    id<MTLDevice> device = ggml_metal_device_get_obj(dev);\n#ifdef SWIFT_PACKAGE"
+        },
+        {
+          "before": "    ggml_metal_pipelines_free(lib->pipelines);\n\n    [lib->lock release];",
+          "after": "#if GGML_METAL_EMBED_LIBRARY\n    [lib->pending_embedded_macros release];\n#endif\n    ggml_metal_pipelines_free(lib->pipelines);\n\n    [lib->lock release];"
+        },
+        {
+          "before": "        int lib_idx = 0;\n        if (lib->override_fns && [lib->override_fns containsObject:base_func]) {",
+          "after": "        int lib_idx = 0;\n        bool selected_embedded_mv = false;\n#if GGML_METAL_EMBED_LIBRARY\n        if (lib->pending_embedded_macros) {\n            if ([base_func hasPrefix:@\"kernel_mul_mv_\"]) {\n                if (!ggml_metal_prepare_embedded_mv(lib)) {\n                    [lib->lock unlock];\n                    return res;\n                }\n                selected_embedded_mv = [[lib->objs[GGML_METAL_LIB_MUL_MV] functionNames] containsObject:base_func];\n            }\n            if (selected_embedded_mv) {\n                lib_idx = GGML_METAL_LIB_MUL_MV;\n            } else {\n                const bool complete = ggml_metal_library_compile_all(lib, ggml_metal_device_get_obj(lib->dev),\n                    lib->pending_embedded_macros, ^NSString * (int kind, NSError ** err) {\n                        (void) err;\n                        return ggml_metal_embedded_source(kind);\n                    }, \"embedded data\");\n                if (!complete) { [lib->lock unlock]; return res; }\n                [lib->pending_embedded_macros release];\n                lib->pending_embedded_macros = nil;\n            }\n        }\n#endif\n        if (lib->override_fns && [lib->override_fns containsObject:base_func]) {"
+        },
+        {
+          "before": "        } else if (!lib->single_library) {\n            NSNumber * idx = lib->fn_to_lib[base_func];",
+          "after": "        } else if (!lib->single_library && !selected_embedded_mv) {\n            NSNumber * idx = lib->fn_to_lib[base_func];"
         }
       ]
     },
@@ -370,7 +402,7 @@
     {
       "path": "src/ggml-metal/ggml-metal.cpp",
       "before_sha256": "4331ba068dd06691214a7f7e00ff6946114006623b4057a104892387bfac0343",
-      "after_sha256": "b95133bacf469500490aeaab8144149b21938a6a7421fdfdd771b548b4aecb1b",
+      "after_sha256": "77362602a3102a8b32707d16c8f71ed9e3f867f0d2f43b1fdb808ba80259bb48",
       "edits": [
         {
           "before": "// backend\n",
@@ -423,6 +455,10 @@
         {
           "before": "extern \"C\" bool ggml_hyle_metal_prepare_graph(ggml_backend_t backend, ggml_cgraph * graph, bool * unsupported) {\n    *unsupported = false;",
           "after": "extern \"C\" bool ggml_hyle_metal_prepare_graph(ggml_backend_t backend, ggml_cgraph * graph, bool * unsupported) {\n    // Bounded prepared regions keep waits, math and signal on one original buffer.\n    ggml_backend_metal_set_n_cb(backend, 0);\n    *unsupported = false;"
+        },
+        {
+          "before": "    if (!op->src[0] || op->src[0]->type != GGML_TYPE_NVFP4) return true;",
+          "after": "    if (!op->src[0]) return true;\n    // These one-row Q4_K projections use the same MV specialization at execution.\n    const bool q4k_matvec = op->op == GGML_OP_MUL_MAT && op->src[0]->type == GGML_TYPE_Q4_K &&\n        op->src[1] && op->src[1]->ne[1] == 1 && op->src[1]->ne[2] == 1 && op->src[1]->ne[3] == 1;\n    if (op->src[0]->type != GGML_TYPE_NVFP4 && !q4k_matvec) return true;"
         }
       ]
     },
@@ -630,8 +666,8 @@
       "after_sha256": "00efb6b90a170e30920c4d2ecac8de81fe16ef7cc89606b3eb8e7d6573247bd5",
       "edits": [
         {
-          "before": "#include \"common.h\"\n#include \"dequantize.h\"\n// Q1_0 dot product: dot = d * (2 * \u03a3(yl[i] where bit=1) - sumy)\ninline float block_q_n_dot_y(device const block_q1_0 * qb_curr, float sumy, thread float * yl, int il) {\n    device const uint8_t * qs = qb_curr->qs + il / 8;\n",
-          "after": "#include \"common.h\"\n#include \"dequantize.h\"\n#include \"dequantize_nvfp4.h\"\n// Q1_0 dot product: dot = d * (2 * \u03a3(yl[i] where bit=1) - sumy)\ninline float block_q_n_dot_y(device const block_q1_0 * qb_curr, float sumy, thread float * yl, int il) {\n    device const uint8_t * qs = qb_curr->qs + il / 8;\n"
+          "before": "#include \"common.h\"\n#include \"dequantize.h\"\n// Q1_0 dot product: dot = d * (2 * Σ(yl[i] where bit=1) - sumy)\ninline float block_q_n_dot_y(device const block_q1_0 * qb_curr, float sumy, thread float * yl, int il) {\n    device const uint8_t * qs = qb_curr->qs + il / 8;\n",
+          "after": "#include \"common.h\"\n#include \"dequantize.h\"\n#include \"dequantize_nvfp4.h\"\n// Q1_0 dot product: dot = d * (2 * Σ(yl[i] where bit=1) - sumy)\ninline float block_q_n_dot_y(device const block_q1_0 * qb_curr, float sumy, thread float * yl, int il) {\n    device const uint8_t * qs = qb_curr->qs + il / 8;\n"
         },
         {
           "before": "\n// mat-vec kernel processing in chunks of float4\n// chpb - chunks per quantization block\ntemplate<short r1ptg, typename q_t, short chpb, void (*deq_t4)(device const q_t *, short, thread float4 &) >\nvoid kernel_mul_mv_ext_q4_f32_impl(\n        constant ggml_metal_kargs_mul_mv_ext & args,\n        device const char * src0,\n        device const char * src1,\n        device       char * dst,\n",
