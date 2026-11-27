@@ -42,6 +42,19 @@ class QualityTests(unittest.TestCase):
         self.assertAlmostEqual(kl,.25*math.log(.5)+.75*math.log(1.5),places=7)
         self.assertEqual(agree,0);self.assertGreater(gap,0)
         self.assertEqual(Q.metrics(p,p)[0],0)
+    def test_reference_gap_uses_the_emitted_token(self):
+        # The reference's runner-up is close in both cases.
+        scores = [-1.932445, -1.933745, -1.955035, -2.142688]
+        gap, accepted = Q.reference_token_gap(scores[0], scores[2])
+        self.assertAlmostEqual(gap, 0.02259)
+        self.assertTrue(accepted)
+        gap, accepted = Q.reference_token_gap(scores[0], scores[3])
+        self.assertAlmostEqual(gap, 0.210243)
+        self.assertFalse(accepted)
+        self.assertEqual(Q.reference_token_gap(scores[0], scores[0]), (0, True))
+        self.assertFalse(Q.reference_token_gap(0, -0.1)[1])
+        with self.assertRaises(ValueError):
+            Q.reference_token_gap(0, float('nan'))
     def test_bad_worker_start_is_reaped(self):
         folder=self.folder()/'worker'
         code="import sys,time;sys.stdout.buffer.write(b'x'*56);sys.stdout.buffer.flush();time.sleep(30)"

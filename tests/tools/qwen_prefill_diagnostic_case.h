@@ -174,7 +174,10 @@ inline int run(const std::filesystem::path &input, const std::filesystem::path &
   for (const auto rows : exact_rows) model.plan_replay_uses(rows, 1, 2 * limit + 4);
   for (const auto rows : capacities) model.plan_replay_uses(rows, 1, 2 * limit + 4, q::GraphRole::kText,
       q::TextCompletion::kEmitNext, 0, q::RowPacking::kPrefill);
-  if (options.shared) model.prepare_shared_prefill_workspace();
+  if (options.shared) {
+    model.prepare_execution_storage();
+    require(model.execution_workspace.valid(), "diagnostic shared execution workspace is unavailable");
+  }
   model.prepare_execution(exact_rows);
   if (!options.shared) model.prepare_prefill_execution(capacities);
   auto storage = q::take(hyle::inference::HostStateStorage::create(model.execution, 2, std::size_t{512} << 20));
@@ -219,14 +222,16 @@ inline int run(const std::filesystem::path &input, const std::filesystem::path &
       const auto oracle = top2(a.logits), candidate = top2(b.logits);
       const auto oracle_gap = double(a.logits[oracle[0]]) - a.logits[oracle[1]];
       const auto candidate_gap = double(b.logits[candidate[0]]) - b.logits[candidate[1]];
-      const bool within = oracle_gap < 0.1;
+      const auto reference_gap = double(a.logits[oracle[0]]) - a.logits[candidate[0]];
+      const bool within = reference_gap < 0.1;
       large_margin += !within;
       std::cout << "argmax_mismatch output=" << output << " turn=" << turn + 1 << " prefill=" << prefill
           << " oracle=" << a.next << " candidate=" << b.next << " teacher=" << teacher[output]
           << " oracle_matches_teacher=" << (a.next == teacher[output])
           << " oracle_top1_top2_gap=" << oracle_gap << " candidate_top1_top2_gap=" << candidate_gap
+          << " candidate_gap_in_oracle=" << reference_gap
           << " candidate_preference_gap=" << double(b.logits[candidate[0]]) - b.logits[oracle[0]]
-          << " oracle_gap_lt_0.1=" << within << '\n';
+          << " candidate_gap_in_oracle_lt_0.1=" << within << '\n';
     }
     h::ImageBytes a_state;
     if (!options.acceptance || prefill || !same || a.next != teacher[output] || b.next != teacher[output]) {
@@ -274,7 +279,7 @@ inline int run(const std::filesystem::path &input, const std::filesystem::path &
   const bool accepted = complete && !exact_teacher_mismatches && !large_margin;
   std::cout << "diagnostic_completed=1 compared_outputs=" << output << " first_greedy_difference=" << index(first_greedy)
       << " first_observed_payload_difference=" << index(first_payload) << " first_teacher_mismatch=" << index(first_teacher)
-      << " argmax_disagreements=" << disagreements << " oracle_gap_ge_0.1=" << large_margin
+      << " argmax_disagreements=" << disagreements << " candidate_gap_in_oracle_ge_0.1=" << large_margin
       << " exact_teacher_mismatches=" << exact_teacher_mismatches << " packed_teacher_mismatches=" << packed_teacher_mismatches
       << " metadata_checks=" << metadata_checks << " state_checkpoints=" << state_checkpoints
       << " requested_outputs=" << options.outputs << " complete_requested_prefix=" << complete

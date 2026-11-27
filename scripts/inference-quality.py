@@ -124,6 +124,17 @@ def metrics(oracle,candidate):
     pair=np.partition(oracle,-2)[-2:]
     return max(0.,kl),int(np.argmax(oracle)==np.argmax(candidate)),float(pair.max()-pair.min())
 
+
+def reference_token_gap(best_score, selected_score, maximum=0.1):
+    """Compare two scores from the same reference row, irrespective of rank."""
+    gap = float(best_score) - float(selected_score)
+    if not np.isfinite(gap) or gap < 0:
+        raise ValueError('invalid reference score gap')
+    if not np.isfinite(maximum) or maximum <= 0:
+        raise ValueError('invalid reference gap limit')
+    return gap, gap < maximum
+
+
 def load_corpus(path):
     with Path(path).open(encoding='utf-8',newline='') as stream:
         cases=list(csv.DictReader(stream,delimiter='\t'))

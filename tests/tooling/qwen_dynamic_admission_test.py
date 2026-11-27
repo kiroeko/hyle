@@ -73,11 +73,13 @@ def check_teacher(args, prompt, actual):
             if (frame.case != 1 or frame.position != len(prompt) - initial + position or
                     frame.length != len(prompt) + position):
                 raise AssertionError('teacher prefix metadata differs')
-            rank = int(np.count_nonzero(frame.values > frame.values[token]) + 1)
-            gap = float(frame.values[frame.top1] - frame.values[token])
-            if rank != 1:
+            if not 0 <= token < frame.vocabulary:
+                raise AssertionError(('generated token outside teacher vocabulary', position, token))
+            if token != frame.top1:
+                rank = int(np.count_nonzero(frame.values > frame.values[token]) + 1)
+                gap, within = quality.reference_token_gap(frame.values[frame.top1], frame.values[token])
                 alternatives.append((position, token, rank, gap))
-                if rank != 2 or gap >= 0.1:
+                if not within:
                     raise AssertionError(('teacher mismatch', position, token, rank, gap))
             if position + 1 < len(actual):
                 worker.send(f'D 1 {token}')
