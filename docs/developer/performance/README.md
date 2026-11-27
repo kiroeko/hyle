@@ -52,6 +52,8 @@ GPU dedicated＋shared仅可在同一采样时刻相加，不能相加两项各�
 
 默认两路中、英、匈代码评审，每路四轮，使用仓库实际源码、差异和测试输出。前两路首轮输入 4096 和 6144 个 token，各路续轮新增 1792、2304、2048 个 token。每轮最多输出 192 个 token。首请求生成 48 个 token 后提交其余请求，每路独立续接原会话。分别运行普通与全词表 K2。
 
+默认输入用于回归。验证优化时轮换不同来源的长开发对话，使用真实源码、补丁、故障记录或工具输出，覆盖不同任务、提示长度和请求到达节奏。同窗各臂使用相同的输入、到达规则和配置，并记录来源版本。用未参与本轮调优的对话复测。MTP 归因另取各轮接受数和验证耗时，子词表校准使用独立素材。
+
 ```sh
 python3 -B scripts/inference-concurrency-bench.py \
   --engine /path/to/hyle --engine-version BUILD_COMMIT \
@@ -59,7 +61,7 @@ python3 -B scripts/inference-concurrency-bench.py \
 ```
 
 传入 `--sessions 2`、`--sessions 3` 或 `--sessions 4` 运行并发负载。第三、四路首轮输入 5120、4608 个 token。使用 `--draft-vocabulary FILE` 可另测中英匈子词表 K2。调用正式 worker 并核对 Metal 放置、草稿深度和实际批宽。并发结果包括各轮交付数、整体综合吞吐、所有会话同时 decode 的吞吐和持续时间、首字延迟及 p95 token 间隔。
-每格至少三个独立进程。传入 `--baseline` 和 `--baseline-version` 时，轮换运行冻结版本和它的 A/A 对照。模型和二进制使用本地制品。
+用 `--agent-turns FILE` 换输入。文件按会话连续排列，每个会话四行，每行是空格分隔的 token ID。每格至少三个独立进程。传入 `--baseline` 和 `--baseline-version` 时，轮换运行冻结版本和它的 A/A 对照。模型和二进制使用本地制品。
 
 ## 对齐工作量
 
