@@ -1952,7 +1952,7 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
     cache::PrefixCache *prefix = nullptr, std::span<const GenerationRequest> requests = {},
     AfterSubmit &&after_submit = nullptr, GenerationContinuation *continuation = nullptr,
     BatchObserver &&batch_observer = nullptr, bool defer_successor = false,
-    std::span<const inference::RequestCreditGrant> credits = {}) {
+    std::span<const inference::RequestCreditGrant> credits = {}, bool single_active_request = false) {
   if (calls.empty()) return;
   const bool packed_prefill = generation_prefill_capacity(model, calls) != 0;
   // Validate every request's cold metadata before prefix eviction, proposal
@@ -2067,7 +2067,7 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
         call.verification_prepared = false;
         const auto begin = Clock::now();
         auto &lookup = call.request->prefix_draft_lookup;
-        if (lookup && call.maximum == 2) {
+        if (single_active_request && lookup && call.maximum == 2) {
           const auto *stop = &call.request->ledger->stop_policy();
           try {
             const auto pair = lookup->propose(call.request->progress);
@@ -3445,6 +3445,9 @@ int execute_generation_sessions(Model &model, inference::GenerationBatch batch, 
     if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<BatchObserver>>) batch_observer(facts);
   };
   const auto execute_ready = [&](inference::RequestWave wave) {
+    // Admission freezes this active cohort through retirement. A one-member
+    // bucket split from a wider wave still uses the original neural drafts.
+    const bool single_active_request = wave.keys.size() == 1;
     const auto prepare_call = [&](inference::RequestKey key) {
       auto &request = requests[key.slot];
       auto &model = selected_model(request.execution_profile);
@@ -3498,7 +3501,7 @@ int execute_generation_sessions(Model &model, inference::GenerationBatch batch, 
       std::cerr << '\n';
       try {
         execute_generation_calls(model, bucket, trace_states, prefix, requests,
-            nullptr, &continuation, observe_batch, entire_wave, wave.credits);
+            nullptr, &continuation, observe_batch, entire_wave, wave.credits, single_active_request);
       } catch (const inference::EvaluationFailure &failure) {
         // Only the real admitted bucket may attribute a native member failure.
         throw inference::RequestExecutionFailure::from_evaluation(failure, bucket.size(),

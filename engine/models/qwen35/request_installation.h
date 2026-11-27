@@ -53,9 +53,10 @@ inline GenerationRequest install_generation_request(RequestInstallation inputs) 
   else request.progress.bind_turns(turns);
   request.logits_provider = std::move(inputs.logits_provider);
   const auto &model = inputs.model;
+  const bool single_sequence_plan = model.cache_plan.resident_sessions == 1 && model.cache_plan.active_sequences == 1;
   if (inputs.prepared_inference && ceiling == 2 && request.max_draft_tokens == ceiling &&
       model.execution.native_generated_storage() && !model.execution.has_cpu_assist() &&
-      model.cache_plan.resident_sessions == 1 && model.cache_plan.active_sequences == 1 &&
+      (single_sequence_plan || model.execution.kind() == inference::BackendKind::kApple) &&
       !request.logits_provider && request.trace.empty()) {
     const auto &sampling = model.sampling_configuration(inputs.sampling_index).configuration;
     if (!sampling.enabled && sampling.modifiers.empty())
