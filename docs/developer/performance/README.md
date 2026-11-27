@@ -61,7 +61,9 @@ python3 -B scripts/inference-concurrency-bench.py \
 ```
 
 传入 `--sessions 2`、`--sessions 3` 或 `--sessions 4` 运行并发负载。第三、四路首轮输入 5120、4608 个 token。使用 `--draft-vocabulary FILE` 可另测中英匈子词表 K2。调用正式 worker 并核对 Metal 放置、草稿深度和实际批宽。并发结果包括各轮交付数、整体综合吞吐、所有会话同时 decode 的吞吐和持续时间、首字延迟及 p95 token 间隔。
-用 `--agent-turns FILE` 换输入。文件按会话连续排列，每个会话四行，每行是空格分隔的 token ID。每格至少三个独立进程。传入 `--baseline` 和 `--baseline-version` 时，轮换运行冻结版本和它的 A/A 对照。模型和二进制使用本地制品。
+用 `--agent-turns FILE` 换输入。文件按会话连续排列，每条会话四行，每行是空格分隔的 token ID。首行可带历史问答、工具调用及结果，后续行仅提交新增消息。首轮至少 4096 个输入 token，四轮合计至少 8596 个，允许短续轮。用 `--capacity` 指定每会话容量，留足四轮输出额度。
+
+自备输入时，每组保持各对照臂的请求顺序一致，组间轮换首个用户。`--arrival-token` 指定其余用户入场的输出位置，首轮提前结束时在结束后入场。每格至少三个独立进程。传入 `--baseline` 和 `--baseline-version` 时，轮换运行冻结版本及其 A/A 对照。缺少同时解码时保留全程指标，同时解码吞吐记为缺测。模型和二进制使用本地制品。
 
 ## 对齐工作量
 
