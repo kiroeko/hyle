@@ -1227,7 +1227,7 @@ bool packed_bfloat_projection_eligible(
     return false;
   const auto x = activation.dimensions(), w = weights.dimensions();
   // A single 16-row Steel tile can cover these prepared query batches.
-  const bool rows = x[0] > 0 && (x[0] <= 4 || x[0] == 6 || x[0] == 9 || x[0] == 12);
+  const bool rows = x[0] > 0 && (x[0] <= 4 || x[0] == 6 || x[0] == 8 || x[0] == 9 || x[0] == 12);
   return rows && fixed_bfloat_head(w[0], w[1]) && w[1] == x[1];
 }
 
